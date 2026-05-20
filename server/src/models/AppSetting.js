@@ -143,6 +143,12 @@ const appSettingSchema = new mongoose.Schema(
       trim: true,
     },
 
+    linkedin: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     youtube: {
       type: String,
       default: "",

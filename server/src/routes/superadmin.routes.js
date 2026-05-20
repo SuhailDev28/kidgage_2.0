@@ -1369,6 +1369,7 @@ router.put(
         facebook: String(req.body.facebook || settings.facebook || "").trim(),
         youtube: String(req.body.youtube || settings.youtube || "").trim(),
         tiktok: String(req.body.tiktok || settings.tiktok || "").trim(),
+        linkedin: String(req.body.linkedin || settings.linkedin || "").trim(),
 
         allowProviderRegistration: toBool(
           req.body.allowProviderRegistration,

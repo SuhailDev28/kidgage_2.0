@@ -45,6 +45,7 @@ const initialForm = {
 
   instagram: "",
   facebook: "",
+  linkedin: "",
   youtube: "",
   tiktok: "",
 
@@ -365,6 +366,7 @@ export default function SettingsPage() {
 
         instagram: data.instagram || "",
         facebook: data.facebook || "",
+        linkedin: data.linkedin || "",
         youtube: data.youtube || "",
         tiktok: data.tiktok || "",
 
@@ -452,6 +454,7 @@ export default function SettingsPage() {
 
       payload.append("instagram", form.instagram);
       payload.append("facebook", form.facebook);
+      payload.append("linkedin", form.linkedin);
       payload.append("youtube", form.youtube);
       payload.append("tiktok", form.tiktok);
 
@@ -488,6 +491,7 @@ export default function SettingsPage() {
         favicon: null,
         logoUrl: updated.logo || prev.logoUrl,
         faviconUrl: updated.favicon || prev.faviconUrl,
+        linkedin: updated.linkedin ?? prev.linkedin,
       }));
 
       setMessage("Settings updated successfully.");
@@ -826,6 +830,14 @@ export default function SettingsPage() {
                 value={form.facebook}
                 onChange={(e) => updateField("facebook", e.target.value)}
                 placeholder="https://facebook.com/..."
+              />
+            </Field>
+
+            <Field label="LinkedIn">
+              <TextInput
+                value={form.linkedin}
+                onChange={(e) => updateField("linkedin", e.target.value)}
+                placeholder="https://linkedin.com/company/..."
               />
             </Field>
 
