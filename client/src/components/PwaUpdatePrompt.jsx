@@ -1,5 +1,6 @@
 // client/src/components/PwaUpdatePrompt.jsx
 import React, { useEffect, useState } from "react";
+import { registerSW } from "virtual:pwa-register";
 
 export default function PwaUpdatePrompt() {
   const [offlineReady, setOfflineReady] = useState(false);
@@ -27,6 +28,10 @@ export default function PwaUpdatePrompt() {
           },
           60 * 60 * 1000,
         );
+      },
+
+      onRegisterError(error) {
+        console.error("PWA service worker registration failed:", error);
       },
     });
 
@@ -62,15 +67,15 @@ export default function PwaUpdatePrompt() {
           Later
         </button>
 
-        {needRefresh && (
+        {needRefresh ? (
           <button
             type="button"
             onClick={() => updateSW?.(true)}
-            className="rounded-full bg-[#AEC4A0] px-4 py-2 text-sm font-black text-slate-950"
+            className="rounded-full bg-[#ff7a3d] px-4 py-2 text-sm font-black text-white"
           >
             Refresh
           </button>
-        )}
+        ) : null}
       </div>
     </div>
   );
