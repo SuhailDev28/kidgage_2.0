@@ -882,6 +882,10 @@ function normalizePackageForClient(item) {
     description: item.description || "",
     price: Number(item.price || 0),
     currency: item.currency || "QAR",
+
+    minAge: toCount(item.minAge, 0),
+    maxAge: toCount(item.maxAge, 18),
+
     isDefault: Boolean(item.isDefault),
     active: Boolean(item.active),
     displayOrder: toCount(item.displayOrder, 0),
@@ -2033,6 +2037,15 @@ router.post("/activities/:id/packages", async (req, res, next) => {
       "BOTH",
     );
 
+    const minAge = toCount(req.body.minAge, 0);
+    const maxAge = toCount(req.body.maxAge, 18);
+
+    if (minAge > maxAge) {
+      return res.status(400).json({
+        message: "Maximum age must be greater than or equal to minimum age",
+      });
+    }
+
     const isDefault = toBool(req.body.isDefault, false);
 
     if (isDefault) {
@@ -2062,6 +2075,10 @@ router.post("/activities/:id/packages", async (req, res, next) => {
       description: String(req.body.description || "").trim(),
       price: toMoney(req.body.price, 0),
       currency: String(req.body.currency || activity.currency || "QAR").trim(),
+
+      minAge,
+      maxAge,
+
       isDefault,
       active: toBool(req.body.active, true),
       displayOrder: toCount(req.body.displayOrder, 0),
@@ -2182,6 +2199,29 @@ router.put("/packages/:id", async (req, res, next) => {
 
     if (req.body.currency !== undefined) {
       pkg.currency = String(req.body.currency || "QAR").trim();
+    }
+
+    if (req.body.minAge !== undefined) {
+      pkg.minAge = toCount(req.body.minAge, 0);
+    }
+
+    if (req.body.maxAge !== undefined) {
+      pkg.maxAge = toCount(req.body.maxAge, 18);
+    }
+
+    if (req.body.minAge !== undefined || req.body.maxAge !== undefined) {
+      const minAge = Number(pkg.minAge ?? 0);
+      const maxAge = Number(pkg.maxAge ?? 18);
+
+      if (
+        Number.isFinite(minAge) &&
+        Number.isFinite(maxAge) &&
+        minAge > maxAge
+      ) {
+        return res.status(400).json({
+          message: "Maximum age must be greater than or equal to minimum age",
+        });
+      }
     }
 
     if (req.body.branchId !== undefined) {

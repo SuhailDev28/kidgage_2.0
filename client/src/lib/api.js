@@ -199,7 +199,64 @@ api.academySettlementDetails = function academySettlementDetails(id) {
     api.get(`/academy/settlements/${requireId(id, "Settlement ID")}`),
   );
 };
+/* -------------------------------------------------------------------------- */
+/* ACTIVITY PACKAGES / COURSE PACKAGES                                        */
+/* -------------------------------------------------------------------------- */
 
+api.activityPackages = function activityPackages(params = {}) {
+  return unwrap(api.get(`/activity-packages${buildQuery(params)}`));
+};
+
+api.activityPackageDetails = function activityPackageDetails(id) {
+  return unwrap(
+    api.get(`/activity-packages/${requireId(id, "Package ID")}`),
+  );
+};
+
+api.createActivityPackage = function createActivityPackage(payload = {}) {
+  const body = {
+    ...payload,
+    minAge: Number(payload.minAge ?? 0),
+    maxAge: Number(payload.maxAge ?? 18),
+  };
+
+  return unwrap(api.post("/activity-packages", body));
+};
+
+api.updateActivityPackage = function updateActivityPackage(id, payload = {}) {
+  const body = {
+    ...payload,
+  };
+
+  if (payload.minAge !== undefined) {
+    body.minAge = Number(payload.minAge ?? 0);
+  }
+
+  if (payload.maxAge !== undefined) {
+    body.maxAge = Number(payload.maxAge ?? 18);
+  }
+
+  return unwrap(
+    api.put(`/activity-packages/${requireId(id, "Package ID")}`, body),
+  );
+};
+
+api.deleteActivityPackage = function deleteActivityPackage(id) {
+  return unwrap(
+    api.delete(`/activity-packages/${requireId(id, "Package ID")}`),
+  );
+};
+
+api.toggleActivityPackageStatus = function toggleActivityPackageStatus(
+  id,
+  active,
+) {
+  return unwrap(
+    api.patch(`/activity-packages/${requireId(id, "Package ID")}/status`, {
+      active: Boolean(active),
+    }),
+  );
+};
 /*
   Usage:
 

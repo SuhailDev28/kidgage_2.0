@@ -63,6 +63,8 @@ function normalizePackage(item, index = 0) {
     description: item?.description || "",
     price: item?.price || 0,
     currency: item?.currency || "QAR",
+    minAge: item?.minAge ?? 0,
+    maxAge: item?.maxAge ?? 18,
     isDefault: Boolean(item?.isDefault),
     active: item?.active !== false,
     displayOrder: item?.displayOrder || 0,
@@ -279,8 +281,8 @@ function PackageModal({
               {mode === "edit" ? "Edit Package" : "Add Package"}
             </h3>
             <p className="mt-1 text-sm text-slate-500">
-              Configure package pricing, session count, validity, and booking
-              mode.
+              Configure package pricing, session count, validity, booking
+              mode, and child age eligibility.
             </p>
           </div>
 
@@ -407,6 +409,32 @@ function PackageModal({
                 value={form.currency}
                 onChange={(e) => onChange("currency", e.target.value)}
                 placeholder="QAR"
+              />
+            </Field>
+
+            <Field
+              label="Minimum Child Age"
+              hint="Smallest child age allowed to book this package."
+            >
+              <TextInput
+                type="number"
+                min="0"
+                value={form.minAge}
+                onChange={(e) => onChange("minAge", e.target.value)}
+                placeholder="0"
+              />
+            </Field>
+
+            <Field
+              label="Maximum Child Age"
+              hint="Largest child age allowed to book this package."
+            >
+              <TextInput
+                type="number"
+                min="0"
+                value={form.maxAge}
+                onChange={(e) => onChange("maxAge", e.target.value)}
+                placeholder="18"
               />
             </Field>
 
@@ -966,6 +994,8 @@ const initialPackageForm = {
   description: "",
   price: "0",
   currency: "QAR",
+  minAge: "0",
+  maxAge: "18",
   isDefault: false,
   active: true,
   displayOrder: "0",
@@ -1120,6 +1150,8 @@ export default function ActivityPackagesSlotsPage() {
       ...initialPackageForm,
       currency: activity?.currency || "QAR",
       bookingMode: activity?.bookingMode || "BOTH",
+      minAge: String(activity?.minAge ?? 0),
+      maxAge: String(activity?.maxAge ?? 18),
       sessionCount: String(activity?.totalSessions || 0),
       maxSelectableSessions: String(activity?.totalSessions || 0),
     });
@@ -1142,6 +1174,8 @@ export default function ActivityPackagesSlotsPage() {
       description: item.description || "",
       price: String(item.price || 0),
       currency: item.currency || "QAR",
+      minAge: String(item.minAge ?? 0),
+      maxAge: String(item.maxAge ?? 18),
       isDefault: Boolean(item.isDefault),
       active: item.active !== false,
       displayOrder: String(item.displayOrder || 0),
@@ -1254,10 +1288,17 @@ export default function ActivityPackagesSlotsPage() {
         description: packageForm.description,
         price: toNumber(packageForm.price, 0),
         currency: packageForm.currency || "QAR",
+        minAge: toNumber(packageForm.minAge, 0),
+        maxAge: toNumber(packageForm.maxAge, 18),
         isDefault: Boolean(packageForm.isDefault),
         active: Boolean(packageForm.active),
         displayOrder: toNumber(packageForm.displayOrder, 0),
       };
+
+      if (payload.minAge > payload.maxAge) {
+        setError("Maximum child age must be greater than or equal to minimum child age.");
+        return;
+      }
 
       if (packageModalMode === "edit" && packageForm.id) {
         await api.put(`/academy/packages/${packageForm.id}`, payload);
@@ -1646,6 +1687,10 @@ export default function ActivityPackagesSlotsPage() {
                                 item.bookingPattern ||
                                 "BOTH"}
                             </span>
+
+                            <span className="rounded-full bg-white px-3 py-1 font-semibold text-slate-700 ring-1 ring-slate-200">
+                              Age {item.minAge ?? 0} - {item.maxAge ?? 18}
+                            </span>
                           </div>
 
                           <div className="mt-3 text-sm text-slate-500">
@@ -1888,7 +1933,8 @@ export default function ActivityPackagesSlotsPage() {
               {selectedPackage.sessionCount || 0} sessions ·{" "}
               {selectedPackage.bookingMode ||
                 selectedPackage.bookingPattern ||
-                "BOTH"}
+                "BOTH"} · Age {selectedPackage.minAge ?? 0} -{" "}
+              {selectedPackage.maxAge ?? 18}
             </div>
           ) : null}
         </div>
