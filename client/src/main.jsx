@@ -7,6 +7,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { PublicSettingsProvider } from "./context/PublicSettingsProvider.jsx";
 import { AppRouter } from "./app/router.jsx";
 import PwaUpdatePrompt from "./components/PwaUpdatePrompt.jsx";
+import PwaInstallButton from "./components/PwaInstallButton.jsx";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -16,6 +17,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <PublicSettingsProvider>
           <AppRouter />
           <PwaUpdatePrompt />
+          <PwaInstallButton />
         </PublicSettingsProvider>
       </BrowserRouter>
     </GoogleOAuthProvider>
