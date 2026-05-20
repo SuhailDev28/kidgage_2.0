@@ -9,7 +9,7 @@ export default defineConfig({
 
     VitePWA({
       registerType: "autoUpdate",
-      injectRegister: "auto",
+      injectRegister: false,
       strategies: "generateSW",
 
       includeAssets: [
@@ -60,31 +60,6 @@ export default defineConfig({
         skipWaiting: true,
         navigateFallback: "/index.html",
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}"],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*\/api\/.*$/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "kidgage-api-cache",
-              networkTimeoutSeconds: 5,
-              expiration: {
-                maxEntries: 80,
-                maxAgeSeconds: 60 * 60,
-              },
-            },
-          },
-          {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|webp|gif)$/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "kidgage-image-cache",
-              expiration: {
-                maxEntries: 120,
-                maxAgeSeconds: 60 * 60 * 24 * 30,
-              },
-            },
-          },
-        ],
       },
 
       devOptions: {

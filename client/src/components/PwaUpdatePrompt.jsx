@@ -8,6 +8,8 @@ export default function PwaUpdatePrompt() {
   const [updateSW, setUpdateSW] = useState(null);
 
   useEffect(() => {
+    let intervalId = null;
+
     const updateServiceWorker = registerSW({
       immediate: true,
 
@@ -22,7 +24,7 @@ export default function PwaUpdatePrompt() {
       onRegistered(registration) {
         if (!registration) return;
 
-        setInterval(
+        intervalId = window.setInterval(
           () => {
             registration.update();
           },
@@ -36,6 +38,10 @@ export default function PwaUpdatePrompt() {
     });
 
     setUpdateSW(() => updateServiceWorker);
+
+    return () => {
+      if (intervalId) window.clearInterval(intervalId);
+    };
   }, []);
 
   if (!offlineReady && !needRefresh) return null;
