@@ -175,6 +175,7 @@ function normalizePublicSettings(settings) {
     instagram: settings.instagram || "",
     facebook: settings.facebook || "",
     youtube: settings.youtube || "",
+    linkedin: settings.linkedin || "",
     tiktok: settings.tiktok || "",
 
     allowProviderRegistration: settings.allowProviderRegistration !== false,
