@@ -67,6 +67,48 @@ function hexToRgba(hex, alpha = 1) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+function FacebookIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+      <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.84c0-2.52 1.49-3.91 3.77-3.91 1.09 0 2.23.2 2.23.2v2.47h-1.25c-1.24 0-1.63.78-1.63 1.57v1.89h2.78l-.44 2.91h-2.34V22C18.34 21.24 22 17.08 22 12.06Z" />
+    </svg>
+  );
+}
+
+function InstagramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none">
+      <rect
+        x="3"
+        y="3"
+        width="18"
+        height="18"
+        rx="5"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2" />
+      <circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" />
+    </svg>
+  );
+}
+
+function WhatsAppIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.33 4.95L2 22l5.28-1.39a9.86 9.86 0 0 0 4.76 1.21h.01c5.46 0 9.91-4.44 9.91-9.9C21.96 6.45 17.51 2 12.04 2Zm0 18.14h-.01a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.13.82.84-3.05-.2-.31a8.2 8.2 0 0 1-1.25-4.36c0-4.53 3.69-8.22 8.23-8.22 2.19 0 4.25.85 5.8 2.4a8.16 8.16 0 0 1 2.41 5.82c0 4.53-3.68 8.23-8.21 8.23Zm4.51-6.16c-.25-.13-1.47-.73-1.7-.81-.23-.09-.4-.13-.56.12-.17.25-.65.81-.8.98-.15.17-.29.19-.54.06-.25-.12-1.04-.38-1.98-1.22-.73-.65-1.23-1.46-1.37-1.71-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.44.13-.15.17-.25.25-.42.09-.17.04-.31-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1s.9 2.43 1.03 2.6c.13.17 1.77 2.7 4.29 3.79.6.26 1.07.41 1.43.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.08.15-1.18-.06-.11-.23-.17-.48-.29Z" />
+    </svg>
+  );
+}
+
+function LinkedinIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+      <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.32 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.1 20.45H3.53V9H7.1v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0Z" />
+    </svg>
+  );
+}
+
 function BrandMark({
   logo = "",
   siteName = "KidGage",
@@ -95,9 +137,7 @@ function BrandMark({
             className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-black text-white"
             style={{ backgroundColor: primaryColor }}
           >
-            {String(siteName || "K")
-              .charAt(0)
-              .toUpperCase()}
+            {String(siteName || "K").charAt(0).toUpperCase()}
           </div>
         )}
       </div>
@@ -109,16 +149,16 @@ function BrandMark({
   );
 }
 
-function SocialIcon({ label, bgColor, textColor }) {
+function SocialIcon({ icon, bgColor, textColor }) {
   return (
     <span
-      className="flex h-11 w-11 items-center justify-center rounded-full text-xs font-black transition hover:scale-[1.04]"
+      className="flex h-11 w-11 items-center justify-center rounded-full transition hover:scale-[1.06] hover:shadow-md"
       style={{
         backgroundColor: bgColor,
         color: textColor,
       }}
     >
-      {label}
+      {icon}
     </span>
   );
 }
@@ -131,20 +171,26 @@ export function Footer() {
   const version = settings?.logoUpdatedAt || settings?.updatedAt || "";
   const primaryColor = settings?.primaryColor || "#2563eb";
   const secondaryColor = settings?.secondaryColor || "#6d28d9";
+
   const footerDescription =
     settings?.footerDescription ||
     settings?.footerText ||
     "Book activities for kids across trusted academies and help parents discover enriching experiences with confidence, clarity, and joy.";
+
   const footerCopyright =
     settings?.footerCopyright || "© KidGage. All rights reserved.";
-  const website = settings?.website || "";
+
+  const facebook = settings?.facebook || "";
   const whatsapp = settings?.whatsapp || "";
   const instagram = settings?.instagram || "";
+  const linkedin = settings?.linkedin || "";
+
   const allowProviderRegistration = settings?.allowProviderRegistration ?? true;
 
-  const websiteHref = useMemo(() => normalizeUrl(website), [website]);
+  const facebookHref = useMemo(() => normalizeUrl(facebook), [facebook]);
   const whatsappHref = useMemo(() => normalizeWhatsApp(whatsapp), [whatsapp]);
   const instagramHref = useMemo(() => normalizeUrl(instagram), [instagram]);
+  const linkedinHref = useMemo(() => normalizeUrl(linkedin), [linkedin]);
 
   const primarySoft = useMemo(
     () => hexToRgba(primaryColor, 0.16),
@@ -221,12 +267,14 @@ export function Footer() {
                   <Link to="/terms" className="transition hover:text-[#0f172a]">
                     Terms & conditions
                   </Link>
+
                   <Link
                     to="/privacy"
                     className="transition hover:text-[#0f172a]"
                   >
                     Privacy policy
                   </Link>
+
                   <Link
                     to="/contact"
                     className="transition hover:text-[#0f172a]"
@@ -242,28 +290,15 @@ export function Footer() {
 
               <div className="flex items-center justify-center gap-3 md:justify-end">
                 <a
-                  href={websiteHref}
+                  href={facebookHref}
                   target="_blank"
                   rel="noreferrer"
-                  aria-label="Website"
+                  aria-label="Facebook"
                 >
                   <SocialIcon
-                    label="W"
+                    icon={<FacebookIcon />}
                     bgColor={primarySoft}
                     textColor={primaryColor}
-                  />
-                </a>
-
-                <a
-                  href={whatsappHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="WhatsApp"
-                >
-                  <SocialIcon
-                    label="WA"
-                    bgColor={secondarySoft}
-                    textColor={secondaryColor}
                   />
                 </a>
 
@@ -274,9 +309,35 @@ export function Footer() {
                   aria-label="Instagram"
                 >
                   <SocialIcon
-                    label="IG"
+                    icon={<InstagramIcon />}
+                    bgColor={secondarySoft}
+                    textColor={secondaryColor}
+                  />
+                </a>
+
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="WhatsApp"
+                >
+                  <SocialIcon
+                    icon={<WhatsAppIcon />}
                     bgColor={primarySoft}
                     textColor={primaryColor}
+                  />
+                </a>
+
+                <a
+                  href={linkedinHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="LinkedIn"
+                >
+                  <SocialIcon
+                    icon={<LinkedinIcon />}
+                    bgColor={secondarySoft}
+                    textColor={secondaryColor}
                   />
                 </a>
               </div>
