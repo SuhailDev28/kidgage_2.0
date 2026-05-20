@@ -1,3 +1,4 @@
+// client/vite.config.js
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
@@ -9,6 +10,7 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: "auto",
+      strategies: "generateSW",
 
       includeAssets: [
         "favicon.ico",
@@ -22,16 +24,14 @@ export default defineConfig({
         id: "/",
         name: "KidGage",
         short_name: "KidGage",
-        description:
-          "KidGage is a kids activity booking platform for parents, academies, activities, classes, and available slots.",
-        theme_color: "#AEC4A0",
+        description: "Kids activity booking platform.",
+        theme_color: "#ff7a3d",
         background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait",
         scope: "/",
         start_url: "/",
         lang: "en",
-
         icons: [
           {
             src: "/pwa-192x192.png",
@@ -58,17 +58,37 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
-
         navigateFallback: "/index.html",
-
-        globPatterns: [
-          "**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}",
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}"],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\/api\/.*$/i,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "kidgage-api-cache",
+              networkTimeoutSeconds: 5,
+              expiration: {
+                maxEntries: 80,
+                maxAgeSeconds: 60 * 60,
+              },
+            },
+          },
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|webp|gif)$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "kidgage-image-cache",
+              expiration: {
+                maxEntries: 120,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+            },
+          },
         ],
       },
 
       devOptions: {
-        enabled: true,
-        type: "module",
+        enabled: false,
       },
     }),
   ],
@@ -76,5 +96,10 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5173,
+  },
+
+  preview: {
+    host: "0.0.0.0",
+    port: 4173,
   },
 });
