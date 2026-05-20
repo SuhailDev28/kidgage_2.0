@@ -23,35 +23,37 @@ export default function PwaInstallButton() {
   useEffect(() => {
     setInstalled(isStandalone());
 
-    function onBeforeInstallPrompt(event) {
+    function handleBeforeInstallPrompt(event) {
       event.preventDefault();
       setDeferredPrompt(event);
       setCanInstall(true);
     }
 
-    function onInstalled() {
+    function handleInstalled() {
       setInstalled(true);
       setCanInstall(false);
       setDeferredPrompt(null);
     }
 
-    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
-    window.addEventListener("appinstalled", onInstalled);
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleInstalled);
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
-      window.removeEventListener("appinstalled", onInstalled);
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt,
+      );
+      window.removeEventListener("appinstalled", handleInstalled);
     };
   }, []);
 
-  async function handleInstall() {
+  async function handleClick() {
     if (ios || !deferredPrompt) {
       setShowHelp(true);
       return;
     }
 
     deferredPrompt.prompt();
-
     await deferredPrompt.userChoice;
 
     setDeferredPrompt(null);
@@ -64,7 +66,7 @@ export default function PwaInstallButton() {
     <>
       <button
         type="button"
-        onClick={handleInstall}
+        onClick={handleClick}
         className="fixed bottom-4 right-4 z-[99998] rounded-full bg-[#ff7a3d] px-5 py-3 text-sm font-black text-white shadow-2xl"
       >
         {canInstall ? "Install App" : "How to Install"}
