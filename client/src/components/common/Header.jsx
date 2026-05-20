@@ -57,7 +57,7 @@ function hexToRgb(hex) {
     };
   }
 
-  return { r: 37, g: 99, b: 235 };
+  return { r: 255, g: 122, b: 61 };
 }
 
 function rgba(hex, alpha = 1) {
@@ -108,7 +108,7 @@ function BrandMark({ logo = "", siteName = "KidGage", version = "", theme }) {
         )}
       </div>
 
-      <div className="min-w-0 truncate text-xl font-black tracking-tight text-[#0f172a] xs:text-2xl sm:text-[28px]">
+      <div className="min-w-0 truncate text-[20px] font-black tracking-tight text-[#0f172a] sm:text-[28px]">
         {siteName}
       </div>
     </div>
@@ -329,7 +329,7 @@ export function Header() {
 
   useEffect(() => {
     function handleResize() {
-      if (window.innerWidth >= 768) setMobileOpen(false);
+      if (window.innerWidth >= 1024) setMobileOpen(false);
     }
 
     window.addEventListener("resize", handleResize);
@@ -394,28 +394,15 @@ export function Header() {
               <button
                 type="button"
                 onClick={() => setLoginOpen(true)}
-                className="hidden rounded-full px-4 py-2.5 text-sm font-semibold transition sm:inline-flex"
-                style={{
-                  color: theme.menuLinkColor,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = theme.menuLinkHoverColor;
-                  e.currentTarget.style.backgroundColor = rgba(
-                    theme.menuLinkHoverColor,
-                    0.08,
-                  );
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = theme.menuLinkColor;
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
+                className="hidden rounded-full px-4 py-2.5 text-sm font-semibold transition lg:inline-flex"
+                style={{ color: theme.menuLinkColor }}
               >
                 Login
               </button>
 
               <Link
                 to="/register"
-                className="hidden rounded-full px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-95 md:inline-flex"
+                className="hidden rounded-full px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-95 lg:inline-flex"
                 style={{
                   backgroundColor: theme.primaryColor,
                   boxShadow: `0 12px 24px ${rgba(theme.primaryColor, 0.22)}`,
@@ -472,10 +459,7 @@ export function Header() {
                     className="inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-bold text-white transition hover:brightness-95"
                     style={{
                       backgroundColor: theme.primaryColor,
-                      boxShadow: `0 12px 24px ${rgba(
-                        theme.primaryColor,
-                        0.18,
-                      )}`,
+                      boxShadow: `0 12px 24px ${rgba(theme.primaryColor, 0.18)}`,
                     }}
                   >
                     Register
