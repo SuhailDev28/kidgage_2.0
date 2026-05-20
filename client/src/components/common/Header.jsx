@@ -5,9 +5,7 @@ import { usePublicSettings } from "../../context/PublicSettingsProvider.jsx";
 
 function getAssetBase() {
   const apiBase = String(import.meta.env.VITE_API_BASE || "").trim();
-
   if (!apiBase) return "";
-
   return apiBase.replace(/\/api\/?$/, "").replace(/\/$/, "");
 }
 
@@ -74,10 +72,7 @@ function getInitials(name = "KidGage") {
     .filter(Boolean);
 
   if (!words.length) return "KG";
-
-  if (words.length === 1) {
-    return words[0].slice(0, 2).toUpperCase();
-  }
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
 
   return `${words[0][0] || ""}${words[1][0] || ""}`.toUpperCase();
 }
@@ -91,9 +86,9 @@ function BrandMark({ logo = "", siteName = "KidGage", version = "", theme }) {
   }, [logo, version]);
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex min-w-0 items-center gap-2 sm:gap-3">
       <div
-        className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,23,42,0.08)] ring-1 ring-[rgba(15,23,42,0.06)]"
+        className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-white shadow-[0_10px_24px_rgba(15,23,42,0.08)] ring-1 ring-[rgba(15,23,42,0.06)] sm:h-12 sm:w-12 sm:rounded-[16px]"
         style={{
           backgroundColor:
             logoSrc && !imageFailed ? "#ffffff" : theme.primaryColor,
@@ -107,13 +102,13 @@ function BrandMark({ logo = "", siteName = "KidGage", version = "", theme }) {
             onError={() => setImageFailed(true)}
           />
         ) : (
-          <span className="text-sm font-black tracking-tight text-white">
+          <span className="text-xs font-black tracking-tight text-white sm:text-sm">
             {getInitials(siteName)}
           </span>
         )}
       </div>
 
-      <div className="text-[28px] font-black tracking-tight text-[#0f172a]">
+      <div className="min-w-0 truncate text-xl font-black tracking-tight text-[#0f172a] xs:text-2xl sm:text-[28px]">
         {siteName}
       </div>
     </div>
@@ -132,7 +127,7 @@ function IconBadge({ accent = "blue", label, theme }) {
 
   return (
     <div
-      className="flex h-11 w-11 items-center justify-center rounded-2xl text-sm font-black"
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xs font-black sm:h-11 sm:w-11 sm:text-sm"
       style={{
         color,
         backgroundColor: rgba(color, 0.12),
@@ -159,10 +154,12 @@ function LoginMenu({ open, onClose, theme, siteName }) {
       if (event.key === "Escape") onClose();
     }
 
+    document.body.style.overflow = "hidden";
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleEscape);
 
     return () => {
+      document.body.style.overflow = "";
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
     };
@@ -174,13 +171,13 @@ function LoginMenu({ open, onClose, theme, siteName }) {
     <>
       <div className="fixed inset-0 z-40 bg-[#0f172a]/35 backdrop-blur-[4px]" />
 
-      <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-24 md:pt-28">
+      <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-3 py-5 sm:px-4 sm:pt-24 md:pt-28">
         <div
           ref={panelRef}
-          className="relative w-full max-w-[430px] overflow-hidden rounded-[30px] border border-white/20 bg-white text-[#0f172a] shadow-[0_24px_80px_rgba(15,23,42,0.28)]"
+          className="relative w-full max-w-[430px] overflow-hidden rounded-[26px] border border-white/20 bg-white text-[#0f172a] shadow-[0_24px_80px_rgba(15,23,42,0.28)] sm:rounded-[30px]"
         >
           <div
-            className="absolute right-0 top-0 h-20 w-20 rounded-bl-[28px]"
+            className="absolute right-0 top-0 h-16 w-16 rounded-bl-[24px] sm:h-20 sm:w-20 sm:rounded-bl-[28px]"
             style={{ backgroundColor: theme.secondaryColor }}
           />
 
@@ -193,7 +190,7 @@ function LoginMenu({ open, onClose, theme, siteName }) {
             ×
           </button>
 
-          <div className="px-6 pb-7 pt-8">
+          <div className="px-4 pb-6 pt-7 sm:px-6 sm:pb-7 sm:pt-8">
             <div
               className="inline-flex rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.16em]"
               style={{
@@ -204,7 +201,7 @@ function LoginMenu({ open, onClose, theme, siteName }) {
               Profile
             </div>
 
-            <h3 className="mt-4 text-3xl font-black text-[#0f172a]">
+            <h3 className="mt-4 text-2xl font-black text-[#0f172a] sm:text-3xl">
               Login to {siteName}
             </h3>
 
@@ -216,11 +213,11 @@ function LoginMenu({ open, onClose, theme, siteName }) {
             <Link
               to="/login"
               onClick={onClose}
-              className="mt-6 flex items-center gap-4 rounded-[22px] border border-[rgba(15,23,42,0.06)] bg-[#f8fbff] px-4 py-4 transition hover:shadow-sm"
+              className="mt-6 flex items-center gap-3 rounded-[22px] border border-[rgba(15,23,42,0.06)] bg-[#f8fbff] px-4 py-4 transition hover:shadow-sm sm:gap-4"
             >
               <IconBadge accent="blue" label="U" theme={theme} />
-              <div>
-                <div className="text-[17px] font-bold text-[#0f172a]">
+              <div className="min-w-0">
+                <div className="text-base font-bold text-[#0f172a] sm:text-[17px]">
                   Sign In
                 </div>
                 <div className="text-sm text-[#64748b]">
@@ -229,20 +226,22 @@ function LoginMenu({ open, onClose, theme, siteName }) {
               </div>
             </Link>
 
-            <div className="mt-7 border-t border-slate-200 pt-7">
-              <h4 className="text-2xl font-black text-[#0f172a]">Business</h4>
+            <div className="mt-6 border-t border-slate-200 pt-6 sm:mt-7 sm:pt-7">
+              <h4 className="text-xl font-black text-[#0f172a] sm:text-2xl">
+                Business
+              </h4>
 
               <Link
                 to="/login"
                 onClick={onClose}
-                className="mt-4 flex items-start gap-4 rounded-[22px] border border-transparent px-4 py-4 transition hover:border-[rgba(15,23,42,0.06)] hover:bg-[#f8fbff]"
+                className="mt-4 flex items-start gap-3 rounded-[22px] border border-transparent px-3 py-4 transition hover:border-[rgba(15,23,42,0.06)] hover:bg-[#f8fbff] sm:gap-4 sm:px-4"
               >
                 <IconBadge accent="green" label="AM" theme={theme} />
-                <div>
-                  <div className="text-[17px] font-bold text-[#0f172a]">
+                <div className="min-w-0">
+                  <div className="text-base font-bold text-[#0f172a] sm:text-[17px]">
                     Activity Manager
                   </div>
-                  <p className="mt-1 max-w-[250px] text-sm leading-6 text-[#64748b]">
+                  <p className="mt-1 text-sm leading-6 text-[#64748b]">
                     Manage activities, campaigns, branches, and bookings.
                   </p>
                 </div>
@@ -253,14 +252,14 @@ function LoginMenu({ open, onClose, theme, siteName }) {
               <Link
                 to="/provider-joining-form"
                 onClick={onClose}
-                className="flex items-start gap-4 rounded-[22px] border border-transparent px-4 py-4 transition hover:border-[rgba(15,23,42,0.06)] hover:bg-[#f8fbff]"
+                className="flex items-start gap-3 rounded-[22px] border border-transparent px-3 py-4 transition hover:border-[rgba(15,23,42,0.06)] hover:bg-[#f8fbff] sm:gap-4 sm:px-4"
               >
                 <IconBadge accent="orange" label="GS" theme={theme} />
-                <div>
-                  <div className="text-[17px] font-bold text-[#0f172a]">
+                <div className="min-w-0">
+                  <div className="text-base font-bold text-[#0f172a] sm:text-[17px]">
                     Get Started
                   </div>
-                  <p className="mt-1 max-w-[250px] text-sm leading-6 text-[#64748b]">
+                  <p className="mt-1 text-sm leading-6 text-[#64748b]">
                     Register your academy and join the {siteName} network.
                   </p>
                 </div>
@@ -273,7 +272,7 @@ function LoginMenu({ open, onClose, theme, siteName }) {
   );
 }
 
-function NavLinkItem({ item, active, theme, mobile = false }) {
+function NavLinkItem({ item, active, theme, mobile = false, onClick }) {
   const [hovered, setHovered] = useState(false);
 
   const color = active
@@ -291,11 +290,12 @@ function NavLinkItem({ item, active, theme, mobile = false }) {
   return (
     <Link
       to={item.to}
+      onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={`font-semibold transition ${
         mobile
-          ? "rounded-[16px] px-4 py-3 text-sm"
+          ? "flex w-full rounded-[16px] px-4 py-3 text-sm"
           : "rounded-full px-4 py-2.5 text-sm"
       }`}
       style={{
@@ -327,6 +327,15 @@ export function Header() {
     setMobileOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth >= 768) setMobileOpen(false);
+    }
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   function isActive(path) {
     return (
       location.pathname === path || location.pathname.startsWith(`${path}/`)
@@ -335,7 +344,7 @@ export function Header() {
 
   const theme = useMemo(() => {
     const primaryColor =
-      settings?.primaryColor || settings?.menuLinkActiveColor || "#2563eb";
+      settings?.primaryColor || settings?.menuLinkActiveColor || "#ff7a3d";
 
     const secondaryColor =
       settings?.secondaryColor || settings?.menuLinkHoverColor || "#facc15";
@@ -358,10 +367,10 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-white/30 bg-[#f8fbff]/90 backdrop-blur-xl">
-        <div className="container-main py-4">
-          <div className="flex items-center justify-between gap-4 rounded-[26px] bg-white/90 px-4 py-3 shadow-[0_10px_30px_rgba(15,23,42,0.05)] ring-1 ring-[rgba(15,23,42,0.05)] md:px-5">
-            <Link to="/" className="shrink-0">
+      <header className="sticky top-0 z-30 w-full border-b border-white/30 bg-[#f8fbff]/90 backdrop-blur-xl">
+        <div className="container-main px-3 py-3 sm:px-4 sm:py-4">
+          <div className="flex min-w-0 items-center justify-between gap-2 rounded-[22px] bg-white/95 px-3 py-3 shadow-[0_10px_30px_rgba(15,23,42,0.05)] ring-1 ring-[rgba(15,23,42,0.05)] sm:gap-4 sm:rounded-[26px] sm:px-4 md:px-5">
+            <Link to="/" className="min-w-0 shrink">
               <BrandMark
                 logo={brand.logo}
                 siteName={brand.siteName}
@@ -370,7 +379,7 @@ export function Header() {
               />
             </Link>
 
-            <nav className="hidden items-center gap-2 md:flex">
+            <nav className="hidden items-center gap-2 lg:flex">
               {navItems.map((item) => (
                 <NavLinkItem
                   key={item.to}
@@ -381,11 +390,11 @@ export function Header() {
               ))}
             </nav>
 
-            <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
               <button
                 type="button"
                 onClick={() => setLoginOpen(true)}
-                className="rounded-full px-4 py-2.5 text-sm font-semibold transition"
+                className="hidden rounded-full px-4 py-2.5 text-sm font-semibold transition sm:inline-flex"
                 style={{
                   color: theme.menuLinkColor,
                 }}
@@ -406,7 +415,7 @@ export function Header() {
 
               <Link
                 to="/register"
-                className="rounded-full px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-95"
+                className="hidden rounded-full px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-95 md:inline-flex"
                 style={{
                   backgroundColor: theme.primaryColor,
                   boxShadow: `0 12px 24px ${rgba(theme.primaryColor, 0.22)}`,
@@ -418,29 +427,63 @@ export function Header() {
               <button
                 type="button"
                 onClick={() => setMobileOpen((v) => !v)}
-                className="rounded-full p-2.5 text-[#0f172a] transition hover:bg-slate-50 md:hidden"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#0f172a] transition hover:bg-slate-50 lg:hidden"
                 aria-label="Menu"
+                aria-expanded={mobileOpen}
               >
-                <span className="text-xl font-bold">☰</span>
+                <span className="text-xl font-black leading-none">
+                  {mobileOpen ? "×" : "☰"}
+                </span>
               </button>
             </div>
           </div>
 
-          {mobileOpen && (
-            <div className="mt-3 md:hidden">
-              <div className="flex flex-col gap-2 rounded-[24px] bg-white p-3 shadow-[0_12px_30px_rgba(15,23,42,0.08)] ring-1 ring-[rgba(15,23,42,0.05)]">
-                {navItems.map((item) => (
-                  <NavLinkItem
-                    key={item.to}
-                    item={item}
-                    active={isActive(item.to)}
-                    theme={theme}
-                    mobile
-                  />
-                ))}
+          {mobileOpen ? (
+            <div className="mt-3 lg:hidden">
+              <div className="overflow-hidden rounded-[24px] bg-white p-3 shadow-[0_12px_30px_rgba(15,23,42,0.08)] ring-1 ring-[rgba(15,23,42,0.05)]">
+                <div className="grid gap-2">
+                  {navItems.map((item) => (
+                    <NavLinkItem
+                      key={item.to}
+                      item={item}
+                      active={isActive(item.to)}
+                      theme={theme}
+                      mobile
+                      onClick={() => setMobileOpen(false)}
+                    />
+                  ))}
+                </div>
+
+                <div className="mt-3 grid gap-2 border-t border-slate-100 pt-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileOpen(false);
+                      setLoginOpen(true);
+                    }}
+                    className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Login
+                  </button>
+
+                  <Link
+                    to="/register"
+                    onClick={() => setMobileOpen(false)}
+                    className="inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-bold text-white transition hover:brightness-95"
+                    style={{
+                      backgroundColor: theme.primaryColor,
+                      boxShadow: `0 12px 24px ${rgba(
+                        theme.primaryColor,
+                        0.18,
+                      )}`,
+                    }}
+                  >
+                    Register
+                  </Link>
+                </div>
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       </header>
 
