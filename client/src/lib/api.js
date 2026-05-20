@@ -1,0 +1,236 @@
+// client/src/lib/api.js
+import axios from "axios";
+import { getToken, logout } from "./auth.js";
+
+const rootBase = String(
+  import.meta.env.VITE_API_BASE || "http://localhost:5001/api",
+).replace(/\/+$/, "");
+
+export const api = axios.create({
+  baseURL: rootBase,
+  withCredentials: false,
+});
+
+export const publicApi = axios.create({
+  baseURL: `${rootBase}/public`,
+  withCredentials: false,
+});
+
+function attachToken(config) {
+  const token = getToken();
+
+  config.headers = config.headers || {};
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+}
+
+function isPublicUrl(url = "") {
+  const text = String(url || "");
+
+  return (
+    text.startsWith("/public/") ||
+    text.startsWith("public/") ||
+    text.startsWith("/settings") ||
+    text.startsWith("/content-pages") ||
+    text.startsWith("/legal") ||
+    text.startsWith("/terms") ||
+    text.startsWith("/privacy") ||
+    text.includes("/public/settings") ||
+    text.includes("/public/content-pages") ||
+    text.includes("/public/legal") ||
+    text.includes("/public/terms") ||
+    text.includes("/public/privacy")
+  );
+}
+
+function normalizeAxiosError(error, fallback = "Request failed") {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    fallback
+  );
+}
+
+api.interceptors.request.use(attachToken);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const url = String(error?.config?.url || "");
+
+    const isLoginRequest = url.includes("/login");
+    const isRegisterRequest = url.includes("/register");
+    const hasToken = Boolean(getToken());
+
+    /*
+      Logout only when:
+      - user already has token
+      - server says token is invalid/expired
+      - request is not login/register/public
+    */
+    if (
+      status === 401 &&
+      hasToken &&
+      !isLoginRequest &&
+      !isRegisterRequest &&
+      !isPublicUrl(url)
+    ) {
+      logout();
+
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
+
+publicApi.interceptors.response.use(
+  (response) => response,
+  (error) => Promise.reject(error),
+);
+
+/* -------------------------------------------------------------------------- */
+/* RESPONSE HELPER                                                            */
+/* -------------------------------------------------------------------------- */
+
+function unwrap(promise) {
+  return promise
+    .then((res) => res.data)
+    .catch((error) => {
+      throw new Error(normalizeAxiosError(error));
+    });
+}
+
+function buildQuery(params = {}) {
+  const qs = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      qs.set(key, String(value));
+    }
+  });
+
+  const text = qs.toString();
+  return text ? `?${text}` : "";
+}
+
+function requireId(id, label = "ID") {
+  const value = String(id || "").trim();
+
+  if (!value) {
+    throw new Error(`${label} is required`);
+  }
+
+  return value;
+}
+
+/* -------------------------------------------------------------------------- */
+/* NOTIFICATIONS                                                              */
+/* -------------------------------------------------------------------------- */
+
+api.notifications = function notifications(params = {}) {
+  return unwrap(api.get(`/notifications${buildQuery(params)}`));
+};
+
+api.notificationUnreadCount = function notificationUnreadCount() {
+  return unwrap(api.get("/notifications/unread-count"));
+};
+
+api.notificationStats = function notificationStats() {
+  return unwrap(api.get("/notifications/stats"));
+};
+
+api.markNotificationRead = function markNotificationRead(id) {
+  return unwrap(
+    api.patch(`/notifications/${requireId(id, "Notification ID")}/read`),
+  );
+};
+
+api.markNotificationUnread = function markNotificationUnread(id) {
+  return unwrap(
+    api.patch(`/notifications/${requireId(id, "Notification ID")}/unread`),
+  );
+};
+
+api.markAllNotificationsRead = function markAllNotificationsRead() {
+  return unwrap(api.patch("/notifications/mark-all-read"));
+};
+
+api.deleteNotification = function deleteNotification(id) {
+  return unwrap(
+    api.delete(`/notifications/${requireId(id, "Notification ID")}`),
+  );
+};
+
+/* -------------------------------------------------------------------------- */
+/* ACADEMY PAYMENTS                                                           */
+/* -------------------------------------------------------------------------- */
+
+api.academyPayments = function academyPayments(params = {}) {
+  return unwrap(api.get(`/academy/payments${buildQuery(params)}`));
+};
+
+api.academyPaymentDetails = function academyPaymentDetails(id) {
+  return unwrap(api.get(`/academy/payments/${requireId(id, "Payment ID")}`));
+};
+
+/* -------------------------------------------------------------------------- */
+/* ACADEMY SETTLEMENTS                                                        */
+/* -------------------------------------------------------------------------- */
+
+api.academySettlementSummary = function academySettlementSummary() {
+  return unwrap(api.get("/academy/settlement-summary"));
+};
+
+api.academySettlements = function academySettlements(params = {}) {
+  return unwrap(api.get(`/academy/settlements${buildQuery(params)}`));
+};
+
+api.academySettlementDetails = function academySettlementDetails(id) {
+  return unwrap(
+    api.get(`/academy/settlements/${requireId(id, "Settlement ID")}`),
+  );
+};
+
+/*
+  Usage:
+
+  api.get("/super-admin/bookings")
+  api.get("/parent/history")
+
+  publicApi.get("/settings")
+  publicApi.get("/content-pages/privacy-policy")
+  publicApi.get("/content-pages/terms-and-conditions")
+  publicApi.get("/privacy-policy")
+  publicApi.get("/terms-and-conditions")
+
+  Notification helpers:
+  api.notifications({ page: 1, limit: 15, status: "UNREAD" })
+  api.notificationUnreadCount()
+  api.notificationStats()
+  api.markNotificationRead(id)
+  api.markNotificationUnread(id)
+  api.markAllNotificationsRead()
+  api.deleteNotification(id)
+
+  Academy payment helpers:
+  api.academyPayments({ page: 1, limit: 20, status: "PAID" })
+  api.academyPaymentDetails(id)
+
+  Academy settlement helpers:
+  api.academySettlementSummary()
+  api.academySettlements({ page: 1, limit: 20, status: "PAID" })
+  api.academySettlementDetails(id)
+
+  Do not use:
+  publicApi.get("/public/settings")
+  publicApi.get("/public/content-pages/privacy-policy")
+*/
