@@ -14,12 +14,14 @@ function ensureDir(dir) {
 }
 
 function safeFolderName(value = "general") {
-  return String(value || "general")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-_]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "") || "general";
+  return (
+    String(value || "general")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9-_]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "") || "general"
+  );
 }
 
 function safeExtension(originalName = "") {
@@ -43,10 +45,12 @@ function safeExtension(originalName = "") {
   return allowed.has(ext) ? ext : "";
 }
 
-function makeFileName(file) {
+function makeFileName(file, folder = "file") {
   const ext = safeExtension(file?.originalname || "");
-  const unique = `${Date.now()}-${crypto.randomBytes(8).toString("hex")}`;
-  return `${unique}${ext}`;
+  const prefix = safeFolderName(folder);
+  const unique = `${Date.now()}-${crypto.randomInt(100000000, 999999999)}`;
+
+  return `${prefix}-${unique}${ext}`;
 }
 
 function isImageMime(mime = "") {
@@ -89,7 +93,7 @@ export function createUploader({
     },
 
     filename(_req, file, cb) {
-      cb(null, makeFileName(file));
+      cb(null, makeFileName(file, safeFolder));
     },
   });
 
@@ -130,12 +134,15 @@ export function createUploader({
 
 export function fileToPublicPath(file, folder = "general") {
   if (!file?.filename) return "";
+
   const safeFolder = safeFolderName(folder);
+
   return `/uploads/${safeFolder}/${file.filename}`;
 }
 
 export function filesToPublicPaths(files, folder = "general") {
   if (!Array.isArray(files)) return [];
+
   return files
     .map((file) => fileToPublicPath(file, folder))
     .filter(Boolean);
@@ -151,8 +158,15 @@ export const uploadActivityImage = createUploader({
   maxSizeMb: 5,
 });
 
+/**
+ * IMPORTANT:
+ * Existing KidGage category URLs use:
+ * /uploads/category/filename.jpeg
+ *
+ * So keep this folder as "category", not "categories".
+ */
 export const uploadCategoryImage = createUploader({
-  folder: "categories",
+  folder: "category",
   fileTypes: "images",
   maxSizeMb: 5,
 });
