@@ -32,6 +32,29 @@ import notificationRoutes from "./routes/notification.routes.js";
 export const app = express();
 
 /* ---------------------------------
+ * Upload root
+ *
+ * Render Pro Disk:
+ * Disk mount path should be /var/data
+ * Uploaded files will be stored in /var/data/uploads
+ *
+ * Local development:
+ * Uploaded files will be stored in ./uploads
+ * -------------------------------- */
+export const UPLOAD_ROOT =
+  process.env.UPLOAD_ROOT ||
+  (process.env.NODE_ENV === "production"
+    ? "/var/data/uploads"
+    : path.join(process.cwd(), "uploads"));
+
+try {
+  fs.mkdirSync(UPLOAD_ROOT, { recursive: true });
+  console.log("Upload root ready:", UPLOAD_ROOT);
+} catch (error) {
+  console.error("Failed to create upload directory:", UPLOAD_ROOT, error);
+}
+
+/* ---------------------------------
  * CORS
  * -------------------------------- */
 const allowedOrigins = (
@@ -64,45 +87,30 @@ app.options("*", cors(corsOptions));
 app.use(
   helmet({
     crossOriginResourcePolicy: false,
+    crossOriginEmbedderPolicy: false,
   }),
 );
 
-app.use(morgan("dev"));
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
 /* ---------------------------------
  * Body parsers
  * -------------------------------- */
 app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 /* ---------------------------------
  * Static uploads
- *
- * Render Pro Disk:
- * Set disk mount path to /var/data
- * Files should be saved inside /var/data/uploads
- *
- * Local development:
- * Falls back to ./uploads
  * -------------------------------- */
-const UPLOAD_ROOT =
-  process.env.UPLOAD_ROOT ||
-  (process.env.NODE_ENV === "production"
-    ? "/var/data/uploads"
-    : path.join(process.cwd(), "uploads"));
-
-try {
-  fs.mkdirSync(UPLOAD_ROOT, { recursive: true });
-} catch (error) {
-  console.error("Failed to create upload directory:", UPLOAD_ROOT, error);
-}
-
 app.use(
   "/uploads",
   express.static(UPLOAD_ROOT, {
+    maxAge: process.env.NODE_ENV === "production" ? "7d" : 0,
+    fallthrough: true,
     setHeaders: (res) => {
       res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
       res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Cache-Control", "public, max-age=604800");
     },
   }),
 );
@@ -115,8 +123,10 @@ app.get("/api/health", (_req, res) => {
   res.json({
     ok: true,
     app: "KidGage API",
+    env: process.env.NODE_ENV || "development",
     uploads: {
       root: UPLOAD_ROOT,
+      exists: fs.existsSync(UPLOAD_ROOT),
       persistentDisk:
         process.env.NODE_ENV === "production" &&
         UPLOAD_ROOT.startsWith("/var/data"),
@@ -125,11 +135,38 @@ app.get("/api/health", (_req, res) => {
 });
 
 /* ---------------------------------
+ * Upload debug check
+ * Useful after Render redeploy
+ * -------------------------------- */
+app.get("/api/uploads/status", (_req, res) => {
+  let files = [];
+
+  try {
+    files = fs
+      .readdirSync(UPLOAD_ROOT, { withFileTypes: true })
+      .slice(0, 50)
+      .map((entry) => ({
+        name: entry.name,
+        type: entry.isDirectory() ? "directory" : "file",
+      }));
+  } catch {
+    files = [];
+  }
+
+  res.json({
+    success: true,
+    root: UPLOAD_ROOT,
+    exists: fs.existsSync(UPLOAD_ROOT),
+    files,
+  });
+});
+
+/* ---------------------------------
  * Rate limits
- * ---------------------------------
+ *
  * Important:
- * Keep this after health check and before routes.
- */
+ * Keep this after health checks and before routes.
+ * -------------------------------- */
 
 // General API protection
 app.use("/api", apiLimiter);
@@ -168,6 +205,7 @@ app.use("/api/notifications", notificationRoutes);
 
 /* ---------------------------------
  * Payment routes
+ *
  * IMPORTANT:
  * MyFatoorah must be mounted before /api/payments
  * because callback URL is /api/payments/myfatoorah/callback
@@ -183,7 +221,7 @@ app.use("/api/super-admin", superAdminPaymentsRoutes);
 app.use("/api/emails", emailRoutes);
 
 /* ---------------------------------
- * 404 fallback for API routes
+ * API 404 fallback
  * -------------------------------- */
 app.use("/api", (_req, res) => {
   return res.status(404).json({
