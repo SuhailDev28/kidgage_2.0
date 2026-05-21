@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import path from "path";
+import fs from "fs";
 
 import { errorHandler } from "./middleware/errorHandler.js";
 
@@ -34,8 +35,9 @@ export const app = express();
  * CORS
  * -------------------------------- */
 const allowedOrigins = (
-  process.env.CLIENT_URL || "http://localhost:5173,http://127.0.0.1:5173"
-) //,"http://192.168.18.11:5173"
+  process.env.CLIENT_URL ||
+  "http://localhost:5173,http://127.0.0.1:5173"
+)
   .split(",")
   .map((v) => v.trim())
   .filter(Boolean);
@@ -75,12 +77,32 @@ app.use(express.urlencoded({ extended: true }));
 
 /* ---------------------------------
  * Static uploads
+ *
+ * Render Pro Disk:
+ * Set disk mount path to /var/data
+ * Files should be saved inside /var/data/uploads
+ *
+ * Local development:
+ * Falls back to ./uploads
  * -------------------------------- */
+const UPLOAD_ROOT =
+  process.env.UPLOAD_ROOT ||
+  (process.env.NODE_ENV === "production"
+    ? "/var/data/uploads"
+    : path.join(process.cwd(), "uploads"));
+
+try {
+  fs.mkdirSync(UPLOAD_ROOT, { recursive: true });
+} catch (error) {
+  console.error("Failed to create upload directory:", UPLOAD_ROOT, error);
+}
+
 app.use(
   "/uploads",
-  express.static(path.join(process.cwd(), "uploads"), {
+  express.static(UPLOAD_ROOT, {
     setHeaders: (res) => {
       res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+      res.setHeader("Access-Control-Allow-Origin", "*");
     },
   }),
 );
@@ -93,6 +115,12 @@ app.get("/api/health", (_req, res) => {
   res.json({
     ok: true,
     app: "KidGage API",
+    uploads: {
+      root: UPLOAD_ROOT,
+      persistentDisk:
+        process.env.NODE_ENV === "production" &&
+        UPLOAD_ROOT.startsWith("/var/data"),
+    },
   });
 });
 
@@ -116,9 +144,6 @@ app.use("/api/auth/reset-password", authLimiter);
 app.use("/api/auth/social", authLimiter);
 
 // Booking creation / enquiry protection
-// This protects public booking-related requests.
-// If your exact booking create route is different,
-// this still safely protects public booking URLs.
 app.use("/api/public/bookings", publicBookingLimiter);
 app.use("/api/public/booking", publicBookingLimiter);
 app.use("/api/public/enquiries", publicBookingLimiter);
