@@ -483,7 +483,9 @@ export function decryptMyFatoorahPaymentData(paymentData, encryptionKey) {
 /* -------------------------------------------------------------------------- */
 
 export async function getMyFatoorahPaymentDetails({ paymentId, invoiceId }) {
-  const key = String(paymentId || invoiceId || "").trim();
+  const cleanPaymentId = String(paymentId || "").trim();
+  const cleanInvoiceId = String(invoiceId || "").trim();
+  const key = cleanPaymentId || cleanInvoiceId;
 
   if (!key) {
     const error = new Error("paymentId or invoiceId is required");
@@ -495,7 +497,7 @@ export async function getMyFatoorahPaymentDetails({ paymentId, invoiceId }) {
     method: "POST",
     body: JSON.stringify({
       Key: key,
-      KeyType: paymentId ? "PaymentId" : "InvoiceId",
+      KeyType: cleanPaymentId ? "PaymentId" : "InvoiceId",
     }),
   });
 
@@ -822,13 +824,15 @@ export async function verifyMyFatoorahEmbeddedResult({
   paymentData,
   rawPayload = null,
 }) {
-  if (!localPaymentId || !isValidObjectId(localPaymentId)) {
+  const cleanLocalPaymentId = String(localPaymentId || "").trim();
+
+  if (!cleanLocalPaymentId || !isValidObjectId(cleanLocalPaymentId)) {
     const error = new Error("Valid localPaymentId is required");
     error.statusCode = 400;
     throw error;
   }
 
-  const payment = await Payment.findById(localPaymentId);
+  const payment = await Payment.findById(cleanLocalPaymentId);
 
   if (!payment) {
     const error = new Error("Local payment not found");
@@ -892,10 +896,11 @@ export async function verifyMyFatoorahEmbeddedResult({
         status = detailsStatus;
       }
     } catch (error) {
-      console.error(
-        "MyFatoorah embedded status lookup failed:",
-        error?.message,
-      );
+      console.error("MyFatoorah embedded status lookup failed:", {
+        message: error?.message,
+        statusCode: error?.statusCode,
+        details: error?.details || null,
+      });
 
       if (rawStatus === "PAID" || decryptedStatus === "PAID") {
         status = "PAID";
@@ -935,15 +940,25 @@ export async function createMyFatoorahCheckout({
   });
 
   const bookingId = String(booking?._id || payment?.bookingId || "");
-  const paymentId = String(payment?._id || "");
+  const localPaymentId = String(payment?._id || "");
 
-  const checkoutUrl = `${appUrl}/payment/myfatoorah/${bookingId}?paymentId=${paymentId}`;
+  /*
+    IMPORTANT:
+    localPaymentId is your MongoDB Payment _id.
+    It is NOT the MyFatoorah PaymentId.
+
+    Do not name this query param paymentId, because the frontend/backend may
+    accidentally send it to MyFatoorah as KeyType: "PaymentId", which causes
+    MyFatoorah 400 Bad Request.
+  */
+  const checkoutUrl = `${appUrl}/payment/myfatoorah/${bookingId}?localPaymentId=${localPaymentId}`;
 
   payment.gatewayCheckoutUrl = checkoutUrl;
   payment.meta = {
     ...(payment.meta || {}),
     embeddedCheckoutUrl: checkoutUrl,
     frontendReturnUrl: appUrl,
+    localPaymentId,
   };
 
   await payment.save();
@@ -973,10 +988,14 @@ export async function syncMyFatoorahPaymentStatus({
   invoiceId,
   rawPayload = null,
 }) {
+  const cleanLocalPaymentId = String(localPaymentId || "").trim();
+  const cleanPaymentId = String(paymentId || "").trim();
+  const cleanInvoiceId = String(invoiceId || "").trim();
+
   const localPayment = await findLocalPayment({
-    localPaymentId,
-    paymentId,
-    invoiceId,
+    localPaymentId: cleanLocalPaymentId,
+    paymentId: cleanPaymentId,
+    invoiceId: cleanInvoiceId,
   });
 
   if (!localPayment) {
@@ -985,14 +1004,30 @@ export async function syncMyFatoorahPaymentStatus({
     throw error;
   }
 
+  const lookupPaymentId =
+    cleanPaymentId ||
+    localPayment.gatewayPaymentId ||
+    localPayment.meta?.myfatoorahPaymentId ||
+    "";
+
+  const lookupInvoiceId =
+    cleanInvoiceId ||
+    localPayment.gatewayInvoiceId ||
+    localPayment.gatewayOrderId ||
+    localPayment.meta?.myfatoorahInvoiceId ||
+    "";
+
+  if (!lookupPaymentId && !lookupInvoiceId) {
+    const error = new Error(
+      "Missing MyFatoorah paymentId or invoiceId. For embedded checkout, call verifyMyFatoorahEmbeddedResult with localPaymentId and paymentData first.",
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
   const details = await getMyFatoorahPaymentDetails({
-    paymentId,
-    invoiceId:
-      invoiceId ||
-      localPayment.gatewayInvoiceId ||
-      localPayment.gatewayOrderId ||
-      localPayment.meta?.myfatoorahInvoiceId ||
-      "",
+    paymentId: lookupPaymentId,
+    invoiceId: lookupPaymentId ? "" : lookupInvoiceId,
   });
 
   const status = normalizeMyFatoorahStatus(details);
@@ -1003,12 +1038,12 @@ export async function syncMyFatoorahPaymentStatus({
     details,
     rawPayload,
     paymentId:
-      paymentId ||
+      lookupPaymentId ||
       pickPaymentIdFromDetails(details) ||
       localPayment.gatewayPaymentId ||
       "",
     invoiceId:
-      invoiceId ||
+      lookupInvoiceId ||
       pickInvoiceIdFromDetails(details) ||
       localPayment.gatewayInvoiceId ||
       "",

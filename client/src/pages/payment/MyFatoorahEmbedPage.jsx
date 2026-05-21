@@ -60,68 +60,80 @@ function boolTrue(value) {
 
 function isCompletedCallback(payload = {}) {
   return (
-    (boolTrue(payload.isSuccess) ||
-      boolTrue(payload.IsSuccess) ||
-      boolTrue(payload.success) ||
-      boolTrue(payload.Success)) &&
-    (boolTrue(payload.paymentCompleted) ||
-      boolTrue(payload.PaymentCompleted) ||
-      boolTrue(payload.completed) ||
-      boolTrue(payload.Completed))
+    (boolTrue(payload?.isSuccess) ||
+      boolTrue(payload?.IsSuccess) ||
+      boolTrue(payload?.success) ||
+      boolTrue(payload?.Success)) &&
+    (boolTrue(payload?.paymentCompleted) ||
+      boolTrue(payload?.PaymentCompleted) ||
+      boolTrue(payload?.completed) ||
+      boolTrue(payload?.Completed))
   );
 }
 
 function pickGatewayPaymentId(payload = {}) {
   return String(
-    payload.paymentId ||
-      payload.PaymentId ||
-      payload.payment_id ||
-      payload.transactionId ||
-      payload.TransactionId ||
-      payload.trackId ||
-      payload.TrackId ||
-      payload?.paymentData?.paymentId ||
-      payload?.paymentData?.PaymentId ||
+    payload?.PaymentId ||
+      payload?.paymentId ||
+      payload?.PaymentID ||
+      payload?.payment_id ||
+      payload?.TransactionId ||
+      payload?.transactionId ||
+      payload?.TrackId ||
+      payload?.trackId ||
       payload?.Data?.PaymentId ||
+      payload?.Data?.paymentId ||
       payload?.data?.PaymentId ||
+      payload?.data?.paymentId ||
+      payload?.paymentData?.PaymentId ||
+      payload?.paymentData?.paymentId ||
       "",
   ).trim();
 }
 
 function pickGatewayInvoiceId(payload = {}) {
   return String(
-    payload.invoiceId ||
-      payload.InvoiceId ||
-      payload.invoice_id ||
-      payload?.paymentData?.invoiceId ||
-      payload?.paymentData?.InvoiceId ||
+    payload?.InvoiceId ||
+      payload?.invoiceId ||
+      payload?.InvoiceID ||
+      payload?.invoice_id ||
+      payload?.Id ||
+      payload?.id ||
       payload?.Data?.InvoiceId ||
+      payload?.Data?.invoiceId ||
+      payload?.Data?.Id ||
       payload?.data?.InvoiceId ||
+      payload?.data?.invoiceId ||
+      payload?.data?.Id ||
+      payload?.paymentData?.InvoiceId ||
+      payload?.paymentData?.invoiceId ||
       "",
   ).trim();
 }
 
 function pickEncryptedPaymentData(payload = {}) {
   return String(
-    payload.paymentData ||
-      payload.PaymentData ||
-      payload.encryptedPaymentData ||
-      payload.EncryptedPaymentData ||
-      payload?.Data?.paymentData ||
+    payload?.PaymentData ||
+      payload?.paymentData ||
+      payload?.EncryptedPaymentData ||
+      payload?.encryptedPaymentData ||
       payload?.Data?.PaymentData ||
-      payload?.data?.paymentData ||
+      payload?.Data?.paymentData ||
       payload?.data?.PaymentData ||
+      payload?.data?.paymentData ||
       "",
   ).trim();
 }
 
 function pickSessionId(payload = {}, fallback = "") {
   return String(
-    payload.sessionId ||
-      payload.SessionId ||
-      payload.session_id ||
+    payload?.SessionId ||
+      payload?.sessionId ||
+      payload?.session_id ||
       payload?.Data?.SessionId ||
+      payload?.Data?.sessionId ||
       payload?.data?.SessionId ||
+      payload?.data?.sessionId ||
       fallback ||
       "",
   ).trim();
@@ -145,7 +157,7 @@ function buildBookingSuccessUrl(bookingId, params = {}) {
   const safeBookingId = String(bookingId || "").trim();
 
   if (!safeBookingId) {
-    return buildResultUrl("/payment/pending", params);
+    return buildResultUrl("/payment/success", params);
   }
 
   return buildResultUrl(`/payment/success/${safeBookingId}`, params);
@@ -160,12 +172,12 @@ function getAxiosMessage(err, fallback = "Something went wrong") {
   );
 }
 
-function getPaymentId(payment, fallback = "") {
+function getLocalPaymentId(payment, embedded, fallback = "") {
   return String(
-    payment?._id ||
-      payment?.id ||
-      payment?.paymentId ||
+    embedded?.localPaymentId ||
       payment?.localPaymentId ||
+      payment?._id ||
+      payment?.id ||
       fallback ||
       "",
   ).trim();
@@ -173,7 +185,8 @@ function getPaymentId(payment, fallback = "") {
 
 function getAmountLabel(payment, embedded) {
   const amount = Number(payment?.amount || embedded?.amount || 0);
-  const currency = payment?.currency || embedded?.currencyCode || "QAR";
+  const currency =
+    payment?.currency || embedded?.currency || embedded?.currencyCode || "QAR";
 
   if (!Number.isFinite(amount) || amount <= 0) {
     return `${currency} 0.00`;
@@ -192,30 +205,32 @@ export default function MyFatoorahEmbedPage() {
   const verifyingRef = useRef(false);
 
   const bookingId = useMemo(() => {
-    return (
+    return String(
       params.bookingId ||
-      searchParams.get("bookingId") ||
-      searchParams.get("booking_id") ||
-      ""
-    );
+        searchParams.get("bookingId") ||
+        searchParams.get("booking_id") ||
+        "",
+    ).trim();
   }, [params.bookingId, searchParams]);
 
   const guestToken = useMemo(() => {
-    return (
+    return String(
       searchParams.get("guestToken") ||
-      searchParams.get("guestPaymentToken") ||
-      searchParams.get("token") ||
-      ""
-    );
+        searchParams.get("guestPaymentToken") ||
+        searchParams.get("token") ||
+        "",
+    ).trim();
   }, [searchParams]);
 
-  const urlPaymentId = useMemo(() => {
-    return (
-      searchParams.get("paymentId") ||
-      searchParams.get("payment_id") ||
+  const urlLocalPaymentId = useMemo(() => {
+    return String(
       searchParams.get("localPaymentId") ||
-      ""
-    );
+        searchParams.get("local_payment_id") ||
+        searchParams.get("kidgagePaymentId") ||
+        searchParams.get("kgPaymentId") ||
+        searchParams.get("paymentId") ||
+        "",
+    ).trim();
   }, [searchParams]);
 
   const [loading, setLoading] = useState(true);
@@ -235,29 +250,31 @@ export default function MyFatoorahEmbedPage() {
   }) {
     const normalized = normalizeStatus(status);
     const safeBookingId = String(finalBookingId || bookingId || "").trim();
+    const safePaymentId = String(localPaymentId || "").trim();
     const safeGuestToken = String(finalGuestToken || guestToken || "").trim();
+    const isGuest = Boolean(guest || safeGuestToken);
+
+    const commonParams = {
+      localPaymentId: safePaymentId,
+      paymentId: safePaymentId,
+      bookingId: safeBookingId,
+      status: normalized || "PENDING",
+      guestToken: isGuest ? safeGuestToken : "",
+      guest: isGuest ? "1" : "",
+    };
 
     if (normalized === "PAID") {
-      navigate(
-        buildBookingSuccessUrl(safeBookingId, {
-          paymentId: localPaymentId,
-          status: "PAID",
-          guestToken: guest || safeGuestToken ? safeGuestToken : "",
-          guest: guest || safeGuestToken ? "1" : "",
-        }),
-        { replace: true },
-      );
+      navigate(buildBookingSuccessUrl(safeBookingId, commonParams), {
+        replace: true,
+      });
       return;
     }
 
-    if (normalized === "FAILED") {
+    if (normalized === "FAILED" || normalized === "CANCELLED") {
       navigate(
         buildResultUrl("/payment/failed", {
-          paymentId: localPaymentId,
-          bookingId: safeBookingId,
+          ...commonParams,
           status: "FAILED",
-          guestToken: guest || safeGuestToken ? safeGuestToken : "",
-          guest: guest || safeGuestToken ? "1" : "",
         }),
         { replace: true },
       );
@@ -266,11 +283,8 @@ export default function MyFatoorahEmbedPage() {
 
     navigate(
       buildResultUrl("/payment/pending", {
-        paymentId: localPaymentId,
-        bookingId: safeBookingId,
+        ...commonParams,
         status: "PENDING",
-        guestToken: guest || safeGuestToken ? safeGuestToken : "",
-        guest: guest || safeGuestToken ? "1" : "",
       }),
       { replace: true },
     );
@@ -284,7 +298,9 @@ export default function MyFatoorahEmbedPage() {
     gatewayInvoiceId = "",
     rawPayload = null,
   }) {
-    if (!localPaymentId) {
+    const safeLocalPaymentId = String(localPaymentId || "").trim();
+
+    if (!safeLocalPaymentId) {
       setError("Local payment ID missing. Please contact support.");
       return;
     }
@@ -296,12 +312,12 @@ export default function MyFatoorahEmbedPage() {
     setError("");
 
     try {
-      const response = await api.post("/payments/myfatoorah/verify", {
+      const response = await api.post("/payments/myfatoorah/embedded-result", {
         bookingId,
         guestToken,
 
-        localPaymentId,
-        paymentRecordId: localPaymentId,
+        localPaymentId: safeLocalPaymentId,
+        paymentRecordId: safeLocalPaymentId,
 
         sessionId,
         paymentData,
@@ -340,14 +356,14 @@ export default function MyFatoorahEmbedPage() {
 
       const isGuestPayment = Boolean(
         data?.booking?.isGuestBooking ||
-        data?.payment?.meta?.guestParent ||
-        data?.payment?.meta?.parentType === "GUEST" ||
-        guestToken,
+          data?.payment?.meta?.guestParent ||
+          data?.payment?.meta?.parentType === "GUEST" ||
+          guestToken,
       );
 
       redirectByStatus({
         status,
-        localPaymentId,
+        localPaymentId: safeLocalPaymentId,
         finalBookingId,
         guest: isGuestPayment,
         finalGuestToken:
@@ -357,7 +373,7 @@ export default function MyFatoorahEmbedPage() {
           guestToken,
       });
     } catch (err) {
-      console.error("MyFatoorah verify failed:", err);
+      console.error("MyFatoorah embedded verify failed:", err);
 
       const message = getAxiosMessage(
         err,
@@ -368,7 +384,8 @@ export default function MyFatoorahEmbedPage() {
 
       navigate(
         buildResultUrl("/payment/pending", {
-          paymentId: localPaymentId,
+          localPaymentId: safeLocalPaymentId,
+          paymentId: safeLocalPaymentId,
           bookingId,
           status: "PENDING",
           guestToken,
@@ -383,7 +400,11 @@ export default function MyFatoorahEmbedPage() {
   }
 
   async function syncPaymentStatus() {
-    const localPaymentId = getPaymentId(payment, urlPaymentId);
+    const localPaymentId = getLocalPaymentId(
+      payment,
+      embedded,
+      urlLocalPaymentId,
+    );
 
     if (!localPaymentId && !bookingId) {
       setError("Payment ID or booking ID missing.");
@@ -446,16 +467,18 @@ export default function MyFatoorahEmbedPage() {
         throw new Error("Booking ID missing");
       }
 
-      const sessionUrl = `/payments/myfatoorah/session/${bookingId}`;
-      const { data } = await api.get(sessionUrl, {
-        params: {
-          ...(guestToken ? { guestToken } : {}),
-          ...(urlPaymentId ? { paymentId: urlPaymentId } : {}),
-        },
+      const { data } = await api.post("/payments/myfatoorah/embed-session", {
+        bookingId,
+        guestToken,
+        localPaymentId: urlLocalPaymentId,
       });
 
       if (data?.alreadyPaid || data?.nextAction === "ALREADY_PAID") {
-        const finalPaymentId = getPaymentId(data?.payment, urlPaymentId);
+        const finalPaymentId = getLocalPaymentId(
+          data?.payment,
+          data?.embedded || data?.myfatoorah,
+          urlLocalPaymentId,
+        );
 
         redirectByStatus({
           status: "PAID",
@@ -467,20 +490,27 @@ export default function MyFatoorahEmbedPage() {
         return;
       }
 
-      if (!data?.success || !data?.myfatoorah?.sessionId) {
+      const responseEmbedded = data?.embedded || data?.myfatoorah || null;
+
+      if (!data?.success || !responseEmbedded?.sessionId) {
         throw new Error(data?.message || "Unable to create payment session");
       }
 
-      const nextEmbedded = data.myfatoorah;
-      const nextPayment = data.payment;
+      const nextPayment = data.payment || null;
 
-      const localPaymentId =
-        nextEmbedded.paymentId ||
-        nextEmbedded.localPaymentId ||
-        getPaymentId(nextPayment, urlPaymentId);
+      const localPaymentId = getLocalPaymentId(
+        nextPayment,
+        responseEmbedded,
+        urlLocalPaymentId,
+      );
+
+      if (!localPaymentId) {
+        throw new Error("Local payment ID missing from payment session.");
+      }
 
       const normalizedEmbedded = {
-        ...nextEmbedded,
+        ...responseEmbedded,
+        localPaymentId,
         paymentId: localPaymentId,
       };
 
@@ -508,7 +538,7 @@ export default function MyFatoorahEmbedPage() {
         containerId,
         shouldHandlePaymentUrl: true,
 
-        callback: async function paymentCallback(response) {
+        callback: async function paymentCallback(response = {}) {
           console.log("MyFatoorah callback:", response);
 
           const paymentData = pickEncryptedPaymentData(response);
@@ -531,8 +561,9 @@ export default function MyFatoorahEmbedPage() {
             return;
           }
 
-          if (response?.redirectionUrl) {
-            window.location.href = response.redirectionUrl;
+          if (response?.redirectionUrl || response?.RedirectionUrl) {
+            window.location.href =
+              response?.redirectionUrl || response?.RedirectionUrl;
             return;
           }
 
@@ -594,7 +625,7 @@ export default function MyFatoorahEmbedPage() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookingId, guestToken, urlPaymentId]);
+  }, [bookingId, guestToken, urlLocalPaymentId]);
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8">
@@ -605,7 +636,9 @@ export default function MyFatoorahEmbedPage() {
           </div>
 
           <div>
-            <h1 className="text-xl font-bold text-slate-900">Secure Payment</h1>
+            <h1 className="text-xl font-bold text-slate-900">
+              Secure Payment
+            </h1>
             <p className="text-sm text-slate-500">
               Complete your KidGage booking payment.
             </p>
@@ -679,7 +712,7 @@ export default function MyFatoorahEmbedPage() {
             <button
               type="button"
               onClick={startPayment}
-              disabled={retrying}
+              disabled={retrying || loading || verifying}
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#16A34A] px-4 py-3 text-sm font-black text-white transition hover:bg-[#15803D] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {retrying ? (
@@ -693,7 +726,7 @@ export default function MyFatoorahEmbedPage() {
             <button
               type="button"
               onClick={syncPaymentStatus}
-              disabled={retrying}
+              disabled={retrying || loading || verifying}
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {retrying ? (

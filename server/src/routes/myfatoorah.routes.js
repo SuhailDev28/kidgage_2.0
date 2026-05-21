@@ -46,7 +46,9 @@ function parseJsonSafe(value) {
 
 function toMoney(value, fallback = 0) {
   const n = Number(value);
+
   if (!Number.isFinite(n)) return fallback;
+
   return Math.round(n * 100) / 100;
 }
 
@@ -60,6 +62,7 @@ function normalizeUpper(value, fallback = "") {
 
 async function expirePendingBookingsSafe() {
   if (typeof Booking.expirePendingBookings !== "function") return null;
+
   return Booking.expirePendingBookings();
 }
 
@@ -68,9 +71,9 @@ function isExpiredBooking(booking) {
 
   return Boolean(
     booking.bookingStatus === "PENDING" &&
-    booking.paymentStatus === "PENDING" &&
-    booking.expiresAt &&
-    new Date(booking.expiresAt).getTime() <= Date.now(),
+      booking.paymentStatus === "PENDING" &&
+      booking.expiresAt &&
+      new Date(booking.expiresAt).getTime() <= Date.now(),
   );
 }
 
@@ -119,13 +122,13 @@ function calculateKidgageCommission(amount) {
 function isGuestBooking(booking) {
   return Boolean(
     booking?.isGuestBooking ||
-    booking?.guestBooking ||
-    booking?.bookingSource === "GUEST" ||
-    booking?.bookingType === "GUEST" ||
-    booking?.guestParent?.email ||
-    booking?.guestParentSnapshot?.email ||
-    booking?.guestChild?.fullName ||
-    booking?.guestChildSnapshot?.fullName,
+      booking?.guestBooking ||
+      booking?.bookingSource === "GUEST" ||
+      booking?.bookingType === "GUEST" ||
+      booking?.guestParent?.email ||
+      booking?.guestParentSnapshot?.email ||
+      booking?.guestChild?.fullName ||
+      booking?.guestChildSnapshot?.fullName,
   );
 }
 
@@ -189,10 +192,33 @@ function pickLocalPaymentId(req, data = {}) {
     return String(queryLocalPaymentId);
   }
 
+  /*
+    Backward compatibility:
+    Older frontend used ?paymentId=<MongoDB Payment _id>.
+    If paymentId is a valid MongoDB ObjectId, treat it as localPaymentId,
+    not as MyFatoorah PaymentId.
+  */
   const queryPaymentId = String(req.query.paymentId || "").trim();
 
   if (isValidObjectId(queryPaymentId)) {
     return queryPaymentId;
+  }
+
+  const bodyLocalPaymentId =
+    req.body?.localPaymentId ||
+    req.body?.local_payment_id ||
+    req.body?.kidgagePaymentId ||
+    req.body?.kgPaymentId ||
+    "";
+
+  if (isValidObjectId(bodyLocalPaymentId)) {
+    return String(bodyLocalPaymentId);
+  }
+
+  const bodyPaymentId = String(req.body?.paymentId || "").trim();
+
+  if (isValidObjectId(bodyPaymentId)) {
+    return bodyPaymentId;
   }
 
   const parsedUserDefined = parseJsonSafe(
@@ -202,12 +228,10 @@ function pickLocalPaymentId(req, data = {}) {
   const possible =
     data.CustomerReference ||
     data.customerReference ||
-    parsedUserDefined?.paymentId ||
     parsedUserDefined?.localPaymentId ||
+    parsedUserDefined?.paymentId ||
     req.body?.CustomerReference ||
     req.body?.customerReference ||
-    req.body?.localPaymentId ||
-    req.body?.paymentId ||
     "";
 
   return isValidObjectId(possible) ? String(possible) : "";
@@ -215,16 +239,28 @@ function pickLocalPaymentId(req, data = {}) {
 
 function pickGatewayPaymentId(req, data = {}) {
   const queryPaymentId = String(req.query.paymentId || "").trim();
+  const bodyPaymentId = String(req.body?.paymentId || "").trim();
 
+  /*
+    Important:
+    MongoDB ObjectId values are local payment ids, not MyFatoorah PaymentIds.
+    Do not pass ObjectId to MyFatoorah as KeyType PaymentId.
+  */
   const safeQueryPaymentId = isValidObjectId(queryPaymentId)
     ? ""
     : queryPaymentId;
+
+  const safeBodyPaymentId = isValidObjectId(bodyPaymentId) ? "" : bodyPaymentId;
 
   return String(
     req.query.PaymentId ||
       req.query.payment_id ||
       req.query.myfatoorahPaymentId ||
       safeQueryPaymentId ||
+      req.body?.PaymentId ||
+      req.body?.payment_id ||
+      req.body?.myfatoorahPaymentId ||
+      safeBodyPaymentId ||
       data.PaymentId ||
       data.PaymentID ||
       data.paymentId ||
@@ -236,7 +272,10 @@ function pickGatewayPaymentId(req, data = {}) {
 
 function pickInvoiceId(req, data = {}) {
   const queryId = String(req.query.Id || req.query.id || "").trim();
+  const bodyId = String(req.body?.Id || req.body?.id || "").trim();
+
   const safeQueryId = isValidObjectId(queryId) ? "" : queryId;
+  const safeBodyId = isValidObjectId(bodyId) ? "" : bodyId;
 
   return String(
     req.query.InvoiceId ||
@@ -244,12 +283,43 @@ function pickInvoiceId(req, data = {}) {
       req.query.invoice_id ||
       req.query.myfatoorahInvoiceId ||
       safeQueryId ||
+      req.body?.InvoiceId ||
+      req.body?.invoiceId ||
+      req.body?.invoice_id ||
+      req.body?.myfatoorahInvoiceId ||
+      safeBodyId ||
       data.InvoiceId ||
       data.InvoiceID ||
       data.invoiceId ||
       data.invoice_id ||
       data.Id ||
       data.id ||
+      "",
+  ).trim();
+}
+
+function pickSessionId(req, data = {}) {
+  return String(
+    req.body?.sessionId ||
+      req.body?.SessionId ||
+      req.query.sessionId ||
+      req.query.SessionId ||
+      data.SessionId ||
+      data.sessionId ||
+      "",
+  ).trim();
+}
+
+function pickPaymentData(req, data = {}) {
+  return String(
+    req.body?.paymentData ||
+      req.body?.PaymentData ||
+      req.body?.data?.paymentData ||
+      req.body?.Data?.PaymentData ||
+      req.query.paymentData ||
+      req.query.PaymentData ||
+      data.PaymentData ||
+      data.paymentData ||
       "",
   ).trim();
 }
@@ -265,6 +335,7 @@ function getRedirectUrl(path, params = {}) {
   });
 
   const query = searchParams.toString();
+
   return `${appUrl}${path}${query ? `?${query}` : ""}`;
 }
 
@@ -314,6 +385,27 @@ async function syncFromRequest(req) {
     paymentId: gatewayPaymentId || undefined,
     invoiceId: invoiceId || undefined,
     rawPayload,
+  });
+}
+
+async function verifyEmbeddedFromRequest(req) {
+  const data = pickMyFatoorahPayload(req);
+
+  const localPaymentId = pickLocalPaymentId(req, data);
+  const sessionId = pickSessionId(req, data);
+  const paymentData = pickPaymentData(req, data);
+
+  if (!localPaymentId) {
+    const error = new Error("Valid localPaymentId is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return verifyMyFatoorahEmbeddedResult({
+    localPaymentId,
+    sessionId,
+    paymentData,
+    rawPayload: req.body || {},
   });
 }
 
@@ -485,6 +577,7 @@ router.post("/embed-session", async (req, res, next) => {
       booking.paymentStatus = "CANCELLED";
       booking.cancelledAt = booking.cancelledAt || new Date();
       booking.expiresAt = null;
+
       await booking.save();
 
       return res.status(409).json({
@@ -516,6 +609,7 @@ router.post("/embed-session", async (req, res, next) => {
 
     const currency =
       booking.currency || process.env.MYFATOORAH_CURRENCY || "QAR";
+
     const commission = calculateKidgageCommission(amount);
 
     let payment = await Payment.findOne({
@@ -551,7 +645,9 @@ router.post("/embed-session", async (req, res, next) => {
 
         paymentReceiver: "KIDGAGE",
 
+        status: "PENDING",
         paymentStatus: "PENDING",
+        gatewayStatus: "PENDING",
         settlementStatus: "PENDING",
 
         ...commission,
@@ -586,7 +682,9 @@ router.post("/embed-session", async (req, res, next) => {
       payment.paymentGateway = "MYFATOORAH";
       payment.amount = amount;
       payment.currency = currency;
+      payment.status = "PENDING";
       payment.paymentStatus = "PENDING";
+      payment.gatewayStatus = "PENDING";
       payment.settlementStatus = "PENDING";
 
       payment.kidgageCommissionType = commission.kidgageCommissionType;
@@ -619,9 +717,7 @@ router.post("/embed-session", async (req, res, next) => {
       ? pickGuestParent(booking)
       : booking.parentId || {};
 
-    const childForCheckout = guest
-      ? pickGuestChild(booking)
-      : booking.childId || {};
+    const childForCheckout = guest ? pickGuestChild(booking) : booking.childId || {};
 
     const embedded = await createMyFatoorahEmbeddedSession({
       payment,
@@ -646,7 +742,13 @@ router.post("/embed-session", async (req, res, next) => {
         settlementStatus: payment.settlementStatus,
       },
       embedded: {
+        /*
+          Backward compatibility:
+          paymentId remains local MongoDB Payment _id for existing frontend code.
+          New frontend should prefer localPaymentId.
+        */
         paymentId: payment._id,
+        localPaymentId: payment._id,
         bookingId: booking._id,
         amount: payment.amount,
         currency: payment.currency || "QAR",
@@ -669,26 +771,7 @@ router.post("/embed-session", async (req, res, next) => {
 
 router.post("/embedded-result", async (req, res, next) => {
   try {
-    const localPaymentId = String(
-      req.body.localPaymentId || req.body.paymentId || "",
-    ).trim();
-
-    const sessionId = String(req.body.sessionId || "").trim();
-    const paymentData = String(req.body.paymentData || "").trim();
-
-    if (!localPaymentId && !paymentData && !sessionId) {
-      return res.status(400).json({
-        success: false,
-        message: "localPaymentId, sessionId, or paymentData is required",
-      });
-    }
-
-    const result = await verifyMyFatoorahEmbeddedResult({
-      localPaymentId,
-      sessionId,
-      paymentData,
-      rawPayload: req.body || {},
-    });
+    const result = await verifyEmbeddedFromRequest(req);
 
     await dispatchPaymentNotifications(result);
 
@@ -699,7 +782,7 @@ router.post("/embedded-result", async (req, res, next) => {
 });
 
 /* -------------------------------------------------------------------------- */
-/* VERIFY                                                                     */
+/* VERIFY / SYNC                                                              */
 /* -------------------------------------------------------------------------- */
 
 router.get("/verify", async (req, res, next) => {
@@ -726,17 +809,60 @@ router.post("/verify", async (req, res, next) => {
   }
 });
 
-/* -------------------------------------------------------------------------- */
-/* CALLBACKS                                                                  */
-/* -------------------------------------------------------------------------- */
+/*
+  Compatibility route.
+  Your browser console showed:
+  POST /api/payments/myfatoorah/sync 400
 
-router.get("/callback", async (req, res, next) => {
+  This route first tries embedded verification when paymentData exists.
+  Otherwise, it falls back to normal sync using real MyFatoorah PaymentId/InvoiceId.
+*/
+router.post("/sync", async (req, res, next) => {
+  try {
+    const data = pickMyFatoorahPayload(req);
+    const paymentData = pickPaymentData(req, data);
+
+    let result = null;
+
+    if (paymentData) {
+      result = await verifyEmbeddedFromRequest(req);
+    } else {
+      result = await syncFromRequest(req);
+    }
+
+    await dispatchPaymentNotifications(result);
+
+    return res.json(buildResultPayload(result));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/sync", async (req, res, next) => {
   try {
     const result = await syncFromRequest(req);
 
     await dispatchPaymentNotifications(result);
 
-    const paymentId = result?.payment?._id || req.query.localPaymentId || "";
+    return res.json(buildResultPayload(result));
+  } catch (error) {
+    next(error);
+  }
+});
+
+/* -------------------------------------------------------------------------- */
+/* CALLBACKS                                                                  */
+/* -------------------------------------------------------------------------- */
+
+router.get("/callback", async (req, res) => {
+  try {
+    const result = await syncFromRequest(req);
+
+    await dispatchPaymentNotifications(result);
+
+    const localPaymentId =
+      result?.payment?._id || req.query.localPaymentId || req.query.paymentId || "";
+
     const bookingId = result?.booking?._id || result?.payment?.bookingId || "";
     const guest = isGuestPayment(result?.payment);
 
@@ -744,7 +870,8 @@ router.get("/callback", async (req, res, next) => {
 
     return res.redirect(
       getRedirectUrl(path, {
-        paymentId,
+        localPaymentId,
+        paymentId: localPaymentId,
         bookingId,
         status: result.status,
         guest: guest ? "1" : "",
@@ -787,7 +914,7 @@ router.get("/failed", async (req, res, next) => {
       result = null;
     }
 
-    const paymentId =
+    const localPaymentId =
       result?.payment?._id ||
       req.query.localPaymentId ||
       req.query.paymentId ||
@@ -801,7 +928,8 @@ router.get("/failed", async (req, res, next) => {
 
       return res.redirect(
         getRedirectUrl(path, {
-          paymentId,
+          localPaymentId,
+          paymentId: localPaymentId,
           bookingId,
           status: result.status,
           guest: guest ? "1" : "",
@@ -811,7 +939,8 @@ router.get("/failed", async (req, res, next) => {
 
     return res.redirect(
       getRedirectUrl("/payment/failed", {
-        paymentId,
+        localPaymentId,
+        paymentId: localPaymentId,
         status: "FAILED",
       }),
     );
@@ -877,6 +1006,7 @@ router.post("/webhook", async (req, res) => {
       myfatoorahWebhookStatus: normalizeMyFatoorahStatus(data),
     };
 
+    payment.markModified("meta");
     await payment.save();
 
     const result = await syncMyFatoorahPaymentStatus({
@@ -897,6 +1027,7 @@ router.post("/webhook", async (req, res) => {
       paid: Boolean(result.paid),
       status: result.status,
       paymentId: String(result.payment?._id || payment._id),
+      localPaymentId: String(result.payment?._id || payment._id),
       bookingId: String(result.booking?._id || result.payment?.bookingId || ""),
     });
   } catch (error) {
