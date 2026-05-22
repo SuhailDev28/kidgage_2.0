@@ -57,6 +57,7 @@ import AcademySettlementsPage from "../pages/academy/SettlementsPage.jsx";
 
 /* Super Admin */
 import SuperAdminDashboardPage from "../pages/superadmin/DashboardPage.jsx";
+import SuperAdminOnboardingPage from "../pages/superadmin/SuperAdminOnboarding.jsx";
 import SuperAdminPlaceholderPage from "../pages/superadmin/PlaceholderPage.jsx";
 import SuperAdminAcademiesPage from "../pages/superadmin/AcademiesPage.jsx";
 import AcademyDetailsPage from "../pages/superadmin/AcademyDetailsPage.jsx";
@@ -75,7 +76,6 @@ import SuperAdminParentsPage from "../pages/superadmin/ParentsPage.jsx";
 import SuperAdminReportsPage from "../pages/superadmin/SuperAdminReportsPage.jsx";
 import ContentPagesManager from "../pages/superadmin/ContentPagesManager.jsx";
 import SuperAdminChildrenPage from "../pages/superadmin/ChildrenPage.jsx";
-import SuperAdminOnboarding from "./pages/SuperAdmin/SuperAdminOnboarding.jsx";
 
 function SuperAdminGuard({ children }) {
   if (!isLoggedIn()) {
@@ -251,6 +251,7 @@ export function AppRouter() {
           />
 
           <Route path="dashboard" element={<SuperAdminDashboardPage />} />
+          <Route path="onboarding" element={<SuperAdminOnboardingPage />} />
 
           <Route path="academies" element={<SuperAdminAcademiesPage />} />
           <Route path="academies/:id" element={<AcademyDetailsPage />} />
@@ -291,7 +292,6 @@ export function AppRouter() {
 
           <Route path="content-pages" element={<ContentPagesManager />} />
           <Route path="settings" element={<SettingsPage />} />
-          <Route path="/super-admin/onboarding" element={<SuperAdminOnboarding />} />
 
           <Route path="*" element={<KidgageFallbackPage />} />
         </Route>
