@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
+  Rocket,
   Building2,
   MapPinned,
   Activity,
@@ -47,6 +48,7 @@ const DEFAULT_SETTINGS = {
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, to: "/super-admin/dashboard" },
+  { label: "Onboarding", icon: Rocket, to: "/super-admin/onboarding" },
 
   {
     label: "CRM",
@@ -416,9 +418,7 @@ function SidebarLink({ item, collapsed, onClick, primaryColor }) {
     ? item.children.some((child) => location.pathname.startsWith(child.to))
     : false;
 
-  const isDirectActive = item.to
-    ? location.pathname.startsWith(item.to)
-    : false;
+  const isDirectActive = item.to ? location.pathname.startsWith(item.to) : false;
 
   const isActive = isDirectActive || isChildActive;
 
