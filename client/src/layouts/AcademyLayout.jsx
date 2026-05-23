@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   BookOpen,
   CalendarDays,
+  ClipboardCheck,
   UserCircle2,
   Settings,
   LogOut,
@@ -710,6 +711,7 @@ function AcademyTopbar({ brand, onOpenMobile }) {
 
     if (pathname.startsWith("/academy/activities")) return "Courses";
     if (pathname.startsWith("/academy/bookings")) return "Bookings";
+    if (pathname.startsWith("/academy/attendance")) return "Attendance";
     if (pathname.startsWith("/academy/settlements")) return "Settlements";
     if (pathname.startsWith("/academy/notifications")) return "Notifications";
     if (pathname.startsWith("/academy/profile")) return "Profile";
@@ -744,8 +746,8 @@ function AcademyTopbar({ brand, onOpenMobile }) {
               {pageTitle}
             </h1>
             <p className="mt-0.5 hidden text-sm font-medium text-slate-500 sm:block">
-              Manage academy courses, bookings, settlements, profile, and
-              notifications.
+              Manage academy courses, bookings, attendance, settlements,
+              profile, and notifications.
             </p>
           </div>
         </div>
@@ -789,6 +791,12 @@ function SidebarContent({
         label: "Bookings",
         path: "/academy/bookings",
         active: pathname.startsWith("/academy/bookings"),
+      },
+      {
+        icon: ClipboardCheck,
+        label: "Attendance",
+        path: "/academy/attendance",
+        active: pathname.startsWith("/academy/attendance"),
       },
       {
         icon: Landmark,
