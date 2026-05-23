@@ -20,6 +20,7 @@ import parentRoutes from "./routes/parent.routes.js";
 import academyRoutes from "./routes/academy.routes.js";
 import superAdminRoutes from "./routes/superadmin.routes.js";
 import superAdminCategoriesRoutes from "./routes/superadmin.categories.routes.js";
+import superAdminCertificateTemplatesRoutes from "./routes/superadmin.certificateTemplates.routes.js";
 
 import paymentRoutes from "./routes/payment.routes.js";
 import myfatoorahRoutes from "./routes/myfatoorah.routes.js";
@@ -200,6 +201,8 @@ app.use("/api/academy", academyRoutes);
 
 app.use("/api/super-admin/categories", superAdminCategoriesRoutes);
 app.use("/api/super-admin", superAdminRoutes);
+app.use("/api/super-admin", superAdminCertificateTemplatesRoutes);
+
 app.use("/api/academy", academySettingsRoutes);
 app.use("/api/auth/social", socialAuthRoutes);
 app.use("/api/notifications", notificationRoutes);

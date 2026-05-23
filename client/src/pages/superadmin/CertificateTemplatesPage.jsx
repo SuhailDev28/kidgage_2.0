@@ -1,8 +1,12 @@
+// client/src/pages/superadmin/CertificateTemplatesPage.jsx
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   Award,
   CheckCircle2,
+  Download,
+  Eye,
   FileImage,
   FileText,
   Loader2,
@@ -13,8 +17,8 @@ import {
 } from "lucide-react";
 import { api } from "../../lib/api.js";
 
-const FALLBACK_PRIMARY = "#ec7a3b";
-const FALLBACK_SECONDARY = "#ffd84d";
+const DEFAULT_PRIMARY = "#2563eb";
+const DEFAULT_SECONDARY = "#6d28d9";
 
 function getAssetUrl(value) {
   if (!value) return "";
@@ -23,6 +27,7 @@ function getAssetUrl(value) {
 
   if (!raw) return "";
   if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  if (raw.startsWith("blob:")) return raw;
 
   const apiBase = String(import.meta.env.VITE_API_BASE || "")
     .replace(/\/api\/?$/, "")
@@ -47,14 +52,20 @@ function formatDate(value) {
   }
 }
 
+function getFileName(fileUrl = "") {
+  const clean = String(fileUrl || "").split("?")[0];
+  const parts = clean.split("/").filter(Boolean);
+  return parts[parts.length - 1] || "certificate-template";
+}
+
 function TemplatePreview({ template }) {
   const url = getAssetUrl(template?.fileUrl);
 
   if (!url) {
     return (
-      <div className="kg-empty-preview">
-        <FileImage size={32} />
-        <span>No preview available</span>
+      <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 rounded-[24px] border border-dashed border-slate-200 bg-slate-50 text-center text-slate-400">
+        <FileImage className="h-10 w-10" />
+        <div className="text-sm font-bold">No preview available</div>
       </div>
     );
   }
@@ -62,20 +73,50 @@ function TemplatePreview({ template }) {
   if (template?.fileType === "PDF") {
     return (
       <iframe
-        title={template.title}
+        title={template.title || "Certificate template"}
         src={url}
-        className="kg-template-pdf"
+        className="h-[420px] w-full rounded-[24px] border border-slate-200 bg-white"
       />
     );
   }
 
   return (
-    <img
-      src={url}
-      alt={template?.title || "Certificate template"}
-      className="kg-template-image"
-      loading="lazy"
-    />
+    <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-3">
+      <img
+        src={url}
+        alt={template?.title || "Certificate template"}
+        className="max-h-[420px] w-full rounded-[18px] object-contain"
+        loading="lazy"
+      />
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, tone = "primary" }) {
+  const toneClass =
+    tone === "green"
+      ? "bg-emerald-50 text-emerald-700"
+      : tone === "amber"
+        ? "bg-amber-50 text-amber-700"
+        : "bg-blue-50 text-blue-700";
+
+  return (
+    <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-center gap-4">
+        <div
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${toneClass}`}
+        >
+          <Icon className="h-6 w-6" />
+        </div>
+
+        <div className="min-w-0">
+          <div className="text-2xl font-black text-slate-950">{value}</div>
+          <div className="mt-1 truncate text-sm font-medium text-slate-500">
+            {label}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -98,14 +139,24 @@ export default function CertificateTemplatesPage() {
     [templates],
   );
 
+  const imageCount = useMemo(
+    () => templates.filter((item) => item.fileType === "IMAGE").length,
+    [templates],
+  );
+
+  const pdfCount = useMemo(
+    () => templates.filter((item) => item.fileType === "PDF").length,
+    [templates],
+  );
+
   async function loadTemplates() {
     try {
       setLoading(true);
       setError("");
 
       const res = await api.get("/super-admin/certificate-templates");
-
       const list = Array.isArray(res.data?.data) ? res.data.data : [];
+
       setTemplates(list);
     } catch (err) {
       setError(
@@ -225,649 +276,464 @@ export default function CertificateTemplatesPage() {
     }
   }
 
+  function openFile(fileUrl) {
+    const url = getAssetUrl(fileUrl);
+    if (!url) return;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
   return (
-    <div className="kg-cert-page">
-      <style>{`
-        .kg-cert-page {
-          --kg-primary: var(--kg-primary-color, ${FALLBACK_PRIMARY});
-          --kg-secondary: var(--kg-secondary-color, ${FALLBACK_SECONDARY});
-          min-height: 100%;
-          padding: 24px;
-          background:
-            radial-gradient(circle at top left, rgba(236, 122, 59, 0.14), transparent 34%),
-            radial-gradient(circle at top right, rgba(255, 216, 77, 0.22), transparent 30%),
-            #fffaf5;
-          color: #1f2937;
-        }
+    <div
+      className="min-h-full"
+      style={{
+        "--kg-primary": `var(--kg-primary-color, ${DEFAULT_PRIMARY})`,
+        "--kg-secondary": `var(--kg-secondary-color, ${DEFAULT_SECONDARY})`,
+      }}
+    >
+      <div className="mx-auto max-w-[1500px] space-y-6">
+        {/* Header */}
+        <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm">
+          <div className="relative p-6 sm:p-8">
+            <div
+              className="absolute right-0 top-0 h-40 w-40 rounded-bl-[80px] opacity-10"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--kg-primary), var(--kg-secondary))",
+              }}
+            />
 
-        .kg-cert-shell {
-          max-width: 1240px;
-          margin: 0 auto;
-        }
+            <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0">
+                <div
+                  className="mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em]"
+                  style={{
+                    backgroundColor: "rgba(37, 99, 235, 0.08)",
+                    color: "var(--kg-primary)",
+                  }}
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  Super Admin Certificate Studio
+                </div>
 
-        .kg-cert-header {
-          display: flex;
-          justify-content: space-between;
-          gap: 16px;
-          align-items: flex-start;
-          margin-bottom: 22px;
-        }
+                <h1 className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">
+                  Course Completion Certificate Templates
+                </h1>
 
-        .kg-cert-kicker {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 7px 12px;
-          border-radius: 999px;
-          background: rgba(236, 122, 59, 0.12);
-          color: var(--kg-primary);
-          font-weight: 800;
-          font-size: 13px;
-          margin-bottom: 10px;
-        }
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500 sm:text-base">
+                  Upload and manage the active background template used when
+                  KidGage generates course completion certificates for children.
+                </p>
+              </div>
 
-        .kg-cert-title {
-          margin: 0;
-          font-size: clamp(28px, 4vw, 44px);
-          line-height: 1;
-          letter-spacing: -0.04em;
-          color: #111827;
-        }
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={loadTemplates}
+                  disabled={loading}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  Refresh
+                </button>
 
-        .kg-cert-subtitle {
-          margin: 10px 0 0;
-          color: #6b7280;
-          max-width: 720px;
-          line-height: 1.6;
-        }
-
-        .kg-cert-refresh {
-          border: 0;
-          border-radius: 16px;
-          background: #ffffff;
-          color: #111827;
-          padding: 12px 16px;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          font-weight: 800;
-          box-shadow: 0 12px 30px rgba(17, 24, 39, 0.08);
-          cursor: pointer;
-        }
-
-        .kg-cert-grid {
-          display: grid;
-          grid-template-columns: 390px minmax(0, 1fr);
-          gap: 20px;
-          align-items: start;
-        }
-
-        .kg-cert-card {
-          background: rgba(255, 255, 255, 0.92);
-          border: 1px solid rgba(236, 122, 59, 0.14);
-          border-radius: 28px;
-          box-shadow: 0 18px 55px rgba(17, 24, 39, 0.08);
-          overflow: hidden;
-        }
-
-        .kg-cert-card-head {
-          padding: 20px;
-          border-bottom: 1px solid rgba(17, 24, 39, 0.06);
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-        }
-
-        .kg-cert-card-head h2 {
-          margin: 0;
-          font-size: 18px;
-          color: #111827;
-        }
-
-        .kg-cert-card-head p {
-          margin: 5px 0 0;
-          color: #6b7280;
-          font-size: 13px;
-        }
-
-        .kg-cert-icon {
-          width: 44px;
-          height: 44px;
-          border-radius: 16px;
-          display: grid;
-          place-items: center;
-          background: linear-gradient(135deg, var(--kg-primary), var(--kg-secondary));
-          color: white;
-          box-shadow: 0 12px 25px rgba(236, 122, 59, 0.28);
-          flex: 0 0 auto;
-        }
-
-        .kg-cert-form {
-          padding: 20px;
-          display: grid;
-          gap: 16px;
-        }
-
-        .kg-field label {
-          display: block;
-          font-size: 13px;
-          font-weight: 800;
-          color: #374151;
-          margin-bottom: 8px;
-        }
-
-        .kg-input {
-          width: 100%;
-          min-height: 46px;
-          border-radius: 16px;
-          border: 1px solid rgba(17, 24, 39, 0.12);
-          background: #fff;
-          padding: 0 14px;
-          color: #111827;
-          outline: none;
-          font-weight: 700;
-        }
-
-        .kg-input:focus {
-          border-color: var(--kg-primary);
-          box-shadow: 0 0 0 4px rgba(236, 122, 59, 0.14);
-        }
-
-        .kg-upload-box {
-          border: 1.5px dashed rgba(236, 122, 59, 0.45);
-          border-radius: 24px;
-          background: rgba(236, 122, 59, 0.06);
-          padding: 20px;
-          text-align: center;
-          cursor: pointer;
-        }
-
-        .kg-upload-box input {
-          display: none;
-        }
-
-        .kg-upload-box strong {
-          display: block;
-          margin-top: 8px;
-          color: #111827;
-        }
-
-        .kg-upload-box span {
-          display: block;
-          margin-top: 5px;
-          color: #6b7280;
-          font-size: 13px;
-          word-break: break-word;
-        }
-
-        .kg-switch-row {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          color: #374151;
-          font-weight: 800;
-          font-size: 14px;
-        }
-
-        .kg-switch-row input {
-          width: 18px;
-          height: 18px;
-          accent-color: var(--kg-primary);
-        }
-
-        .kg-submit {
-          border: 0;
-          min-height: 50px;
-          border-radius: 18px;
-          background: linear-gradient(135deg, var(--kg-primary), #f59e0b);
-          color: white;
-          font-weight: 900;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          cursor: pointer;
-          box-shadow: 0 16px 30px rgba(236, 122, 59, 0.28);
-        }
-
-        .kg-submit:disabled,
-        .kg-cert-refresh:disabled,
-        .kg-action-btn:disabled {
-          opacity: 0.65;
-          cursor: not-allowed;
-        }
-
-        .kg-alert {
-          display: flex;
-          align-items: flex-start;
-          gap: 9px;
-          padding: 12px 14px;
-          border-radius: 16px;
-          font-size: 13px;
-          font-weight: 800;
-        }
-
-        .kg-alert.error {
-          color: #991b1b;
-          background: #fee2e2;
-        }
-
-        .kg-alert.success {
-          color: #166534;
-          background: #dcfce7;
-        }
-
-        .kg-active-preview {
-          padding: 20px;
-        }
-
-        .kg-active-banner {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          border-radius: 20px;
-          padding: 14px;
-          background: linear-gradient(135deg, rgba(236,122,59,0.12), rgba(255,216,77,0.2));
-          color: #92400e;
-          font-weight: 900;
-          margin-bottom: 16px;
-        }
-
-        .kg-template-stage {
-          background:
-            linear-gradient(45deg, rgba(17,24,39,0.04) 25%, transparent 25%),
-            linear-gradient(-45deg, rgba(17,24,39,0.04) 25%, transparent 25%),
-            linear-gradient(45deg, transparent 75%, rgba(17,24,39,0.04) 75%),
-            linear-gradient(-45deg, transparent 75%, rgba(17,24,39,0.04) 75%);
-          background-size: 20px 20px;
-          background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-          border-radius: 22px;
-          overflow: hidden;
-          min-height: 330px;
-          display: grid;
-          place-items: center;
-          border: 1px solid rgba(17, 24, 39, 0.08);
-        }
-
-        .kg-template-image {
-          width: 100%;
-          height: 100%;
-          max-height: 520px;
-          object-fit: contain;
-          display: block;
-          background: white;
-        }
-
-        .kg-template-pdf {
-          width: 100%;
-          height: 520px;
-          border: 0;
-          background: white;
-        }
-
-        .kg-empty-preview {
-          color: #9ca3af;
-          display: grid;
-          place-items: center;
-          gap: 8px;
-          padding: 40px;
-          text-align: center;
-        }
-
-        .kg-list {
-          display: grid;
-          gap: 14px;
-          padding: 20px;
-        }
-
-        .kg-template-row {
-          display: grid;
-          grid-template-columns: 120px minmax(0, 1fr) auto;
-          gap: 14px;
-          align-items: center;
-          border: 1px solid rgba(17, 24, 39, 0.08);
-          border-radius: 22px;
-          padding: 12px;
-          background: #fff;
-        }
-
-        .kg-thumb {
-          height: 82px;
-          border-radius: 16px;
-          overflow: hidden;
-          background: #f3f4f6;
-          display: grid;
-          place-items: center;
-          color: #9ca3af;
-        }
-
-        .kg-thumb img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .kg-template-info h3 {
-          margin: 0;
-          font-size: 15px;
-          color: #111827;
-        }
-
-        .kg-template-info p {
-          margin: 5px 0 0;
-          color: #6b7280;
-          font-size: 13px;
-        }
-
-        .kg-badges {
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-          margin-top: 8px;
-        }
-
-        .kg-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          border-radius: 999px;
-          padding: 5px 9px;
-          font-size: 12px;
-          font-weight: 900;
-          background: #f3f4f6;
-          color: #374151;
-        }
-
-        .kg-badge.active {
-          background: #dcfce7;
-          color: #166534;
-        }
-
-        .kg-actions {
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-          justify-content: flex-end;
-        }
-
-        .kg-action-btn {
-          border: 0;
-          border-radius: 14px;
-          min-height: 38px;
-          padding: 0 12px;
-          display: inline-flex;
-          align-items: center;
-          gap: 7px;
-          font-weight: 900;
-          cursor: pointer;
-          background: #f3f4f6;
-          color: #111827;
-        }
-
-        .kg-action-btn.primary {
-          background: rgba(236, 122, 59, 0.12);
-          color: var(--kg-primary);
-        }
-
-        .kg-action-btn.danger {
-          background: #fee2e2;
-          color: #991b1b;
-        }
-
-        .kg-empty {
-          padding: 34px;
-          text-align: center;
-          color: #6b7280;
-        }
-
-        @media (max-width: 980px) {
-          .kg-cert-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .kg-cert-header {
-            flex-direction: column;
-          }
-        }
-
-        @media (max-width: 680px) {
-          .kg-cert-page {
-            padding: 14px;
-          }
-
-          .kg-template-row {
-            grid-template-columns: 1fr;
-          }
-
-          .kg-thumb {
-            height: 160px;
-          }
-
-          .kg-actions {
-            justify-content: stretch;
-          }
-
-          .kg-action-btn {
-            flex: 1;
-            justify-content: center;
-          }
-        }
-      `}</style>
-
-      <div className="kg-cert-shell">
-        <header className="kg-cert-header">
-          <div>
-            <div className="kg-cert-kicker">
-              <ShieldCheck size={16} />
-              Super Admin Certificate Studio
+                {activeTemplate?.fileUrl ? (
+                  <button
+                    type="button"
+                    onClick={() => openFile(activeTemplate.fileUrl)}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black text-white shadow-sm transition hover:opacity-95"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, var(--kg-primary), var(--kg-secondary))",
+                    }}
+                  >
+                    <Eye className="h-4 w-4" />
+                    View Active
+                  </button>
+                ) : null}
+              </div>
             </div>
-
-            <h1 className="kg-cert-title">
-              Course Completion Certificate Template
-            </h1>
-
-            <p className="kg-cert-subtitle">
-              Upload and manage the certificate background used for KidGage
-              course completion certificates. The active template will be used
-              when generating certificates for completed courses.
-            </p>
           </div>
+        </section>
 
-          <button
-            type="button"
-            className="kg-cert-refresh"
-            onClick={loadTemplates}
-            disabled={loading}
-          >
-            {loading ? <Loader2 size={17} className="kg-spin" /> : <RefreshCw size={17} />}
-            Refresh
-          </button>
-        </header>
+        {/* Alerts */}
+        {error ? (
+          <div className="flex items-start gap-3 rounded-[22px] border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            <span>{error}</span>
+          </div>
+        ) : null}
 
-        <div className="kg-cert-grid">
-          <section className="kg-cert-card">
-            <div className="kg-cert-card-head">
+        {success ? (
+          <div className="flex items-start gap-3 rounded-[22px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-700">
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
+            <span>{success}</span>
+          </div>
+        ) : null}
+
+        {/* Stats */}
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            icon={FileImage}
+            label="Total Templates"
+            value={templates.length}
+          />
+          <StatCard
+            icon={CheckCircle2}
+            label="Active Template"
+            value={activeTemplate ? "Yes" : "No"}
+            tone="green"
+          />
+          <StatCard icon={FileImage} label="Image Templates" value={imageCount} />
+          <StatCard icon={FileText} label="PDF Templates" value={pdfCount} tone="amber" />
+        </section>
+
+        {/* Main grid */}
+        <section className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
+          {/* Upload card */}
+          <div className="rounded-[30px] border border-slate-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between gap-4 border-b border-slate-100 p-6">
               <div>
-                <h2>Upload Template</h2>
-                <p>Recommended: A4 landscape PNG/JPG or PDF.</p>
+                <h2 className="text-lg font-black text-slate-950">
+                  Upload Template
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Recommended: A4 landscape PNG/JPG.
+                </p>
               </div>
-              <div className="kg-cert-icon">
-                <UploadCloud size={22} />
+
+              <div
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--kg-primary), var(--kg-secondary))",
+                }}
+              >
+                <UploadCloud className="h-6 w-6" />
               </div>
             </div>
 
-            <form className="kg-cert-form" onSubmit={handleUpload}>
-              {error ? (
-                <div className="kg-alert error">
-                  <AlertCircle size={17} />
-                  <span>{error}</span>
-                </div>
-              ) : null}
-
-              {success ? (
-                <div className="kg-alert success">
-                  <CheckCircle2 size={17} />
-                  <span>{success}</span>
-                </div>
-              ) : null}
-
-              <div className="kg-field">
-                <label>Template title</label>
+            <form className="space-y-5 p-6" onSubmit={handleUpload}>
+              <div>
+                <label className="mb-2 block text-sm font-black text-slate-700">
+                  Template title
+                </label>
                 <input
-                  className="kg-input"
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
                   placeholder="Course Completion Certificate"
+                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
-              <label className="kg-upload-box">
+              <label className="block cursor-pointer rounded-[26px] border-2 border-dashed border-slate-200 bg-slate-50 p-6 text-center transition hover:border-blue-300 hover:bg-blue-50/40">
                 <input
                   ref={fileRef}
                   type="file"
                   accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf"
+                  className="hidden"
                   onChange={(event) =>
                     setFile(event.target.files?.[0] || null)
                   }
                 />
 
-                <UploadCloud size={34} color="var(--kg-primary)" />
-                <strong>Click to upload certificate template</strong>
-                <span>
-                  {file
-                    ? file.name
-                    : "PNG, JPG, WEBP, or PDF up to 15 MB"}
-                </span>
+                <div
+                  className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-sm"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, var(--kg-primary), var(--kg-secondary))",
+                  }}
+                >
+                  <UploadCloud className="h-7 w-7" />
+                </div>
+
+                <div className="mt-4 text-sm font-black text-slate-950">
+                  Click to upload certificate template
+                </div>
+
+                <div className="mt-2 break-words text-xs leading-5 text-slate-500">
+                  {file ? file.name : "PNG, JPG, WEBP, or PDF up to 15 MB"}
+                </div>
               </label>
 
-              <label className="kg-switch-row">
+              <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4">
                 <input
                   type="checkbox"
                   checked={makeActive}
                   onChange={(event) => setMakeActive(event.target.checked)}
+                  className="mt-0.5 h-5 w-5 rounded border-slate-300"
+                  style={{ accentColor: "var(--kg-primary)" }}
                 />
-                Set as active template after upload
+
+                <span>
+                  <span className="block text-sm font-black text-slate-800">
+                    Set as active template
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-slate-500">
+                    This template will be used after upload for new completion
+                    certificates.
+                  </span>
+                </span>
               </label>
 
               <button
                 type="submit"
-                className="kg-submit"
                 disabled={uploading}
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-black text-white shadow-sm transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--kg-primary), var(--kg-secondary))",
+                }}
               >
-                {uploading ? <Loader2 size={18} /> : <UploadCloud size={18} />}
+                {uploading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <UploadCloud className="h-5 w-5" />
+                )}
                 {uploading ? "Uploading..." : "Upload Template"}
               </button>
             </form>
-          </section>
+          </div>
 
-          <section className="kg-cert-card">
-            <div className="kg-cert-card-head">
+          {/* Active preview */}
+          <div className="rounded-[30px] border border-slate-200 bg-white shadow-sm">
+            <div className="flex flex-col gap-4 border-b border-slate-100 p-6 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2>Active Template Preview</h2>
-                <p>This template will be used for course completion.</p>
+                <h2 className="text-lg font-black text-slate-950">
+                  Active Template Preview
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  This background will be used for generated course completion
+                  certificates.
+                </p>
               </div>
-              <div className="kg-cert-icon">
-                <Award size={22} />
-              </div>
+
+              {activeTemplate ? (
+                <span className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Active
+                </span>
+              ) : (
+                <span className="inline-flex w-fit items-center gap-2 rounded-full bg-amber-50 px-3 py-2 text-xs font-black text-amber-700">
+                  <AlertCircle className="h-4 w-4" />
+                  Not selected
+                </span>
+              )}
             </div>
 
-            <div className="kg-active-preview">
+            <div className="p-6">
               {activeTemplate ? (
-                <>
-                  <div className="kg-active-banner">
-                    <CheckCircle2 size={18} />
-                    Active: {activeTemplate.title}
+                <div className="space-y-4">
+                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-black text-slate-950">
+                          {activeTemplate.title}
+                        </div>
+                        <div className="mt-1 truncate text-xs text-slate-500">
+                          {getFileName(activeTemplate.fileUrl)} • Uploaded{" "}
+                          {formatDate(activeTemplate.createdAt)}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => openFile(activeTemplate.fileUrl)}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-700 transition hover:bg-slate-50"
+                      >
+                        <Eye className="h-4 w-4" />
+                        Open
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="kg-template-stage">
-                    <TemplatePreview template={activeTemplate} />
-                  </div>
-                </>
+                  <TemplatePreview template={activeTemplate} />
+                </div>
               ) : (
-                <div className="kg-empty">
-                  No active certificate template selected yet.
+                <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[26px] border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white text-slate-400 shadow-sm">
+                    <Award className="h-8 w-8" />
+                  </div>
+
+                  <h3 className="mt-5 text-base font-black text-slate-950">
+                    No active template selected
+                  </h3>
+
+                  <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
+                    Upload a certificate template and mark it as active to start
+                    using it for course completion certificates.
+                  </p>
                 </div>
               )}
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
 
-        <section className="kg-cert-card" style={{ marginTop: 20 }}>
-          <div className="kg-cert-card-head">
+        {/* Uploaded templates */}
+        <section className="rounded-[30px] border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-4 border-b border-slate-100 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2>Uploaded Templates</h2>
-              <p>Manage previous certificate templates.</p>
+              <h2 className="text-lg font-black text-slate-950">
+                Uploaded Templates
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Manage previous templates and choose which one is active.
+              </p>
             </div>
-            <div className="kg-cert-icon">
-              <FileImage size={22} />
+
+            <div className="inline-flex w-fit items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">
+              <FileImage className="h-4 w-4" />
+              {templates.length} template{templates.length === 1 ? "" : "s"}
             </div>
           </div>
 
           {loading ? (
-            <div className="kg-empty">
-              <Loader2 size={26} /> Loading templates...
+            <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
+              {[1, 2, 3].map((item) => (
+                <div
+                  key={item}
+                  className="h-[260px] animate-pulse rounded-[26px] bg-slate-100"
+                />
+              ))}
             </div>
           ) : templates.length === 0 ? (
-            <div className="kg-empty">
-              No certificate templates uploaded yet.
+            <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-100 text-slate-400">
+                <FileImage className="h-8 w-8" />
+              </div>
+
+              <h3 className="mt-5 text-base font-black text-slate-950">
+                No certificate templates uploaded yet
+              </h3>
+
+              <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
+                Upload your first KidGage course completion certificate template
+                from the form above.
+              </p>
             </div>
           ) : (
-            <div className="kg-list">
+            <div className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
               {templates.map((template) => {
                 const url = getAssetUrl(template.fileUrl);
                 const isBusy = busyId === template._id;
 
                 return (
-                  <article className="kg-template-row" key={template._id}>
-                    <div className="kg-thumb">
+                  <article
+                    key={template._id}
+                    className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    <div className="relative flex h-44 items-center justify-center bg-slate-50">
                       {template.fileType === "PDF" ? (
-                        <FileText size={30} />
+                        <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-white text-red-500 shadow-sm">
+                          <FileText className="h-10 w-10" />
+                        </div>
                       ) : (
-                        <img src={url} alt={template.title} loading="lazy" />
+                        <img
+                          src={url}
+                          alt={template.title}
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                        />
                       )}
-                    </div>
 
-                    <div className="kg-template-info">
-                      <h3>{template.title}</h3>
-                      <p>Uploaded: {formatDate(template.createdAt)}</p>
-
-                      <div className="kg-badges">
-                        <span className="kg-badge">
+                      <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[11px] font-black text-slate-700 shadow-sm">
+                          {template.fileType === "PDF" ? (
+                            <FileText className="h-3.5 w-3.5" />
+                          ) : (
+                            <FileImage className="h-3.5 w-3.5" />
+                          )}
                           {template.fileType}
                         </span>
 
                         {template.isActive ? (
-                          <span className="kg-badge active">
-                            <CheckCircle2 size={13} />
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500 px-3 py-1.5 text-[11px] font-black text-white shadow-sm">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
                             Active
                           </span>
                         ) : null}
                       </div>
                     </div>
 
-                    <div className="kg-actions">
-                      {!template.isActive ? (
+                    <div className="space-y-4 p-5">
+                      <div>
+                        <h3 className="line-clamp-1 text-base font-black text-slate-950">
+                          {template.title}
+                        </h3>
+
+                        <p className="mt-1 line-clamp-1 text-xs text-slate-500">
+                          {getFileName(template.fileUrl)}
+                        </p>
+
+                        <p className="mt-2 text-xs font-bold text-slate-400">
+                          Uploaded {formatDate(template.createdAt)}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
                         <button
                           type="button"
-                          className="kg-action-btn primary"
-                          onClick={() => activateTemplate(template._id)}
-                          disabled={isBusy}
+                          onClick={() => openFile(template.fileUrl)}
+                          className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 transition hover:bg-slate-50"
                         >
-                          {isBusy ? <Loader2 size={15} /> : <CheckCircle2 size={15} />}
-                          Activate
+                          <Eye className="h-4 w-4" />
+                          View
                         </button>
-                      ) : null}
 
-                      <button
-                        type="button"
-                        className="kg-action-btn danger"
-                        onClick={() => deleteTemplate(template._id)}
-                        disabled={isBusy}
-                      >
-                        {isBusy ? <Loader2 size={15} /> : <Trash2 size={15} />}
-                        Delete
-                      </button>
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 transition hover:bg-slate-50"
+                        >
+                          <Download className="h-4 w-4" />
+                          Open
+                        </a>
+                      </div>
+
+                      <div className="flex gap-2">
+                        {!template.isActive ? (
+                          <button
+                            type="button"
+                            onClick={() => activateTemplate(template._id)}
+                            disabled={isBusy}
+                            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-2xl px-3 text-xs font-black text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                            style={{
+                              background:
+                                "linear-gradient(135deg, var(--kg-primary), var(--kg-secondary))",
+                            }}
+                          >
+                            {isBusy ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="h-4 w-4" />
+                            )}
+                            Activate
+                          </button>
+                        ) : (
+                          <div className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-50 px-3 text-xs font-black text-emerald-700">
+                            <CheckCircle2 className="h-4 w-4" />
+                            Active
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => deleteTemplate(template._id)}
+                          disabled={isBusy}
+                          className="inline-flex h-11 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          title="Delete template"
+                        >
+                          {isBusy ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </article>
                 );
