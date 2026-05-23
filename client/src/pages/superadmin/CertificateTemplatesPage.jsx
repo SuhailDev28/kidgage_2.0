@@ -15,10 +15,48 @@ import {
   Trash2,
   UploadCloud,
 } from "lucide-react";
-import { api } from "../../lib/api.js";
+import { api, publicApi } from "../../lib/api.js";
 
-const DEFAULT_PRIMARY = "#2563eb";
-const DEFAULT_SECONDARY = "#6d28d9";
+const DEFAULT_PRIMARY = "#ec7a3b";
+const DEFAULT_SECONDARY = "#ffd84d";
+
+function isValidHex(value) {
+  return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(value || "").trim());
+}
+
+function normalizeHex(value, fallback) {
+  const raw = String(value || "").trim();
+  return isValidHex(raw) ? raw : fallback;
+}
+
+function hexToRgb(hex) {
+  const clean = String(hex || "")
+    .replace("#", "")
+    .trim();
+
+  if (clean.length === 3) {
+    return {
+      r: parseInt(clean[0] + clean[0], 16),
+      g: parseInt(clean[1] + clean[1], 16),
+      b: parseInt(clean[2] + clean[2], 16),
+    };
+  }
+
+  if (clean.length === 6) {
+    return {
+      r: parseInt(clean.slice(0, 2), 16),
+      g: parseInt(clean.slice(2, 4), 16),
+      b: parseInt(clean.slice(4, 6), 16),
+    };
+  }
+
+  return { r: 236, g: 122, b: 59 };
+}
+
+function rgba(hex, alpha = 1) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 function getAssetUrl(value) {
   if (!value) return "";
@@ -58,6 +96,27 @@ function getFileName(fileUrl = "") {
   return parts[parts.length - 1] || "certificate-template";
 }
 
+function extractSettings(payload) {
+  const row =
+    payload?.settings ||
+    payload?.data?.settings ||
+    payload?.data ||
+    payload ||
+    {};
+
+  return {
+    siteName: row.siteName || "KidGage",
+    primaryColor: normalizeHex(
+      row.primaryColor || row.brandPrimary || row.primary,
+      DEFAULT_PRIMARY,
+    ),
+    secondaryColor: normalizeHex(
+      row.secondaryColor || row.brandSecondary || row.secondary,
+      DEFAULT_SECONDARY,
+    ),
+  };
+}
+
 function TemplatePreview({ template }) {
   const url = getAssetUrl(template?.fileUrl);
 
@@ -92,7 +151,7 @@ function TemplatePreview({ template }) {
   );
 }
 
-function StatCard({ icon: Icon, label, value, tone = "blue" }) {
+function StatCard({ icon: Icon, label, value, tone = "primary" }) {
   const toneClass =
     tone === "green"
       ? "bg-emerald-50 text-emerald-700"
@@ -100,13 +159,21 @@ function StatCard({ icon: Icon, label, value, tone = "blue" }) {
         ? "bg-amber-50 text-amber-700"
         : tone === "purple"
           ? "bg-violet-50 text-violet-700"
-          : "bg-blue-50 text-blue-700";
+          : "";
 
   return (
     <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-center gap-4">
         <div
           className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${toneClass}`}
+          style={
+            tone === "primary"
+              ? {
+                  backgroundColor: "var(--kg-primary-soft)",
+                  color: "var(--kg-primary)",
+                }
+              : undefined
+          }
         >
           <Icon className="h-6 w-6" />
         </div>
@@ -125,12 +192,19 @@ function StatCard({ icon: Icon, label, value, tone = "blue" }) {
 export default function CertificateTemplatesPage() {
   const fileRef = useRef(null);
 
+  const [theme, setTheme] = useState({
+    siteName: "KidGage",
+    primaryColor: DEFAULT_PRIMARY,
+    secondaryColor: DEFAULT_SECONDARY,
+  });
+
   const [templates, setTemplates] = useState([]);
   const [title, setTitle] = useState("Course Completion Certificate");
   const [file, setFile] = useState(null);
   const [makeActive, setMakeActive] = useState(true);
 
   const [loading, setLoading] = useState(true);
+  const [themeLoading, setThemeLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [busyId, setBusyId] = useState("");
   const [error, setError] = useState("");
@@ -150,6 +224,48 @@ export default function CertificateTemplatesPage() {
     () => templates.filter((item) => item.fileType === "PDF").length,
     [templates],
   );
+
+  const themeVars = useMemo(() => {
+    const primary = normalizeHex(theme.primaryColor, DEFAULT_PRIMARY);
+    const secondary = normalizeHex(theme.secondaryColor, DEFAULT_SECONDARY);
+
+    return {
+      "--kg-primary": primary,
+      "--kg-secondary": secondary,
+      "--kg-primary-soft": rgba(primary, 0.1),
+      "--kg-primary-softer": rgba(primary, 0.06),
+      "--kg-secondary-soft": rgba(secondary, 0.18),
+      "--kg-primary-ring": rgba(primary, 0.18),
+      "--kg-primary-shadow": rgba(primary, 0.24),
+    };
+  }, [theme.primaryColor, theme.secondaryColor]);
+
+  async function loadThemeSettings() {
+    try {
+      setThemeLoading(true);
+
+      try {
+        const { data } = await api.get("/super-admin/settings");
+        setTheme(extractSettings(data));
+        return;
+      } catch {
+        // Fallback for public settings when super-admin settings endpoint is unavailable.
+      }
+
+      try {
+        const { data } = await publicApi.get("/settings");
+        setTheme(extractSettings(data));
+      } catch {
+        setTheme({
+          siteName: "KidGage",
+          primaryColor: DEFAULT_PRIMARY,
+          secondaryColor: DEFAULT_SECONDARY,
+        });
+      }
+    } finally {
+      setThemeLoading(false);
+    }
+  }
 
   async function loadTemplates() {
     try {
@@ -171,6 +287,7 @@ export default function CertificateTemplatesPage() {
   }
 
   useEffect(() => {
+    loadThemeSettings();
     loadTemplates();
   }, []);
 
@@ -285,18 +402,12 @@ export default function CertificateTemplatesPage() {
   }
 
   return (
-    <div
-      className="min-h-full"
-      style={{
-        "--kg-primary": `var(--kg-primary-color, ${DEFAULT_PRIMARY})`,
-        "--kg-secondary": `var(--kg-secondary-color, ${DEFAULT_SECONDARY})`,
-      }}
-    >
+    <div className="min-h-full" style={themeVars}>
       <div className="mx-auto max-w-[1500px] space-y-6">
         <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm">
           <div className="relative p-6 sm:p-8">
             <div
-              className="absolute right-0 top-0 h-40 w-40 rounded-bl-[80px] opacity-10"
+              className="absolute right-0 top-0 h-40 w-40 rounded-bl-[80px] opacity-15"
               style={{
                 background:
                   "linear-gradient(135deg, var(--kg-primary), var(--kg-secondary))",
@@ -308,7 +419,7 @@ export default function CertificateTemplatesPage() {
                 <div
                   className="mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em]"
                   style={{
-                    backgroundColor: "rgba(37, 99, 235, 0.08)",
+                    backgroundColor: "var(--kg-primary-soft)",
                     color: "var(--kg-primary)",
                   }}
                 >
@@ -321,19 +432,29 @@ export default function CertificateTemplatesPage() {
                 </h1>
 
                 <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500 sm:text-base">
-                  Upload and manage the active background template used when
-                  KidGage generates course completion certificates for children.
+                  Upload and manage the active background template used when{" "}
+                  {theme.siteName || "KidGage"} generates course completion
+                  certificates for children.
                 </p>
+
+                {themeLoading ? (
+                  <div className="mt-3 text-xs font-bold text-slate-400">
+                    Loading brand colors...
+                  </div>
+                ) : null}
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
-                  onClick={loadTemplates}
-                  disabled={loading}
+                  onClick={() => {
+                    loadThemeSettings();
+                    loadTemplates();
+                  }}
+                  disabled={loading || themeLoading}
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {loading ? (
+                  {loading || themeLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <RefreshCw className="h-4 w-4" />
@@ -349,6 +470,7 @@ export default function CertificateTemplatesPage() {
                     style={{
                       background:
                         "linear-gradient(135deg, var(--kg-primary), var(--kg-secondary))",
+                      boxShadow: "0 14px 30px var(--kg-primary-shadow)",
                     }}
                   >
                     <Eye className="h-4 w-4" />
@@ -408,7 +530,7 @@ export default function CertificateTemplatesPage() {
                   Upload Template
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Recommended: A4 landscape PNG/JPG.
+                  Recommended: A4 landscape PNG/JPG or PDF.
                 </p>
               </div>
 
@@ -432,11 +554,25 @@ export default function CertificateTemplatesPage() {
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
                   placeholder="Course Completion Certificate"
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-900 outline-none transition placeholder:text-slate-400"
+                  onFocus={(event) => {
+                    event.currentTarget.style.borderColor = "var(--kg-primary)";
+                    event.currentTarget.style.boxShadow =
+                      "0 0 0 4px var(--kg-primary-ring)";
+                  }}
+                  onBlur={(event) => {
+                    event.currentTarget.style.borderColor = "";
+                    event.currentTarget.style.boxShadow = "";
+                  }}
                 />
               </div>
 
-              <label className="block cursor-pointer rounded-[26px] border-2 border-dashed border-slate-200 bg-slate-50 p-6 text-center transition hover:border-blue-300 hover:bg-blue-50/40">
+              <label
+                className="block cursor-pointer rounded-[26px] border-2 border-dashed bg-slate-50 p-6 text-center transition"
+                style={{
+                  borderColor: "var(--kg-primary-ring)",
+                }}
+              >
                 <input
                   ref={fileRef}
                   type="file"
@@ -493,6 +629,7 @@ export default function CertificateTemplatesPage() {
                 style={{
                   background:
                     "linear-gradient(135deg, var(--kg-primary), var(--kg-secondary))",
+                  boxShadow: "0 14px 30px var(--kg-primary-shadow)",
                 }}
               >
                 {uploading ? (
@@ -532,7 +669,13 @@ export default function CertificateTemplatesPage() {
             <div className="p-6">
               {activeTemplate ? (
                 <div className="space-y-4">
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                  <div
+                    className="rounded-[24px] border p-4"
+                    style={{
+                      borderColor: "var(--kg-primary-ring)",
+                      backgroundColor: "var(--kg-primary-softer)",
+                    }}
+                  >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">
                         <div className="truncate text-sm font-black text-slate-950">
@@ -559,7 +702,10 @@ export default function CertificateTemplatesPage() {
                 </div>
               ) : (
                 <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[26px] border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white text-slate-400 shadow-sm">
+                  <div
+                    className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white shadow-sm"
+                    style={{ color: "var(--kg-primary)" }}
+                  >
                     <Award className="h-8 w-8" />
                   </div>
 
@@ -588,7 +734,13 @@ export default function CertificateTemplatesPage() {
               </p>
             </div>
 
-            <div className="inline-flex w-fit items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">
+            <div
+              className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-2 text-xs font-black"
+              style={{
+                backgroundColor: "var(--kg-primary-soft)",
+                color: "var(--kg-primary)",
+              }}
+            >
               <FileImage className="h-4 w-4" />
               {templates.length} template{templates.length === 1 ? "" : "s"}
             </div>
@@ -605,7 +757,13 @@ export default function CertificateTemplatesPage() {
             </div>
           ) : templates.length === 0 ? (
             <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-100 text-slate-400">
+              <div
+                className="flex h-16 w-16 items-center justify-center rounded-3xl"
+                style={{
+                  backgroundColor: "var(--kg-primary-soft)",
+                  color: "var(--kg-primary)",
+                }}
+              >
                 <FileImage className="h-8 w-8" />
               </div>
 
@@ -614,8 +772,8 @@ export default function CertificateTemplatesPage() {
               </h3>
 
               <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-                Upload your first KidGage course completion certificate template
-                from the form above.
+                Upload your first {theme.siteName || "KidGage"} course
+                completion certificate template from the form above.
               </p>
             </div>
           ) : (
@@ -654,7 +812,13 @@ export default function CertificateTemplatesPage() {
                         </span>
 
                         {template.isActive ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500 px-3 py-1.5 text-[11px] font-black text-white shadow-sm">
+                          <span
+                            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-black text-white shadow-sm"
+                            style={{
+                              background:
+                                "linear-gradient(135deg, var(--kg-primary), var(--kg-secondary))",
+                            }}
+                          >
                             <CheckCircle2 className="h-3.5 w-3.5" />
                             Active
                           </span>
@@ -708,6 +872,8 @@ export default function CertificateTemplatesPage() {
                             style={{
                               background:
                                 "linear-gradient(135deg, var(--kg-primary), var(--kg-secondary))",
+                              boxShadow:
+                                "0 12px 24px var(--kg-primary-shadow)",
                             }}
                           >
                             {isBusy ? (
@@ -718,7 +884,13 @@ export default function CertificateTemplatesPage() {
                             Activate
                           </button>
                         ) : (
-                          <div className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-50 px-3 text-xs font-black text-emerald-700">
+                          <div
+                            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-2xl px-3 text-xs font-black"
+                            style={{
+                              backgroundColor: "var(--kg-primary-soft)",
+                              color: "var(--kg-primary)",
+                            }}
+                          >
                             <CheckCircle2 className="h-4 w-4" />
                             Active
                           </div>
