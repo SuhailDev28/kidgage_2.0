@@ -45,6 +45,12 @@ const bookingConfigSchema = new mongoose.Schema(
   { _id: false },
 );
 
+export const ACTIVITY_APPROVAL_STATUSES = [
+  "PENDING_APPROVAL",
+  "APPROVED",
+  "REJECTED",
+];
+
 const activitySchema = new mongoose.Schema(
   {
     academyId: {
@@ -395,6 +401,54 @@ const activitySchema = new mongoose.Schema(
       default: "DRAFT",
       index: true,
     },
+
+    /*
+     * Super Admin approval workflow.
+     *
+     * Public/parent listing must require:
+     * status: "PUBLISHED"
+     * approvalStatus: "APPROVED"
+     */
+    approvalStatus: {
+      type: String,
+      enum: ACTIVITY_APPROVAL_STATUSES,
+      default: "PENDING_APPROVAL",
+      index: true,
+    },
+
+    approvalRequestedAt: {
+      type: Date,
+      default: Date.now,
+      index: true,
+    },
+
+    approvedAt: {
+      type: Date,
+      default: null,
+    },
+
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    rejectedAt: {
+      type: Date,
+      default: null,
+    },
+
+    rejectedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    rejectionReason: {
+      type: String,
+      default: "",
+      trim: true,
+    },
   },
   { timestamps: true },
 );
@@ -561,6 +615,37 @@ activitySchema.pre("validate", function activityPreValidate(next) {
   this.bookingConfig.defaultCapacity = this.defaultCapacity;
   this.bookingConfig.allowWaitlist = this.allowWaitlist;
 
+  /*
+   * Approval safety:
+   * Keeps approve/reject metadata consistent.
+   */
+  if (!this.approvalStatus) {
+    this.approvalStatus = "PENDING_APPROVAL";
+  }
+
+  if (!this.approvalRequestedAt) {
+    this.approvalRequestedAt = new Date();
+  }
+
+  if (this.approvalStatus === "PENDING_APPROVAL") {
+    this.approvedAt = null;
+    this.approvedBy = null;
+    this.rejectedAt = null;
+    this.rejectedBy = null;
+    this.rejectionReason = "";
+  }
+
+  if (this.approvalStatus === "APPROVED") {
+    this.rejectedAt = null;
+    this.rejectedBy = null;
+    this.rejectionReason = "";
+  }
+
+  if (this.approvalStatus === "REJECTED") {
+    this.approvedAt = null;
+    this.approvedBy = null;
+  }
+
   next();
 });
 
@@ -570,6 +655,21 @@ activitySchema.index({ academyId: 1, categoryId: 1, status: 1 });
 activitySchema.index({ academyId: 1, categoryName: 1 });
 activitySchema.index({ featured: 1, status: 1 });
 activitySchema.index({ bookingMode: 1, status: 1 });
+
+/*
+ * Approval workflow indexes.
+ */
+activitySchema.index({ academyId: 1, approvalStatus: 1 });
+activitySchema.index({ academyId: 1, status: 1, approvalStatus: 1 });
+activitySchema.index({ status: 1, approvalStatus: 1 });
+activitySchema.index({ approvalStatus: 1, approvalRequestedAt: -1 });
+activitySchema.index({ featured: 1, status: 1, approvalStatus: 1 });
+activitySchema.index({
+  academyId: 1,
+  categoryId: 1,
+  status: 1,
+  approvalStatus: 1,
+});
 
 export default mongoose.models.Activity ||
   mongoose.model("Activity", activitySchema);
