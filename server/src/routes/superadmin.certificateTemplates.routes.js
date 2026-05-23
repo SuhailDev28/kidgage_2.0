@@ -9,11 +9,10 @@ import { requireRole } from "../middleware/requireRole.js";
 import CertificateTemplate from "../models/CertificateTemplate.js";
 
 import {
+  UPLOAD_ROOT,
   uploadCertificateTemplate,
   fileToPublicPath,
 } from "../utils/upload.js";
-
-import { UPLOAD_ROOT } from "../app.js";
 
 const router = express.Router();
 

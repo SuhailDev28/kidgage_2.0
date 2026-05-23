@@ -1,9 +1,12 @@
+// server/src/app.js
+
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import path from "path";
 import fs from "fs";
+
+import { UPLOAD_ROOT } from "./utils/upload.js";
 
 import { errorHandler } from "./middleware/errorHandler.js";
 
@@ -32,29 +35,6 @@ import notificationRoutes from "./routes/notification.routes.js";
 import academyAttendanceRoutes from "./routes/academy.attendance.routes.js";
 
 export const app = express();
-
-/* ---------------------------------
- * Upload root
- *
- * Render Pro Disk:
- * Disk mount path should be /var/data
- * Uploaded files will be stored in /var/data/uploads
- *
- * Local development:
- * Uploaded files will be stored in ./uploads
- * -------------------------------- */
-export const UPLOAD_ROOT =
-  process.env.UPLOAD_ROOT ||
-  (process.env.NODE_ENV === "production"
-    ? "/var/data/uploads"
-    : path.join(process.cwd(), "uploads"));
-
-try {
-  fs.mkdirSync(UPLOAD_ROOT, { recursive: true });
-  console.log("Upload root ready:", UPLOAD_ROOT);
-} catch (error) {
-  console.error("Failed to create upload directory:", UPLOAD_ROOT, error);
-}
 
 /* ---------------------------------
  * CORS
@@ -103,6 +83,10 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 /* ---------------------------------
  * Static uploads
+ *
+ * Render Pro Disk:
+ * Disk mount path should be /var/data
+ * Uploaded files should be saved in /var/data/uploads
  * -------------------------------- */
 app.use(
   "/uploads",

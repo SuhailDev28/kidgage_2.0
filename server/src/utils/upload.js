@@ -1,8 +1,26 @@
+// server/src/utils/upload.js
+
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
-import { UPLOAD_ROOT } from "../app.js";
+
+/* -------------------------------------------------------------------------- */
+/* Upload root                                                                */
+/* -------------------------------------------------------------------------- */
+
+export const UPLOAD_ROOT =
+  process.env.UPLOAD_ROOT ||
+  (process.env.NODE_ENV === "production"
+    ? "/var/data/uploads"
+    : path.join(process.cwd(), "uploads"));
+
+try {
+  fs.mkdirSync(UPLOAD_ROOT, { recursive: true });
+  console.log("Upload root ready:", UPLOAD_ROOT);
+} catch (error) {
+  console.error("Failed to create upload directory:", UPLOAD_ROOT, error);
+}
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */
