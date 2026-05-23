@@ -200,3 +200,9 @@ export const uploadDocument = createUploader({
   fileTypes: "documents",
   maxSizeMb: 10,
 });
+
+export const uploadCertificateTemplate = createUploader({
+  folder: "certificate-templates",
+  fileTypes: "images-and-documents",
+  maxSizeMb: 15,
+});

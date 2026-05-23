@@ -78,6 +78,7 @@ import SuperAdminParentsPage from "../pages/superadmin/ParentsPage.jsx";
 import SuperAdminReportsPage from "../pages/superadmin/SuperAdminReportsPage.jsx";
 import ContentPagesManager from "../pages/superadmin/ContentPagesManager.jsx";
 import SuperAdminChildrenPage from "../pages/superadmin/ChildrenPage.jsx";
+import CertificateTemplatesPage from "../pages/superadmin/CertificateTemplatesPage.jsx";
 
 function SuperAdminGuard({ children }) {
   if (!isLoggedIn()) {
@@ -266,7 +267,10 @@ export function AppRouter() {
           />
 
           <Route path="activities" element={<SuperAdminActivitiesPage />} />
-          <Route path="activity-approvals" element={<ActivityApprovalsPage />} />
+          <Route
+            path="activity-approvals"
+            element={<ActivityApprovalsPage />}
+          />
           <Route path="bookings" element={<SuperAdminBookingEnquiriesPage />} />
           <Route path="parents" element={<SuperAdminParentsPage />} />
           <Route path="children" element={<SuperAdminChildrenPage />} />
@@ -285,8 +289,12 @@ export function AppRouter() {
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="requests" element={<RequestsPage />} />
 
-          <Route path="notifications" element={<NotificationsPage />} />
+          <Route
+            path="certificate-templates"
+            element={<CertificateTemplatesPage />}
+          />
 
+          <Route path="notifications" element={<NotificationsPage />} />
           <Route path="reports" element={<SuperAdminReportsPage />} />
 
           <Route
@@ -299,7 +307,6 @@ export function AppRouter() {
 
           <Route path="*" element={<KidgageFallbackPage />} />
         </Route>
-
         {/* GLOBAL FALLBACK */}
         <Route path="*" element={<KidgageFallbackPage />} />
       </Routes>
