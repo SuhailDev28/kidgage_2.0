@@ -257,6 +257,86 @@ api.toggleActivityPackageStatus = function toggleActivityPackageStatus(
     }),
   );
 };
+
+/* -------------------------------------------------------------------------- */
+/* PUBLIC SETTINGS / CONTENT                                                  */
+/* -------------------------------------------------------------------------- */
+
+api.publicSettings = function publicSettings() {
+  return unwrap(api.get("/public/settings"));
+};
+
+publicApi.settings = function publicSettingsViaPublicApi() {
+  return unwrap(publicApi.get("/settings"));
+};
+
+api.publicContentPage = function publicContentPage(slug) {
+  return unwrap(api.get(`/public/content-pages/${requireId(slug, "Slug")}`));
+};
+
+publicApi.contentPage = function publicContentPageViaPublicApi(slug) {
+  return unwrap(publicApi.get(`/content-pages/${requireId(slug, "Slug")}`));
+};
+
+api.publicLegalPage = function publicLegalPage(type) {
+  return unwrap(api.get(`/public/legal/${requireId(type, "Legal page type")}`));
+};
+
+publicApi.legalPage = function publicLegalPageViaPublicApi(type) {
+  return unwrap(publicApi.get(`/legal/${requireId(type, "Legal page type")}`));
+};
+
+api.publicTerms = function publicTerms() {
+  return unwrap(api.get("/public/terms-and-conditions"));
+};
+
+publicApi.terms = function publicTermsViaPublicApi() {
+  return unwrap(publicApi.get("/terms-and-conditions"));
+};
+
+api.publicPrivacy = function publicPrivacy() {
+  return unwrap(api.get("/public/privacy-policy"));
+};
+
+publicApi.privacy = function publicPrivacyViaPublicApi() {
+  return unwrap(publicApi.get("/privacy-policy"));
+};
+
+/* -------------------------------------------------------------------------- */
+/* SUPER ADMIN ACTIVITY APPROVALS                                             */
+/* -------------------------------------------------------------------------- */
+
+api.superAdminActivityApprovals = function superAdminActivityApprovals(
+  params = {},
+) {
+  return unwrap(
+    api.get(`/super-admin/activity-approvals${buildQuery(params)}`),
+  );
+};
+
+api.approveActivity = function approveActivity(id) {
+  return unwrap(
+    api.patch(
+      `/super-admin/activity-approvals/${requireId(
+        id,
+        "Activity ID",
+      )}/approve`,
+    ),
+  );
+};
+
+api.rejectActivity = function rejectActivity(id, reason = "") {
+  return unwrap(
+    api.patch(
+      `/super-admin/activity-approvals/${requireId(
+        id,
+        "Activity ID",
+      )}/reject`,
+      { reason },
+    ),
+  );
+};
+
 /*
   Usage:
 
@@ -268,6 +348,18 @@ api.toggleActivityPackageStatus = function toggleActivityPackageStatus(
   publicApi.get("/content-pages/terms-and-conditions")
   publicApi.get("/privacy-policy")
   publicApi.get("/terms-and-conditions")
+
+
+  Public settings helpers:
+  api.publicSettings()
+  publicApi.settings()
+  api.publicContentPage("privacy-policy")
+  publicApi.contentPage("terms-and-conditions")
+
+  Super admin activity approval helpers:
+  api.superAdminActivityApprovals({ status: "PENDING_APPROVAL" })
+  api.approveActivity(activityId)
+  api.rejectActivity(activityId, reason)
 
   Notification helpers:
   api.notifications({ page: 1, limit: 15, status: "UNREAD" })
