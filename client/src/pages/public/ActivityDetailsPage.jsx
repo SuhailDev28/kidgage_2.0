@@ -57,14 +57,110 @@ function toCurrency(value, currency = "QAR") {
   }
 }
 
-function formatAgeRange(minAge, maxAge) {
+function formatAgeRange(minAge, maxAge, fallback = "All ages") {
   const min = Number(minAge || 0);
   const max = Number(maxAge || 0);
 
   if (min && max) return `${min}-${max} years`;
   if (min) return `${min}+ years`;
   if (max) return `Up to ${max} years`;
-  return "All ages";
+
+  return fallback;
+}
+
+function pickFirstValue(source = {}, keys = []) {
+  for (const key of keys) {
+    const value = source?.[key];
+
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      return value;
+    }
+  }
+
+  return "";
+}
+
+function getCourseAgeMeta(course = {}) {
+  const ageGroupText = pickFirstValue(course, [
+    "ageGroup",
+    "ageRange",
+    "age",
+    "ages",
+    "ageLabel",
+    "ageGroupLabel",
+    "targetAge",
+    "targetAgeGroup",
+  ]);
+
+  const minAge = Number(
+    pickFirstValue(course, [
+      "minAge",
+      "minimumAge",
+      "ageFrom",
+      "fromAge",
+      "ageMin",
+      "min_age",
+    ]) || 0,
+  );
+
+  const maxAge = Number(
+    pickFirstValue(course, [
+      "maxAge",
+      "maximumAge",
+      "ageTo",
+      "toAge",
+      "ageMax",
+      "max_age",
+    ]) || 0,
+  );
+
+  return {
+    minAge: Number.isFinite(minAge) ? minAge : 0,
+    maxAge: Number.isFinite(maxAge) ? maxAge : 0,
+    label: String(ageGroupText || "").trim(),
+  };
+}
+
+function getCourseAgeGroupLabel(course = {}) {
+  const meta = getCourseAgeMeta(course);
+
+  return formatAgeRange(meta.minAge, meta.maxAge, meta.label || "All ages");
+}
+
+function toDateInputValue(date) {
+  if (!date) return "";
+
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+
+  return `${y}-${m}-${day}`;
+}
+
+function getDobConstraintsFromCourse(course = {}) {
+  const { minAge, maxAge } = getCourseAgeMeta(course);
+  const today = new Date();
+
+  let min = "";
+  let max = "";
+
+  if (maxAge > 0) {
+    const earliestDob = new Date(today);
+    earliestDob.setFullYear(today.getFullYear() - maxAge - 1);
+    earliestDob.setDate(earliestDob.getDate() + 1);
+    min = toDateInputValue(earliestDob);
+  }
+
+  if (minAge > 0) {
+    const latestDob = new Date(today);
+    latestDob.setFullYear(today.getFullYear() - minAge);
+    max = toDateInputValue(latestDob);
+  }
+
+  return { min, max };
 }
 
 function formatDateLabel(value) {
@@ -868,6 +964,9 @@ function GuestBookingForm({
   guestNotes,
   setGuestNotes,
   onSignIn,
+  courseAgeLabel = "All ages",
+  dobMin = "",
+  dobMax = "",
 }) {
   return (
     <div className="space-y-4 rounded-[24px] border border-slate-200 bg-slate-50 p-4 sm:p-5">
@@ -921,12 +1020,19 @@ function GuestBookingForm({
           className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-[#16A34A]"
         />
 
-        <input
-          type="date"
-          value={guestChildDob}
-          onChange={(e) => setGuestChildDob(e.target.value)}
-          className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-[#16A34A]"
-        />
+        <div>
+          <input
+            type="date"
+            value={guestChildDob}
+            min={dobMin || undefined}
+            max={dobMax || undefined}
+            onChange={(e) => setGuestChildDob(e.target.value)}
+            className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-[#16A34A]"
+          />
+          <div className="mt-1 text-xs font-semibold text-slate-500">
+            Course age group: {courseAgeLabel}
+          </div>
+        </div>
 
         <select
           value={guestChildGender}
@@ -1045,6 +1151,14 @@ export default function ActivityDetailsPage() {
         "",
     );
   }, [activity, academy]);
+
+  const courseAgeLabel = useMemo(() => {
+    return getCourseAgeGroupLabel(activity || {});
+  }, [activity]);
+
+  const guestDobConstraints = useMemo(() => {
+    return getDobConstraintsFromCourse(activity || {});
+  }, [activity]);
 
   const currentDateSelectedSlotIds = useMemo(() => {
     const source =
@@ -1638,6 +1752,16 @@ export default function ActivityDetailsPage() {
         return;
       }
 
+      if (guestDobConstraints.min && guestChildDob < guestDobConstraints.min) {
+        setError(`Child age does not match this course age group: ${courseAgeLabel}.`);
+        return;
+      }
+
+      if (guestDobConstraints.max && guestChildDob > guestDobConstraints.max) {
+        setError(`Child age does not match this course age group: ${courseAgeLabel}.`);
+        return;
+      }
+
       if (!guestChildGender) {
         setError("Child gender is required.");
         return;
@@ -1905,7 +2029,7 @@ export default function ActivityDetailsPage() {
                     Age group
                   </div>
                   <div className="mt-2 text-base font-bold text-slate-900">
-                    {formatAgeRange(activity.minAge, activity.maxAge)}
+                    {courseAgeLabel}
                   </div>
                 </div>
 
@@ -2308,6 +2432,9 @@ export default function ActivityDetailsPage() {
                     setGuestChildGender={setGuestChildGender}
                     guestNotes={guestNotes}
                     setGuestNotes={setGuestNotes}
+                    courseAgeLabel={courseAgeLabel}
+                    dobMin={guestDobConstraints.min}
+                    dobMax={guestDobConstraints.max}
                     onSignIn={handleProceedAuth}
                   />
                 )}
