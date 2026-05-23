@@ -351,6 +351,56 @@ function BookingConfigSummary({ course }) {
   );
 }
 
+
+function getApprovalStatus(course = {}) {
+  return String(course?.approvalStatus || course?.raw?.approvalStatus || "PENDING_APPROVAL")
+    .trim()
+    .toUpperCase();
+}
+
+function getApprovalMeta(status) {
+  if (status === "APPROVED") {
+    return {
+      label: "Approved",
+      className: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+      icon: BadgeCheck,
+      description: "Visible to parents/public",
+    };
+  }
+
+  if (status === "REJECTED") {
+    return {
+      label: "Rejected",
+      className: "bg-red-50 text-red-700 ring-red-100",
+      icon: AlertCircle,
+      description: "Not visible to parents/public",
+    };
+  }
+
+  return {
+    label: "Pending Approval",
+    className: "bg-amber-50 text-amber-700 ring-amber-100",
+    icon: Clock3,
+    description: "Waiting for Super Admin approval",
+  };
+}
+
+function ApprovalBadge({ course, compact = false }) {
+  const status = getApprovalStatus(course);
+  const meta = getApprovalMeta(status);
+  const Icon = meta.icon;
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black ring-1 ${meta.className}`}
+      title={meta.description}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {compact ? meta.label.replace(" Approval", "") : meta.label}
+    </span>
+  );
+}
+
 function PackageSummaryBadges({ items }) {
   const rows = toArray(items);
 
@@ -1172,7 +1222,8 @@ function CourseModal({
 
               <p className="mt-1 text-sm text-slate-500">
                 Create booking-ready academy programs with packages and slot
-                setup.
+                setup. New courses are submitted to Super Admin for approval
+                before they appear publicly.
               </p>
             </div>
 
@@ -1434,7 +1485,11 @@ function ViewCourseModal({ open, course, onClose }) {
                 {course.name}
               </h3>
 
-              <p className="mt-1 text-sm text-slate-500">
+              <div className="mt-3">
+                <ApprovalBadge course={course} />
+              </div>
+
+              <p className="mt-2 text-sm text-slate-500">
                 Review the full academy course details.
               </p>
             </div>
@@ -1473,6 +1528,19 @@ function ViewCourseModal({ open, course, onClose }) {
             <div className="grid gap-4 md:grid-cols-2">
               <InfoBox label="Category" value={course.category || "N/A"} />
               <InfoBox label="Fees" value={course.fees || "N/A"} />
+              <div className="rounded-[24px] bg-slate-50 p-4 md:col-span-2">
+                <div className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
+                  Approval Status
+                </div>
+                <div className="mt-3">
+                  <ApprovalBadge course={course} />
+                </div>
+                {course.rejectionReason ? (
+                  <div className="mt-3 rounded-2xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+                    {course.rejectionReason}
+                  </div>
+                ) : null}
+              </div>
               <InfoBox
                 label="Start Date"
                 value={formatDate(course.startDate) || "N/A"}
@@ -1719,6 +1787,25 @@ export default function AcademyActivitiesPage() {
           allowWaitlist: Boolean(
             item?.allowWaitlist ?? bookingConfig?.allowWaitlist,
           ),
+          approvalStatus: String(
+            item?.approvalStatus || "PENDING_APPROVAL",
+          ).toUpperCase(),
+          approvalRequestedAt: item?.approvalRequestedAt || null,
+          approvedAt: item?.approvedAt || null,
+          approvedBy: item?.approvedBy || null,
+          rejectedAt: item?.rejectedAt || null,
+          rejectedBy: item?.rejectedBy || null,
+          rejectionReason: item?.rejectionReason || "",
+          isApproved:
+            String(item?.approvalStatus || "").toUpperCase() === "APPROVED",
+          isPendingApproval:
+            String(item?.approvalStatus || "PENDING_APPROVAL").toUpperCase() ===
+            "PENDING_APPROVAL",
+          isRejected:
+            String(item?.approvalStatus || "").toUpperCase() === "REJECTED",
+          visibleToPublic:
+            String(item?.status || "").toUpperCase() === "PUBLISHED" &&
+            String(item?.approvalStatus || "").toUpperCase() === "APPROVED",
         };
       });
 
@@ -1764,12 +1851,27 @@ export default function AcademyActivitiesPage() {
           .includes(q) ||
         String(item.bookingMode || "")
           .toLowerCase()
+          .includes(q) ||
+        String(getApprovalMeta(getApprovalStatus(item)).label || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(item.approvalStatus || "")
+          .toLowerCase()
           .includes(q)
       );
     });
   }, [courses, search]);
 
   const publishedCount = courses.length;
+  const approvedCount = courses.filter(
+    (course) => getApprovalStatus(course) === "APPROVED",
+  ).length;
+  const pendingApprovalCount = courses.filter(
+    (course) => getApprovalStatus(course) === "PENDING_APPROVAL",
+  ).length;
+  const rejectedCount = courses.filter(
+    (course) => getApprovalStatus(course) === "REJECTED",
+  ).length;
   const bookingReadyCount = courses.filter(
     (course) => Number(course.totalSessions || 0) > 0 || course.bookingMode,
   ).length;
@@ -2075,8 +2177,8 @@ export default function AcademyActivitiesPage() {
 
       setMessage(
         modalMode === "edit"
-          ? "Course updated successfully."
-          : "Course created successfully.",
+          ? "Course updated successfully. Approval status remains controlled by Super Admin."
+          : "Course submitted for Super Admin approval. It will be visible to parents only after approval.",
       );
 
       closeModal();
@@ -2161,7 +2263,7 @@ export default function AcademyActivitiesPage() {
               parent-friendly KidGage workflow.
             </p>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
               <StatMini
                 icon={BookOpen}
                 label="Courses"
@@ -2178,10 +2280,24 @@ export default function AcademyActivitiesPage() {
               />
               <StatMini
                 icon={BadgeCheck}
-                label="Booking Ready"
-                value={bookingReadyCount}
+                label="Approved"
+                value={approvedCount}
                 color="text-emerald-600"
                 bg="bg-emerald-50"
+              />
+              <StatMini
+                icon={Clock3}
+                label="Pending"
+                value={pendingApprovalCount}
+                color="text-amber-600"
+                bg="bg-amber-50"
+              />
+              <StatMini
+                icon={AlertCircle}
+                label="Rejected"
+                value={rejectedCount}
+                color="text-red-600"
+                bg="bg-red-50"
               />
             </div>
           </div>
@@ -2209,6 +2325,11 @@ export default function AcademyActivitiesPage() {
                   <span className="inline-flex items-center gap-2">
                     <BookOpen className="h-4 w-4 text-[#ff7a3d]" />
                     {toNumber(publishedCount)} courses
+                  </span>
+
+                  <span className="inline-flex items-center gap-2">
+                    <Clock3 className="h-4 w-4 text-amber-600" />
+                    {toNumber(pendingApprovalCount)} pending
                   </span>
 
                   <span className="inline-flex items-center gap-2">
@@ -2272,9 +2393,9 @@ export default function AcademyActivitiesPage() {
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-2 rounded-full bg-orange-50 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#ff7a3d] ring-1 ring-orange-100">
+          <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-amber-700 ring-1 ring-amber-100">
             <ShieldCheck className="h-4 w-4" />
-            KidGage Ready
+            Super Admin Approval Required
           </div>
         </div>
 
@@ -2292,7 +2413,7 @@ export default function AcademyActivitiesPage() {
         ) : (
           <>
             <div className="hidden overflow-x-auto xl:block">
-              <table className="w-full min-w-[1420px] border-collapse">
+              <table className="w-full min-w-[1540px] border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 text-left">
                     <th className="pb-4 pr-5 text-sm font-black text-slate-500">
@@ -2300,6 +2421,9 @@ export default function AcademyActivitiesPage() {
                     </th>
                     <th className="pb-4 pr-5 text-sm font-black text-slate-500">
                       Name
+                    </th>
+                    <th className="pb-4 pr-5 text-sm font-black text-slate-500">
+                      Approval
                     </th>
                     <th className="pb-4 pr-5 text-sm font-black text-slate-500">
                       Duration
@@ -2357,6 +2481,15 @@ export default function AcademyActivitiesPage() {
                             <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
                               <Wallet className="h-3.5 w-3.5" />
                               {course.fees}
+                            </div>
+                          ) : null}
+                        </td>
+
+                        <td className="py-5 pr-5 align-top">
+                          <ApprovalBadge course={course} />
+                          {course.rejectionReason ? (
+                            <div className="mt-2 max-w-[220px] text-xs font-semibold text-red-600">
+                              {course.rejectionReason}
                             </div>
                           ) : null}
                         </td>
@@ -2459,9 +2592,18 @@ export default function AcademyActivitiesPage() {
                     </div>
 
                     <div className="mt-4">
-                      <div className="text-lg font-black text-slate-950">
-                        {course.name}
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="text-lg font-black text-slate-950">
+                          {course.name}
+                        </div>
+                        <ApprovalBadge course={course} compact />
                       </div>
+
+                      {course.rejectionReason ? (
+                        <div className="mt-2 rounded-2xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
+                          {course.rejectionReason}
+                        </div>
+                      ) : null}
 
                       <div className="mt-2 text-sm font-medium text-slate-500">
                         {course.durationLabel ||

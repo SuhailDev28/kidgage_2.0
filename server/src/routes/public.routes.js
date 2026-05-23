@@ -13,6 +13,7 @@ import AppSetting from "../models/AppSetting.js";
 import Event from "../models/Event.js";
 import ContentPage from "../models/ContentPage.js";
 import Booking from "../models/Booking.js";
+import Activity from "../models/Activity.js";
 
 import { notifyAcademyRegistrationSubmitted } from "../services/notification.service.js";
 
@@ -80,6 +81,44 @@ const registrationUpload = multer({
  * -------------------------------- */
 function isValidObjectId(value) {
   return mongoose.Types.ObjectId.isValid(String(value || ""));
+}
+
+const PUBLIC_ACTIVITY_FILTER = {
+  status: "PUBLISHED",
+  approvalStatus: "APPROVED",
+};
+
+async function ensurePublicActivityApproved(req, res, next) {
+  try {
+    const slug = String(req.params.slug || "").trim();
+
+    if (!slug) {
+      return res.status(400).json({
+        message: "Activity slug is required",
+      });
+    }
+
+    const activity = await Activity.findOne({
+      slug,
+      ...PUBLIC_ACTIVITY_FILTER,
+    })
+      .select("_id slug status approvalStatus")
+      .lean();
+
+    if (!activity) {
+      return res.status(404).json({
+        message: "Activity not found or not approved yet",
+        activity: null,
+      });
+    }
+
+    req.publicActivity = activity;
+    req.publicActivityFilter = PUBLIC_ACTIVITY_FILTER;
+
+    return next();
+  } catch (error) {
+    return next(error);
+  }
 }
 
 async function getPublicSettings() {
@@ -788,8 +827,15 @@ router.get("/academies/:slug", academyDetails);
 /* ---------------------------------
  * Activities
  * -------------------------------- */
-router.get("/activities", listActivities);
-router.get("/activities/:slug", activityDetails);
+router.get(
+  "/activities",
+  (req, _res, next) => {
+    req.publicActivityFilter = PUBLIC_ACTIVITY_FILTER;
+    return next();
+  },
+  listActivities,
+);
+router.get("/activities/:slug", ensurePublicActivityApproved, activityDetails);
 
 /* ---------------------------------
  * Booking flow endpoints
@@ -798,30 +844,35 @@ router.get("/activities/:slug", activityDetails);
 router.get(
   "/activities/:slug/booking-data",
   expirePendingPublicBookings,
+  ensurePublicActivityApproved,
   getActivityBookingData,
 );
 
 router.get(
   "/activities/:slug/available-dates",
   expirePendingPublicBookings,
+  ensurePublicActivityApproved,
   getAvailableDates,
 );
 
 router.get(
   "/activities/:slug/slots",
   expirePendingPublicBookings,
+  ensurePublicActivityApproved,
   getSlotsByDate,
 );
 
 router.get(
   "/activities/:slug/flexible-date-range",
   expirePendingPublicBookings,
+  ensurePublicActivityApproved,
   getFlexibleDateRange,
 );
 
 router.get(
   "/activities/:slug/straight-schedule-preview",
   expirePendingPublicBookings,
+  ensurePublicActivityApproved,
   getStraightSchedulePreview,
 );
 
@@ -832,6 +883,7 @@ router.get(
 router.post(
   "/activities/:slug/guest-booking",
   expirePendingPublicBookings,
+  ensurePublicActivityApproved,
   createGuestBooking,
 );
 

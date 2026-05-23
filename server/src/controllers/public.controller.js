@@ -165,6 +165,18 @@ function normalizeUpper(value, fallback = "") {
   return text || fallback;
 }
 
+const PUBLIC_ACTIVITY_FILTER = {
+  status: "PUBLISHED",
+  approvalStatus: "APPROVED",
+};
+
+function buildPublicActivityFilter(extra = {}) {
+  return {
+    ...PUBLIC_ACTIVITY_FILTER,
+    ...extra,
+  };
+}
+
 class ApiError extends Error {
   constructor(statusCode, message) {
     super(message);
@@ -812,6 +824,20 @@ function normalizeActivityCard(item) {
     modes: normalizeModes(raw),
     fees: raw.fees || raw.price || raw.basePrice || "",
     basePrice: Number(raw.basePrice || raw.price || 0),
+
+    approvalStatus: raw.approvalStatus || "PENDING_APPROVAL",
+    approvalRequestedAt: raw.approvalRequestedAt || null,
+    approvedAt: raw.approvedAt || null,
+    approvedBy: raw.approvedBy || null,
+    rejectedAt: raw.rejectedAt || null,
+    rejectedBy: raw.rejectedBy || null,
+    rejectionReason: raw.rejectionReason || "",
+    isApproved: raw.approvalStatus === "APPROVED",
+    isPendingApproval: raw.approvalStatus === "PENDING_APPROVAL",
+    isRejected: raw.approvalStatus === "REJECTED",
+    visibleToPublic:
+      raw.status === "PUBLISHED" && raw.approvalStatus === "APPROVED",
+
     bookingMode: raw.bookingMode || bookingConfig.bookingMode || "BOTH",
     packageType: raw.packageType || bookingConfig.packageType || "SESSIONS",
     totalSessions: Number(
@@ -906,10 +932,11 @@ function getAllowedDateWindow(activity) {
 }
 
 async function getPublishedActivityBySlug(slug, withPopulate = false) {
-  const query = Activity.findOne({
-    slug,
-    status: "PUBLISHED",
-  });
+  const query = Activity.findOne(
+    buildPublicActivityFilter({
+      slug,
+    }),
+  );
 
   if (withPopulate) {
     query.populate("academyId categoryId");
@@ -933,7 +960,7 @@ export async function home(_req, res, next) {
           .sort({ isFeatured: -1, featured: -1, createdAt: -1 })
           .limit(8),
 
-        Activity.find({ status: "PUBLISHED" })
+        Activity.find(buildPublicActivityFilter())
           .sort({ featured: -1, createdAt: -1 })
           .limit(8)
           .populate("academyId categoryId"),
@@ -1002,10 +1029,9 @@ export async function listActivities(req, res, next) {
   try {
     const { academyId, age, q = "", category = "" } = req.query;
 
-    const filter = {
-      status: "PUBLISHED",
+    const filter = buildPublicActivityFilter({
       ...(academyId ? { academyId } : {}),
-    };
+    });
 
     if (age) {
       filter.minAge = { $lte: Number(age) };

@@ -747,6 +747,19 @@ function normalizeActivityForClient(item) {
     organizerName: item.organizerName || "",
 
     status: item.status || "PUBLISHED",
+    approvalStatus: item.approvalStatus || "PENDING_APPROVAL",
+    approvalRequestedAt: item.approvalRequestedAt || null,
+    approvedAt: item.approvedAt || null,
+    approvedBy: item.approvedBy || null,
+    rejectedAt: item.rejectedAt || null,
+    rejectedBy: item.rejectedBy || null,
+    rejectionReason: item.rejectionReason || "",
+    isApproved: item.approvalStatus === "APPROVED",
+    isPendingApproval:
+      !item.approvalStatus || item.approvalStatus === "PENDING_APPROVAL",
+    isRejected: item.approvalStatus === "REJECTED",
+    visibleToPublic:
+      item.status === "PUBLISHED" && item.approvalStatus === "APPROVED",
     featured: Boolean(item.featured || item.isFeatured),
     shareEnabled: item.shareEnabled !== false,
     trialClassEnabled: Boolean(item.trialClassEnabled),
@@ -1427,6 +1440,16 @@ router.post("/activities", activityUploadFields, async (req, res, next) => {
         .trim()
         .toUpperCase(),
 
+      // Academy-created activities must be approved by Super Admin
+      // before they appear in public/parent activity listings.
+      approvalStatus: "PENDING_APPROVAL",
+      approvalRequestedAt: new Date(),
+      approvedAt: null,
+      approvedBy: null,
+      rejectedAt: null,
+      rejectedBy: null,
+      rejectionReason: "",
+
       packageType,
       totalSessions,
       sessionCount: totalSessions,
@@ -1486,8 +1509,34 @@ router.post("/activities", activityUploadFields, async (req, res, next) => {
 
     const created = await Activity.findById(doc._id).populate("categoryId");
 
+    try {
+      await notifySuperAdmins({
+        title: "New activity approval request",
+        message: `Academy submitted ${created?.title || title} for approval.`,
+        category: "APPROVAL",
+        priority: "HIGH",
+        actionUrl: "/super-admin/activity-approvals",
+        entityType: "ACTIVITY",
+        entityId: created?._id || doc._id,
+        createdByUserId: req.user?._id || req.user?.id,
+        meta: {
+          academyId: String(academyId || ""),
+          activityId: String(created?._id || doc._id || ""),
+          activityTitle: created?.title || title,
+          approvalStatus: "PENDING_APPROVAL",
+          source: "ACADEMY_ACTIVITY_CREATE",
+        },
+      });
+    } catch (notificationError) {
+      console.error(
+        "Failed to notify super admins about activity approval request:",
+        notificationError,
+      );
+    }
+
     return res.status(201).json({
-      message: "Activity created successfully",
+      message:
+        "Activity submitted for Super Admin approval. It will be visible after approval.",
       activity: normalizeActivityForClient(created.toObject()),
     });
   } catch (error) {
@@ -1524,6 +1573,11 @@ router.put("/activities/:id", activityUploadFields, async (req, res, next) => {
     );
 
     const bookingConfigInput = safeJsonParse(req.body.bookingConfig, {}) || {};
+
+    // Security: academy admins must never approve/reject their own activities.
+    // These request body fields are intentionally ignored in this route:
+    // approvalStatus, approvalRequestedAt, approvedAt, approvedBy,
+    // rejectedAt, rejectedBy, rejectionReason.
 
     if (req.body.title !== undefined || req.body.name !== undefined) {
       const nextTitle = String(req.body.title || req.body.name || "").trim();

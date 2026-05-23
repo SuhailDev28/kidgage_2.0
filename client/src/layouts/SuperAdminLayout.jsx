@@ -66,6 +66,11 @@ const navItems = [
       { label: "Academies", icon: Building2, to: "/super-admin/academies" },
       { label: "Branches", icon: MapPinned, to: "/super-admin/branches" },
       { label: "Activities", icon: Activity, to: "/super-admin/activities" },
+      {
+        label: "Activity Approvals",
+        icon: ClipboardList,
+        to: "/super-admin/activity-approvals",
+      },
       { label: "Staff", icon: UserCog, to: "/super-admin/staff" },
     ],
   },

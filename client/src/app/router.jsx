@@ -72,6 +72,7 @@ import SuperAdminPaymentsPage from "../pages/superadmin/SuperAdminPayments.jsx";
 import SettlementsPage from "../pages/superadmin/SettlementsPage.jsx";
 import SuperAdminBookingEnquiriesPage from "../pages/superadmin/BookingEnquiriesPage.jsx";
 import SuperAdminActivitiesPage from "../pages/superadmin/SuperAdminActivitiesPage.jsx";
+import ActivityApprovalsPage from "../pages/superadmin/ActivityApprovalsPage.jsx";
 import SuperAdminParentsPage from "../pages/superadmin/ParentsPage.jsx";
 import SuperAdminReportsPage from "../pages/superadmin/SuperAdminReportsPage.jsx";
 import ContentPagesManager from "../pages/superadmin/ContentPagesManager.jsx";
@@ -263,6 +264,7 @@ export function AppRouter() {
           />
 
           <Route path="activities" element={<SuperAdminActivitiesPage />} />
+          <Route path="activity-approvals" element={<ActivityApprovalsPage />} />
           <Route path="bookings" element={<SuperAdminBookingEnquiriesPage />} />
           <Route path="parents" element={<SuperAdminParentsPage />} />
           <Route path="children" element={<SuperAdminChildrenPage />} />

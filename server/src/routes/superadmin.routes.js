@@ -545,6 +545,87 @@ function normalizeAcademyAdminForClient(user) {
   };
 }
 
+function normalizeActivityApprovalForClient(item) {
+  if (!item) return null;
+
+  const academy = item.academyId || {};
+  const approvedBy = item.approvedBy || {};
+  const rejectedBy = item.rejectedBy || {};
+
+  return {
+    _id: item._id,
+    id: item._id,
+
+    academyId: academy?._id || item.academyId || null,
+    academyName: academy?.name || "Academy",
+    academyLogo: academy?.logo || "",
+    academyCity: academy?.city || "",
+
+    categoryId: item.categoryId?._id || item.categoryId || null,
+    categoryName:
+      item.categoryId?.name || item.categoryName || item.category || "",
+
+    title: item.title || item.name || "",
+    name: item.name || item.title || "",
+    slug: item.slug || "",
+    shortDescription: item.shortDescription || "",
+    description: item.description || "",
+
+    image:
+      item.image ||
+      item.bannerImage ||
+      item.coverImage ||
+      item.images?.[0] ||
+      "",
+    coverImage:
+      item.coverImage ||
+      item.image ||
+      item.bannerImage ||
+      item.images?.[0] ||
+      "",
+    bannerImage:
+      item.bannerImage ||
+      item.coverImage ||
+      item.image ||
+      item.images?.[0] ||
+      "",
+    images: Array.isArray(item.images) ? item.images : [],
+
+    price: item.price || item.basePrice || 0,
+    basePrice: item.basePrice || item.price || 0,
+    currency: item.currency || "QAR",
+
+    minAge: item.minAge ?? 0,
+    maxAge: item.maxAge ?? 18,
+    gender: item.gender || "ALL",
+    skillLevel: item.skillLevel || "ALL",
+
+    status: item.status || "DRAFT",
+    approvalStatus: item.approvalStatus || "PENDING_APPROVAL",
+    approvalRequestedAt: item.approvalRequestedAt || item.createdAt || null,
+
+    approvedAt: item.approvedAt || null,
+    approvedBy: approvedBy?._id || item.approvedBy || null,
+    approvedByName: approvedBy?.fullName || approvedBy?.name || "",
+
+    rejectedAt: item.rejectedAt || null,
+    rejectedBy: rejectedBy?._id || item.rejectedBy || null,
+    rejectedByName: rejectedBy?.fullName || rejectedBy?.name || "",
+    rejectionReason: item.rejectionReason || "",
+
+    isApproved: item.approvalStatus === "APPROVED",
+    isPendingApproval:
+      !item.approvalStatus || item.approvalStatus === "PENDING_APPROVAL",
+    isRejected: item.approvalStatus === "REJECTED",
+    visibleToPublic:
+      item.status === "PUBLISHED" && item.approvalStatus === "APPROVED",
+
+    createdAt: item.createdAt || null,
+    updatedAt: item.updatedAt || null,
+  };
+}
+
+
 async function dispatchManualPaymentPaidNotifications({
   payment,
   createdByUserId = null,
@@ -859,6 +940,210 @@ router.delete(
       return res.json({
         message: "Registration deleted successfully",
         deletedId: id,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+
+/* ---------------------------------
+ * Activity Approval Requests
+ * -------------------------------- */
+router.get(
+  "/activity-approvals",
+  auth,
+  requireRole("SUPER_ADMIN"),
+  async (req, res, next) => {
+    try {
+      const status = String(req.query.status || "PENDING_APPROVAL")
+        .trim()
+        .toUpperCase();
+
+      const allowedStatuses = ["PENDING_APPROVAL", "APPROVED", "REJECTED", "ALL"];
+      const approvalStatus = allowedStatuses.includes(status)
+        ? status
+        : "PENDING_APPROVAL";
+
+      const filter =
+        approvalStatus === "ALL" ? {} : { approvalStatus };
+
+      if (req.query.academyId && isValidObjectId(req.query.academyId)) {
+        filter.academyId = req.query.academyId;
+      }
+
+      const q = String(req.query.q || "").trim().toLowerCase();
+      const limit = Math.min(Math.max(Number(req.query.limit || 200), 1), 500);
+
+      let activities = await Activity.find(filter)
+        .populate("academyId", "name logo city")
+        .populate("categoryId", "name slug")
+        .populate("approvedBy", "fullName name email")
+        .populate("rejectedBy", "fullName name email")
+        .sort({ approvalRequestedAt: -1, createdAt: -1 })
+        .limit(limit)
+        .lean();
+
+      if (q) {
+        activities = activities.filter((item) => {
+          const academy = item?.academyId || {};
+          const category = item?.categoryId || {};
+
+          return [
+            item?.title,
+            item?.name,
+            item?.slug,
+            item?.categoryName,
+            item?.category,
+            category?.name,
+            academy?.name,
+            item?.approvalStatus,
+            item?.status,
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(q);
+        });
+      }
+
+      const counts = await Activity.aggregate([
+        {
+          $group: {
+            _id: "$approvalStatus",
+            count: { $sum: 1 },
+          },
+        },
+      ]);
+
+      const summary = {
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        total: 0,
+      };
+
+      for (const row of counts) {
+        const key = String(row._id || "PENDING_APPROVAL").toUpperCase();
+        const count = Number(row.count || 0);
+
+        summary.total += count;
+
+        if (key === "PENDING_APPROVAL") summary.pending = count;
+        if (key === "APPROVED") summary.approved = count;
+        if (key === "REJECTED") summary.rejected = count;
+      }
+
+      return res.json({
+        count: activities.length,
+        summary,
+        activities: activities.map(normalizeActivityApprovalForClient),
+        approvals: activities.map(normalizeActivityApprovalForClient),
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.patch(
+  "/activity-approvals/:id/approve",
+  auth,
+  requireRole("SUPER_ADMIN"),
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+
+      if (!isValidObjectId(id)) {
+        return res.status(400).json({ message: "Invalid activity id" });
+      }
+
+      const activity = await Activity.findById(id);
+
+      if (!activity) {
+        return res.status(404).json({ message: "Activity not found" });
+      }
+
+      activity.approvalStatus = "APPROVED";
+      activity.approvedAt = new Date();
+      activity.approvedBy = req.user?._id || null;
+
+      activity.rejectedAt = null;
+      activity.rejectedBy = null;
+      activity.rejectionReason = "";
+
+      if (!activity.approvalRequestedAt) {
+        activity.approvalRequestedAt = activity.createdAt || new Date();
+      }
+
+      // Keep academy's chosen publish state unless it is inactive/rejected.
+      // Public APIs must still require both status=PUBLISHED and approvalStatus=APPROVED.
+      if (!activity.status || activity.status === "DRAFT") {
+        activity.status = "PUBLISHED";
+      }
+
+      await activity.save();
+
+      const updated = await Activity.findById(activity._id)
+        .populate("academyId", "name logo city")
+        .populate("categoryId", "name slug")
+        .populate("approvedBy", "fullName name email")
+        .populate("rejectedBy", "fullName name email")
+        .lean();
+
+      return res.json({
+        message: "Activity approved successfully",
+        activity: normalizeActivityApprovalForClient(updated),
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.patch(
+  "/activity-approvals/:id/reject",
+  auth,
+  requireRole("SUPER_ADMIN"),
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const reason = String(req.body.reason || "").trim();
+
+      if (!isValidObjectId(id)) {
+        return res.status(400).json({ message: "Invalid activity id" });
+      }
+
+      const activity = await Activity.findById(id);
+
+      if (!activity) {
+        return res.status(404).json({ message: "Activity not found" });
+      }
+
+      activity.approvalStatus = "REJECTED";
+      activity.rejectedAt = new Date();
+      activity.rejectedBy = req.user?._id || null;
+      activity.rejectionReason = reason;
+
+      activity.approvedAt = null;
+      activity.approvedBy = null;
+
+      if (!activity.approvalRequestedAt) {
+        activity.approvalRequestedAt = activity.createdAt || new Date();
+      }
+
+      await activity.save();
+
+      const updated = await Activity.findById(activity._id)
+        .populate("academyId", "name logo city")
+        .populate("categoryId", "name slug")
+        .populate("approvedBy", "fullName name email")
+        .populate("rejectedBy", "fullName name email")
+        .lean();
+
+      return res.json({
+        message: "Activity rejected successfully",
+        activity: normalizeActivityApprovalForClient(updated),
       });
     } catch (error) {
       next(error);
