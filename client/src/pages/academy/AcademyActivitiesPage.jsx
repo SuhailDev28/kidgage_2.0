@@ -89,48 +89,76 @@ function getBestImage(item) {
 }
 
 function normalizeModesValue(value) {
-  if (Array.isArray(value)) {
-    return value
-      .flatMap((item) => {
-        if (Array.isArray(item)) return item;
+  const output = [];
 
-        if (typeof item === "string") {
-          const trimmed = item.trim();
+  function pushMode(item) {
+    const text = String(item || "").trim();
+    if (!text) return;
 
-          if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-            try {
-              const parsed = JSON.parse(trimmed);
-              return Array.isArray(parsed) ? parsed : [trimmed];
-            } catch {
-              return [trimmed];
-            }
-          }
+    const normalized = text
+      .replace(/_/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
 
-          return [trimmed];
-        }
+    if (!normalized) return;
 
-        return [];
-      })
-      .map((item) => String(item).trim())
-      .filter(Boolean);
+    const upper = normalized.toUpperCase();
+
+    if (upper === "ONLINE") output.push("Online");
+    else if (upper === "OFFLINE") output.push("Offline");
+    else if (upper === "HYBRID") output.push("Hybrid");
+    else if (upper === "BOTH") output.push("Both");
+    else output.push(normalized);
   }
 
-  if (typeof value === "string" && value.trim()) {
-    const trimmed = value.trim();
-
-    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-      try {
-        const parsed = JSON.parse(trimmed);
-        return normalizeModesValue(parsed);
-      } catch {
-        return [trimmed];
-      }
+  function walk(input) {
+    if (Array.isArray(input)) {
+      input.forEach(walk);
+      return;
     }
 
-    return [trimmed];
+    if (typeof input === "string") {
+      const trimmed = input.trim();
+
+      if (!trimmed) return;
+
+      if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          walk(parsed);
+          return;
+        } catch {
+          pushMode(trimmed);
+          return;
+        }
+      }
+
+      if (trimmed.includes(",")) {
+        trimmed.split(",").forEach(pushMode);
+        return;
+      }
+
+      pushMode(trimmed);
+      return;
+    }
+
+    if (input && typeof input === "object") {
+      pushMode(
+        input.mode ||
+          input.classMode ||
+          input.type ||
+          input.label ||
+          input.name ||
+          "",
+      );
+    }
   }
 
-  return [];
+  walk(value);
+
+  return Array.from(
+    new Map(output.map((item) => [item.toLowerCase(), item])).values(),
+  );
 }
 
 function formatDate(value) {
@@ -290,23 +318,32 @@ function Checkbox({ checked, onChange, label, description = "" }) {
   );
 }
 
-function ModeChips({ value }) {
+function ModeChips({ value, maxVisible = 3 }) {
   const list = normalizeModesValue(value);
 
   if (!list.length) {
     return <span className="text-sm text-slate-500">N/A</span>;
   }
 
+  const visible = list.slice(0, maxVisible);
+  const hiddenCount = Math.max(list.length - visible.length, 0);
+
   return (
-    <div className="flex flex-wrap gap-2">
-      {list.map((item, idx) => (
+    <div className="flex max-w-[240px] flex-wrap gap-2">
+      {visible.map((item) => (
         <span
-          key={`${item}-${idx}`}
+          key={item}
           className="inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-[#ff7a3d] ring-1 ring-orange-100"
         >
           {item}
         </span>
       ))}
+
+      {hiddenCount > 0 ? (
+        <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+          +{hiddenCount} more
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -1574,7 +1611,7 @@ function ViewCourseModal({ open, course, onClose }) {
                   Mode of Classes
                 </div>
                 <div className="mt-3">
-                  <ModeChips value={course.modes} />
+                  <ModeChips value={course.modes} maxVisible={3} />
                 </div>
               </div>
 
@@ -2413,7 +2450,7 @@ export default function AcademyActivitiesPage() {
         ) : (
           <>
             <div className="hidden overflow-x-auto xl:block">
-              <table className="w-full min-w-[1540px] border-collapse">
+              <table className="w-full min-w-[1320px] border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 text-left">
                     <th className="pb-4 pr-5 text-sm font-black text-slate-500">
@@ -2509,7 +2546,7 @@ export default function AcademyActivitiesPage() {
 
                         <td className="py-5 pr-5 align-top">
                           <div className="max-w-[240px]">
-                            <ModeChips value={course.modes} />
+                            <ModeChips value={course.modes} maxVisible={3} />
                           </div>
                         </td>
 
