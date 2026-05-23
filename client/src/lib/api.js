@@ -199,6 +199,7 @@ api.academySettlementDetails = function academySettlementDetails(id) {
     api.get(`/academy/settlements/${requireId(id, "Settlement ID")}`),
   );
 };
+
 /* -------------------------------------------------------------------------- */
 /* ACTIVITY PACKAGES / COURSE PACKAGES                                        */
 /* -------------------------------------------------------------------------- */
@@ -258,6 +259,47 @@ api.toggleActivityPackageStatus = function toggleActivityPackageStatus(
   );
 };
 
+/* -------------------------------------------------------------------------- */
+/* ACADEMY COURSE ATTENDANCE                                                  */
+/* -------------------------------------------------------------------------- */
+
+api.academyAttendanceCourses = function academyAttendanceCourses(params = {}) {
+  return unwrap(api.get(`/academy/attendance/courses${buildQuery(params)}`));
+};
+
+api.academyCourseAttendanceStudents =
+  function academyCourseAttendanceStudents(courseId, params = {}) {
+    return unwrap(
+      api.get(
+        `/academy/attendance/course/${requireId(
+          courseId,
+          "Course ID",
+        )}/students${buildQuery(params)}`,
+      ),
+    );
+  };
+
+api.markAcademyCourseAttendance = function markAcademyCourseAttendance(
+  payload = {},
+) {
+  return unwrap(api.post("/academy/attendance/mark", payload));
+};
+
+api.issueAcademyCourseCertificate = function issueAcademyCourseCertificate(
+  courseId,
+  bookingId,
+  payload = {},
+) {
+  return unwrap(
+    api.post(
+      `/academy/attendance/course/${requireId(
+        courseId,
+        "Course ID",
+      )}/certificate/${requireId(bookingId, "Booking ID")}`,
+      payload,
+    ),
+  );
+};
 /* -------------------------------------------------------------------------- */
 /* PUBLIC SETTINGS / CONTENT                                                  */
 /* -------------------------------------------------------------------------- */
@@ -378,6 +420,27 @@ api.rejectActivity = function rejectActivity(id, reason = "") {
   api.academySettlementSummary()
   api.academySettlements({ page: 1, limit: 20, status: "PAID" })
   api.academySettlementDetails(id)
+
+  Activity package helpers:
+  api.activityPackages({ page: 1, limit: 20, active: true })
+  api.activityPackageDetails(packageId)
+  api.createActivityPackage(payload)
+  api.updateActivityPackage(packageId, payload)
+  api.deleteActivityPackage(packageId)
+  api.toggleActivityPackageStatus(packageId, true)
+
+  Academy attendance helpers:
+  api.academyAttendanceCourses()
+  api.academyCourseAttendanceStudents(courseId, { date: "2026-05-23" })
+  api.markAcademyCourseAttendance({
+    courseId,
+    childId,
+    bookingId,
+    attendanceDate,
+    status: "PRESENT",
+    notes: "",
+  })
+  api.issueAcademyCourseCertificate(courseId, bookingId)
 
   Do not use:
   publicApi.get("/public/settings")

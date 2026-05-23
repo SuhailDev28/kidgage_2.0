@@ -54,6 +54,7 @@ import BookingEnquiriesPage from "../pages/academy/BookingEnquiriesPage.jsx";
 import AcademyProfilePage from "../pages/academy/AcademyProfilePage.jsx";
 import AcademySettingsPage from "../pages/academy/AcademySettingsPage.jsx";
 import AcademySettlementsPage from "../pages/academy/SettlementsPage.jsx";
+import AttendancePage from "../pages/academy/AttendancePage.jsx";
 
 /* Super Admin */
 import SuperAdminDashboardPage from "../pages/superadmin/DashboardPage.jsx";
@@ -233,6 +234,7 @@ export function AppRouter() {
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="profile" element={<AcademyProfilePage />} />
           <Route path="settings" element={<AcademySettingsPage />} />
+          <Route path="attendance" element={<AttendancePage />} />
 
           <Route path="*" element={<KidgageFallbackPage />} />
         </Route>

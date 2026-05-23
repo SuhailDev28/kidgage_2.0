@@ -28,6 +28,7 @@ import academySettingsRoutes from "./routes/academy.settings.routes.js";
 import emailRoutes from "./routes/email.routes.js";
 import socialAuthRoutes from "./routes/socialAuth.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
+import academyAttendanceRoutes from "./routes/academy.attendance.routes.js";
 
 export const app = express();
 
@@ -202,6 +203,7 @@ app.use("/api/super-admin", superAdminRoutes);
 app.use("/api/academy", academySettingsRoutes);
 app.use("/api/auth/social", socialAuthRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/academy/attendance", academyAttendanceRoutes);
 
 /* ---------------------------------
  * Payment routes
