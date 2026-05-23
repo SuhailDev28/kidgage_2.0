@@ -239,6 +239,30 @@ function toBool(value, fallback = false) {
   return fallback;
 }
 
+function hasBodyValue(body = {}, key) {
+  return (
+    Object.prototype.hasOwnProperty.call(body, key) &&
+    body[key] !== undefined &&
+    body[key] !== null &&
+    String(body[key]).trim() !== ""
+  );
+}
+
+function pickNumberFromBody(body = {}, keys = [], fallback = 0) {
+  for (const key of keys) {
+    if (hasBodyValue(body, key)) {
+      return toCount(body[key], fallback);
+    }
+  }
+
+  return fallback;
+}
+
+function hasAnyBodyValue(body = {}, keys = []) {
+  return keys.some((key) => hasBodyValue(body, key));
+}
+
+
 function safeJsonParse(value, fallback = null) {
   if (typeof value !== "string" || !value.trim()) return fallback;
 
@@ -873,7 +897,13 @@ function normalizeActivityForClient(item) {
 }
 
 function normalizePackageForClient(item) {
-  const bookingPattern = item.bookingPattern || "BOTH";
+  const bookingMode = normalizePackageBookingPattern(
+    item?.bookingMode || item?.bookingPattern || "BOTH",
+    "BOTH",
+  );
+
+  const minAge = toCount(item?.minAge, 0);
+  const maxAge = toCount(item?.maxAge, 18);
 
   return {
     _id: item._id,
@@ -890,14 +920,23 @@ function normalizePackageForClient(item) {
     validityDays: toCount(item.validityDays, 0),
     minSelectableSessions: toCount(item.minSelectableSessions, 0),
     maxSelectableSessions: toCount(item.maxSelectableSessions, 0),
-    bookingPattern,
-    bookingMode: bookingPattern,
+    bookingPattern: bookingMode,
+    bookingMode,
     description: item.description || "",
     price: Number(item.price || 0),
     currency: item.currency || "QAR",
 
-    minAge: toCount(item.minAge, 0),
-    maxAge: toCount(item.maxAge, 18),
+    // Package age is the real booking age limit for kids.
+    minAge,
+    maxAge,
+    ageLimitLabel:
+      minAge > 0 && maxAge > 0
+        ? `${minAge}-${maxAge} years`
+        : minAge > 0
+          ? `${minAge}+ years`
+          : maxAge > 0
+            ? `Up to ${maxAge} years`
+            : "All ages",
 
     isDefault: Boolean(item.isDefault),
     active: Boolean(item.active),
@@ -2084,15 +2123,24 @@ router.post("/activities/:id/packages", async (req, res, next) => {
       .trim()
       .toUpperCase();
 
-    const bookingPattern = normalizePackageBookingPattern(
+    const bookingMode = normalizePackageBookingPattern(
       req.body.bookingPattern ||
         req.body.bookingMode ||
         activity.bookingConfig?.bookingMode,
       "BOTH",
     );
 
-    const minAge = toCount(req.body.minAge, 0);
-    const maxAge = toCount(req.body.maxAge, 18);
+    const minAge = pickNumberFromBody(
+      req.body,
+      ["minAge", "minimumAge", "minChildAge", "childMinAge"],
+      toCount(activity.minAge, 0),
+    );
+
+    const maxAge = pickNumberFromBody(
+      req.body,
+      ["maxAge", "maximumAge", "maxChildAge", "childMaxAge"],
+      toCount(activity.maxAge, 18),
+    );
 
     if (minAge > maxAge) {
       return res.status(400).json({
@@ -2125,7 +2173,7 @@ router.post("/activities/:id/packages", async (req, res, next) => {
       validityDays: toCount(req.body.validityDays, 0),
       minSelectableSessions: toCount(req.body.minSelectableSessions, 0),
       maxSelectableSessions: toCount(req.body.maxSelectableSessions, 0),
-      bookingPattern,
+      bookingMode,
       description: String(req.body.description || "").trim(),
       price: toMoney(req.body.price, 0),
       currency: String(req.body.currency || activity.currency || "QAR").trim(),
@@ -2235,7 +2283,7 @@ router.put("/packages/:id", async (req, res, next) => {
       req.body.bookingPattern !== undefined ||
       req.body.bookingMode !== undefined
     ) {
-      pkg.bookingPattern = normalizePackageBookingPattern(
+      pkg.bookingMode = normalizePackageBookingPattern(
         req.body.bookingPattern ||
           req.body.bookingMode ||
           activity.bookingConfig?.bookingMode,
@@ -2255,15 +2303,21 @@ router.put("/packages/:id", async (req, res, next) => {
       pkg.currency = String(req.body.currency || "QAR").trim();
     }
 
-    if (req.body.minAge !== undefined) {
-      pkg.minAge = toCount(req.body.minAge, 0);
+    const minAgeKeys = ["minAge", "minimumAge", "minChildAge", "childMinAge"];
+    const maxAgeKeys = ["maxAge", "maximumAge", "maxChildAge", "childMaxAge"];
+
+    if (hasAnyBodyValue(req.body, minAgeKeys)) {
+      pkg.minAge = pickNumberFromBody(req.body, minAgeKeys, toCount(pkg.minAge, 0));
     }
 
-    if (req.body.maxAge !== undefined) {
-      pkg.maxAge = toCount(req.body.maxAge, 18);
+    if (hasAnyBodyValue(req.body, maxAgeKeys)) {
+      pkg.maxAge = pickNumberFromBody(req.body, maxAgeKeys, toCount(pkg.maxAge, 18));
     }
 
-    if (req.body.minAge !== undefined || req.body.maxAge !== undefined) {
+    if (
+      hasAnyBodyValue(req.body, minAgeKeys) ||
+      hasAnyBodyValue(req.body, maxAgeKeys)
+    ) {
       const minAge = Number(pkg.minAge ?? 0);
       const maxAge = Number(pkg.maxAge ?? 18);
 

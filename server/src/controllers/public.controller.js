@@ -719,6 +719,35 @@ function ensureChildFitsActivity(childAge, activity) {
   }
 }
 
+function formatPackageAgeLimit(activityPackage) {
+  const minAge = Number(activityPackage?.minAge || 0);
+  const maxAge = Number(activityPackage?.maxAge || 0);
+
+  if (minAge > 0 && maxAge > 0) return `${minAge}-${maxAge} years`;
+  if (minAge > 0) return `${minAge}+ years`;
+  if (maxAge > 0) return `up to ${maxAge} years`;
+
+  return "all ages";
+}
+
+function ensureChildFitsPackage(childAge, activityPackage) {
+  const minAge = Number(activityPackage?.minAge || 0);
+  const maxAge = Number(activityPackage?.maxAge || 0);
+  const ageLimit = formatPackageAgeLimit(activityPackage);
+
+  if (Number.isFinite(minAge) && minAge > 0 && childAge < minAge) {
+    throw badRequest(
+      `Child age ${childAge} is below the selected package age limit: ${ageLimit}`,
+    );
+  }
+
+  if (Number.isFinite(maxAge) && maxAge > 0 && childAge > maxAge) {
+    throw badRequest(
+      `Child age ${childAge} is above the selected package age limit: ${ageLimit}`,
+    );
+  }
+}
+
 function normalizeAllowedBookingMode(activity, requestedMode) {
   const allowed = String(activity?.bookingMode || "BOTH").toUpperCase();
   const requested = String(requestedMode || "").toUpperCase();
@@ -863,7 +892,30 @@ function normalizeActivityCard(item) {
 }
 
 function normalizePackage(item) {
-  const bookingPattern = item.bookingPattern || item.bookingMode || "BOTH";
+  const bookingMode = String(
+    item?.bookingMode || item?.bookingPattern || "BOTH",
+  ).toUpperCase();
+
+  const safeBookingMode = ["STRAIGHT", "FLEXIBLE", "BOTH"].includes(
+    bookingMode,
+  )
+    ? bookingMode
+    : "BOTH";
+
+  const minAge = Number(item?.minAge ?? 0);
+  const maxAge = Number(item?.maxAge ?? 18);
+
+  const safeMinAge = Number.isFinite(minAge) ? minAge : 0;
+  const safeMaxAge = Number.isFinite(maxAge) ? maxAge : 18;
+
+  const ageLimitLabel =
+    safeMinAge > 0 && safeMaxAge > 0
+      ? `${safeMinAge}-${safeMaxAge} years`
+      : safeMinAge > 0
+        ? `${safeMinAge}+ years`
+        : safeMaxAge > 0
+          ? `Up to ${safeMaxAge} years`
+          : "All ages";
 
   return {
     _id: item._id,
@@ -876,11 +928,17 @@ function normalizePackage(item) {
     validityDays: Number(item.validityDays || 0),
     minSelectableSessions: Number(item.minSelectableSessions || 0),
     maxSelectableSessions: Number(item.maxSelectableSessions || 0),
-    bookingPattern,
-    bookingMode: bookingPattern,
+    bookingPattern: safeBookingMode,
+    bookingMode: safeBookingMode,
     description: item.description || "",
     price: Number(item.price || 0),
     currency: item.currency || "QAR",
+
+    // Package age is the real child booking eligibility limit.
+    minAge: safeMinAge,
+    maxAge: safeMaxAge,
+    ageLimitLabel,
+
     isDefault: Boolean(item.isDefault),
     active: item.active !== false,
     displayOrder: Number(item.displayOrder || 0),
@@ -1531,7 +1589,7 @@ export async function createGuestBooking(req, res, next) {
       );
 
       const childAge = calcAge(body.guestChild.dob);
-      ensureChildFitsActivity(childAge, activity);
+      ensureChildFitsPackage(childAge, activityPackage);
 
       const { selectedSlots, requiredSessions } =
         await resolveGuestSelectedSlots({
@@ -1663,7 +1721,17 @@ export async function createGuestBooking(req, res, next) {
                   durationUnit: activityPackage.durationUnit || "",
                   sessionCount: Number(activityPackage.sessionCount || 0),
                   validityDays: Number(activityPackage.validityDays || 0),
-                  bookingPattern: activityPackage.bookingPattern || "",
+                  bookingPattern:
+                    activityPackage.bookingMode ||
+                    activityPackage.bookingPattern ||
+                    "",
+                  bookingMode:
+                    activityPackage.bookingMode ||
+                    activityPackage.bookingPattern ||
+                    "",
+                  minAge: Number(activityPackage.minAge || 0),
+                  maxAge: Number(activityPackage.maxAge || 0),
+                  ageLimitLabel: formatPackageAgeLimit(activityPackage),
                   price: Number(activityPackage.price || 0),
                   currency: activityPackage.currency || "QAR",
                 },
