@@ -7,7 +7,7 @@ import Booking from "../models/Booking.js";
 import CourseAttendance from "../models/CourseAttendance.js";
 import CourseCertificate from "../models/CourseCertificate.js";
 
-import { requireAuth } from "../middleware/auth.middleware.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = express.Router();
 
