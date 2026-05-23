@@ -31,6 +31,7 @@ import {
   ChevronDown,
   FileText,
   Landmark,
+  Award,
   X,
 } from "lucide-react";
 import { api } from "../lib/api.js";
@@ -93,6 +94,11 @@ const navItems = [
       { label: "Blogs", icon: Newspaper, to: "/super-admin/blogs" },
       { label: "Banners", icon: ImageIcon, to: "/super-admin/banners" },
       { label: "Categories", icon: Tags, to: "/super-admin/categories" },
+      {
+        label: "Certificate Templates",
+        icon: Award,
+        to: "/super-admin/certificate-templates",
+      },
       {
         label: "Legal Content",
         icon: FileText,
@@ -423,7 +429,9 @@ function SidebarLink({ item, collapsed, onClick, primaryColor }) {
     ? item.children.some((child) => location.pathname.startsWith(child.to))
     : false;
 
-  const isDirectActive = item.to ? location.pathname.startsWith(item.to) : false;
+  const isDirectActive = item.to
+    ? location.pathname.startsWith(item.to)
+    : false;
 
   const isActive = isDirectActive || isChildActive;
 
