@@ -966,8 +966,26 @@ router.get(
         ? status
         : "PENDING_APPROVAL";
 
-      const filter =
-        approvalStatus === "ALL" ? {} : { approvalStatus };
+      let filter = {};
+
+      if (approvalStatus === "PENDING_APPROVAL") {
+        // Backward-compatible: old activities created before the approval
+        // workflow may not have approvalStatus yet. Treat them as pending.
+        filter = {
+          $or: [
+            { approvalStatus: "PENDING_APPROVAL" },
+            { approvalStatus: { $exists: false } },
+            { approvalStatus: null },
+            { approvalStatus: "" },
+          ],
+        };
+      } else if (approvalStatus === "APPROVED") {
+        filter = { approvalStatus: "APPROVED" };
+      } else if (approvalStatus === "REJECTED") {
+        filter = { approvalStatus: "REJECTED" };
+      } else {
+        filter = {};
+      }
 
       if (req.query.academyId && isValidObjectId(req.query.academyId)) {
         filter.academyId = req.query.academyId;
@@ -1008,6 +1026,23 @@ router.get(
       }
 
       const counts = await Activity.aggregate([
+        {
+          $project: {
+            approvalStatus: {
+              $cond: [
+                {
+                  $or: [
+                    { $eq: ["$approvalStatus", null] },
+                    { $eq: ["$approvalStatus", ""] },
+                    { $not: ["$approvalStatus"] },
+                  ],
+                },
+                "PENDING_APPROVAL",
+                "$approvalStatus",
+              ],
+            },
+          },
+        },
         {
           $group: {
             _id: "$approvalStatus",
