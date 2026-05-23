@@ -92,13 +92,15 @@ function TemplatePreview({ template }) {
   );
 }
 
-function StatCard({ icon: Icon, label, value, tone = "primary" }) {
+function StatCard({ icon: Icon, label, value, tone = "blue" }) {
   const toneClass =
     tone === "green"
       ? "bg-emerald-50 text-emerald-700"
       : tone === "amber"
         ? "bg-amber-50 text-amber-700"
-        : "bg-blue-50 text-blue-700";
+        : tone === "purple"
+          ? "bg-violet-50 text-violet-700"
+          : "bg-blue-50 text-blue-700";
 
   return (
     <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -291,7 +293,6 @@ export default function CertificateTemplatesPage() {
       }}
     >
       <div className="mx-auto max-w-[1500px] space-y-6">
-        {/* Header */}
         <section className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm">
           <div className="relative p-6 sm:p-8">
             <div
@@ -359,7 +360,6 @@ export default function CertificateTemplatesPage() {
           </div>
         </section>
 
-        {/* Alerts */}
         {error ? (
           <div className="flex items-start gap-3 rounded-[22px] border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
@@ -374,7 +374,6 @@ export default function CertificateTemplatesPage() {
           </div>
         ) : null}
 
-        {/* Stats */}
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             icon={FileImage}
@@ -387,13 +386,21 @@ export default function CertificateTemplatesPage() {
             value={activeTemplate ? "Yes" : "No"}
             tone="green"
           />
-          <StatCard icon={FileImage} label="Image Templates" value={imageCount} />
-          <StatCard icon={FileText} label="PDF Templates" value={pdfCount} tone="amber" />
+          <StatCard
+            icon={FileImage}
+            label="Image Templates"
+            value={imageCount}
+            tone="purple"
+          />
+          <StatCard
+            icon={FileText}
+            label="PDF Templates"
+            value={pdfCount}
+            tone="amber"
+          />
         </section>
 
-        {/* Main grid */}
         <section className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
-          {/* Upload card */}
           <div className="rounded-[30px] border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between gap-4 border-b border-slate-100 p-6">
               <div>
@@ -498,7 +505,6 @@ export default function CertificateTemplatesPage() {
             </form>
           </div>
 
-          {/* Active preview */}
           <div className="rounded-[30px] border border-slate-200 bg-white shadow-sm">
             <div className="flex flex-col gap-4 border-b border-slate-100 p-6 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -506,8 +512,7 @@ export default function CertificateTemplatesPage() {
                   Active Template Preview
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  This background will be used for generated course completion
-                  certificates.
+                  This background will be used for generated certificates.
                 </p>
               </div>
 
@@ -572,7 +577,6 @@ export default function CertificateTemplatesPage() {
           </div>
         </section>
 
-        {/* Uploaded templates */}
         <section className="rounded-[30px] border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-col gap-4 border-b border-slate-100 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
