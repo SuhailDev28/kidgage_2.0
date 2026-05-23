@@ -163,6 +163,172 @@ function getDobConstraintsFromCourse(course = {}) {
   return { min, max };
 }
 
+function getPackageAgeMeta(pkg = {}, fallbackCourse = {}) {
+  const packageMeta = getCourseAgeMeta(pkg);
+  const courseMeta = getCourseAgeMeta(fallbackCourse);
+
+  const hasPackageAge =
+    packageMeta.minAge > 0 ||
+    packageMeta.maxAge > 0 ||
+    Boolean(packageMeta.label);
+
+  if (hasPackageAge) {
+    return packageMeta;
+  }
+
+  return courseMeta;
+}
+
+function getPackageAgeLimitLabel(pkg = {}, fallbackCourse = {}) {
+  const meta = getPackageAgeMeta(pkg, fallbackCourse);
+
+  return formatAgeRange(meta.minAge, meta.maxAge, meta.label || "All ages");
+}
+
+function getDobConstraintsFromPackage(pkg = {}, fallbackCourse = {}) {
+  const meta = getPackageAgeMeta(pkg, fallbackCourse);
+  const today = new Date();
+
+  let min = "";
+  let max = "";
+
+  if (meta.maxAge > 0) {
+    const earliestDob = new Date(today);
+    earliestDob.setFullYear(today.getFullYear() - meta.maxAge - 1);
+    earliestDob.setDate(earliestDob.getDate() + 1);
+    min = toDateInputValue(earliestDob);
+  }
+
+  if (meta.minAge > 0) {
+    const latestDob = new Date(today);
+    latestDob.setFullYear(today.getFullYear() - meta.minAge);
+    max = toDateInputValue(latestDob);
+  }
+
+  return { min, max };
+}
+
+function calculateAgeFromDob(dob) {
+  if (!dob) return null;
+
+  const birthDate = new Date(dob);
+  if (Number.isNaN(birthDate.getTime())) return null;
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age -= 1;
+  }
+
+  return age >= 0 ? age : null;
+}
+
+function getChildDob(child = {}) {
+  return pickFirstValue(child, [
+    "dob",
+    "dateOfBirth",
+    "birthDate",
+    "birthday",
+    "childDob",
+  ]);
+}
+
+function getChildAge(child = {}) {
+  const rawAge = pickFirstValue(child, [
+    "age",
+    "childAge",
+    "currentAge",
+  ]);
+
+  const age = Number(rawAge);
+
+  if (Number.isFinite(age) && age >= 0) {
+    return age;
+  }
+
+  return calculateAgeFromDob(getChildDob(child));
+}
+
+function isAgeNumberAllowedForPackage(age, pkg = {}, fallbackCourse = {}) {
+  if (!Number.isFinite(Number(age))) {
+    return {
+      ok: false,
+      age: null,
+      message: "Child age is missing or invalid.",
+    };
+  }
+
+  const safeAge = Number(age);
+  const meta = getPackageAgeMeta(pkg, fallbackCourse);
+
+  if (meta.minAge > 0 && safeAge < meta.minAge) {
+    return {
+      ok: false,
+      age: safeAge,
+      message: `Child age ${safeAge} is below the selected package age limit: ${getPackageAgeLimitLabel(
+        pkg,
+        fallbackCourse,
+      )}.`,
+    };
+  }
+
+  if (meta.maxAge > 0 && safeAge > meta.maxAge) {
+    return {
+      ok: false,
+      age: safeAge,
+      message: `Child age ${safeAge} is above the selected package age limit: ${getPackageAgeLimitLabel(
+        pkg,
+        fallbackCourse,
+      )}.`,
+    };
+  }
+
+  return { ok: true, age: safeAge, message: "" };
+}
+
+function isAgeAllowedForPackage(dob, pkg = {}, fallbackCourse = {}) {
+  const age = calculateAgeFromDob(dob);
+
+  if (age === null) {
+    return {
+      ok: false,
+      age: null,
+      message: "Child date of birth is missing or invalid.",
+    };
+  }
+
+  const meta = getPackageAgeMeta(pkg, fallbackCourse);
+
+  if (meta.minAge > 0 && age < meta.minAge) {
+    return {
+      ok: false,
+      age,
+      message: `Child age ${age} is below the selected package age limit: ${getPackageAgeLimitLabel(
+        pkg,
+        fallbackCourse,
+      )}.`,
+    };
+  }
+
+  if (meta.maxAge > 0 && age > meta.maxAge) {
+    return {
+      ok: false,
+      age,
+      message: `Child age ${age} is above the selected package age limit: ${getPackageAgeLimitLabel(
+        pkg,
+        fallbackCourse,
+      )}.`,
+    };
+  }
+
+  return { ok: true, age, message: "" };
+}
+
 function formatDateLabel(value) {
   if (!value) return "";
 
@@ -404,6 +570,10 @@ function PackageCard({ item, active, onClick, currency }) {
       <div className="mt-3 flex flex-wrap gap-2">
         <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
           {sessionCount} session{sessionCount > 1 ? "s" : ""}
+        </span>
+
+        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+          Age {formatAgeRange(item?.minAge, item?.maxAge)}
         </span>
       </div>
     </button>
@@ -1030,7 +1200,7 @@ function GuestBookingForm({
             className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-[#16A34A]"
           />
           <div className="mt-1 text-xs font-semibold text-slate-500">
-            Course age group: {courseAgeLabel}
+            Package age limit: {courseAgeLabel}
           </div>
         </div>
 
@@ -1152,13 +1322,13 @@ export default function ActivityDetailsPage() {
     );
   }, [activity, academy]);
 
-  const courseAgeLabel = useMemo(() => {
-    return getCourseAgeGroupLabel(activity || {});
-  }, [activity]);
+  const packageAgeLabel = useMemo(() => {
+    return getPackageAgeLimitLabel(selectedPackage || {}, activity || {});
+  }, [selectedPackage, activity]);
 
   const guestDobConstraints = useMemo(() => {
-    return getDobConstraintsFromCourse(activity || {});
-  }, [activity]);
+    return getDobConstraintsFromPackage(selectedPackage || {}, activity || {});
+  }, [selectedPackage, activity]);
 
   const currentDateSelectedSlotIds = useMemo(() => {
     const source =
@@ -1726,6 +1896,25 @@ export default function ActivityDetailsPage() {
         setError("Please select a child before confirming booking.");
         return;
       }
+
+      const selectedChild = children.find(
+        (child) => String(child._id || child.id || "") === String(selectedChildId),
+      );
+
+      const selectedChildAge = getChildAge(selectedChild || {});
+      const ageCheck = isAgeNumberAllowedForPackage(
+        selectedChildAge,
+        selectedPackage || {},
+        activity || {},
+      );
+
+      if (!ageCheck.ok) {
+        setError(
+          ageCheck.message ||
+            `Child age does not match the selected package age limit: ${packageAgeLabel}.`,
+        );
+        return;
+      }
     } else {
       if (!guestParentName.trim()) {
         setError("Parent full name is required.");
@@ -1753,12 +1942,12 @@ export default function ActivityDetailsPage() {
       }
 
       if (guestDobConstraints.min && guestChildDob < guestDobConstraints.min) {
-        setError(`Child age does not match this course age group: ${courseAgeLabel}.`);
+        setError(`Child age does not match the selected package age limit: ${packageAgeLabel}.`);
         return;
       }
 
       if (guestDobConstraints.max && guestChildDob > guestDobConstraints.max) {
-        setError(`Child age does not match this course age group: ${courseAgeLabel}.`);
+        setError(`Child age does not match the selected package age limit: ${packageAgeLabel}.`);
         return;
       }
 
@@ -2026,10 +2215,10 @@ export default function ActivityDetailsPage() {
                 <div className="rounded-2xl bg-slate-50 p-4">
                   <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
                     <Users className="h-4 w-4" />
-                    Age group
+                    Age limit
                   </div>
                   <div className="mt-2 text-base font-bold text-slate-900">
-                    {courseAgeLabel}
+                    {packageAgeLabel}
                   </div>
                 </div>
 
@@ -2432,7 +2621,7 @@ export default function ActivityDetailsPage() {
                     setGuestChildGender={setGuestChildGender}
                     guestNotes={guestNotes}
                     setGuestNotes={setGuestNotes}
-                    courseAgeLabel={courseAgeLabel}
+                    courseAgeLabel={packageAgeLabel}
                     dobMin={guestDobConstraints.min}
                     dobMax={guestDobConstraints.max}
                     onSignIn={handleProceedAuth}
