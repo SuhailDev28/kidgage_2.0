@@ -530,8 +530,9 @@ function buildBookingSuccessUrl(bookingId, guestToken = "") {
   return `/payment/success/${safeBookingId}${query ? `?${query}` : ""}`;
 }
 
-function PackageCard({ item, active, onClick, currency }) {
+function PackageCard({ item, active, onClick, currency, fallbackCourse }) {
   const sessionCount = getPackageSessionCount(item);
+  const ageLimitLabel = getPackageAgeLimitLabel(item, fallbackCourse || {});
 
   return (
     <button
@@ -573,7 +574,7 @@ function PackageCard({ item, active, onClick, currency }) {
         </span>
 
         <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
-          Age {formatAgeRange(item?.minAge, item?.maxAge)}
+          Age {ageLimitLabel}
         </span>
       </div>
     </button>
@@ -1289,7 +1290,8 @@ export default function ActivityDetailsPage() {
 
   const selectedPackage = useMemo(() => {
     return (
-      packages.find((item) => String(item._id) === selectedPackageId) || null
+      packages.find((item) => String(extractId(item)) === String(selectedPackageId)) ||
+      null
     );
   }, [packages, selectedPackageId]);
 
@@ -1338,7 +1340,7 @@ export default function ActivityDetailsPage() {
 
     return source
       .filter((slot) => getSlotDateKey(slot) === selectedDate)
-      .map((slot) => String(slot._id));
+      .map((slot) => String(extractId(slot)));
   }, [
     bookingMode,
     scheduleOpen,
@@ -1375,7 +1377,7 @@ export default function ActivityDetailsPage() {
           nextPackages[0] ||
           null;
 
-        setSelectedPackageId(defaultPackage ? String(defaultPackage._id) : "");
+        setSelectedPackageId(defaultPackage ? String(extractId(defaultPackage)) : "");
 
         const nextMode = normalizeBookingMode(nextActivity?.bookingMode);
 
@@ -1424,12 +1426,12 @@ export default function ActivityDetailsPage() {
         setSelectedChildId((prev) => {
           if (
             prev &&
-            rows.some((child) => String(child._id) === String(prev))
+            rows.some((child) => String(extractId(child)) === String(prev))
           ) {
             return prev;
           }
 
-          return rows[0]?._id ? String(rows[0]._id) : "";
+          return rows[0] ? String(extractId(rows[0])) : "";
         });
       } catch {
         if (!active) return;
@@ -1967,13 +1969,13 @@ export default function ActivityDetailsPage() {
           ? {
               packageId: selectedPackageId,
               bookingMode: "STRAIGHT",
-              slotId: selectedSlot._id,
-              slotIds: selectedStraightSlots.map((slot) => slot._id),
+              slotId: extractId(selectedSlot),
+              slotIds: selectedStraightSlots.map((slot) => extractId(slot)),
             }
           : {
               packageId: selectedPackageId,
               bookingMode: "FLEXIBLE",
-              slotIds: selectedFlexibleSlots.map((slot) => slot._id),
+              slotIds: selectedFlexibleSlots.map((slot) => extractId(slot)),
             };
 
       if (isParentLoggedIn) {
@@ -2279,11 +2281,12 @@ export default function ActivityDetailsPage() {
                 {packages.length > 0 ? (
                   packages.map((item) => (
                     <PackageCard
-                      key={item._id}
+                      key={extractId(item)}
                       item={item}
-                      active={selectedPackageId === String(item._id)}
-                      onClick={() => handleSelectPackage(item._id)}
+                      active={selectedPackageId === String(extractId(item))}
+                      onClick={() => handleSelectPackage(extractId(item))}
                       currency={currency}
+                      fallbackCourse={activity}
                     />
                   ))
                 ) : (
