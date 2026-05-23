@@ -45,7 +45,68 @@ function addDaysYmd(days = 30) {
   return `${y}-${m}-${day}`;
 }
 
-function normalizePackage(item, index = 0) {
+function firstUsableNumber(values = [], fallback = 0) {
+  for (const value of values) {
+    if (value === undefined || value === null || value === "") continue;
+
+    const n = Number(value);
+
+    if (Number.isFinite(n)) {
+      return n;
+    }
+  }
+
+  return fallback;
+}
+
+function getAgeRangeFromSource(source = {}, fallback = {}) {
+  const fallbackMin = firstUsableNumber(
+    [fallback.minAge, fallback.minimumAge, fallback.ageFrom, fallback.fromAge],
+    0,
+  );
+
+  const fallbackMax = firstUsableNumber(
+    [fallback.maxAge, fallback.maximumAge, fallback.ageTo, fallback.toAge],
+    18,
+  );
+
+  return {
+    minAge: firstUsableNumber(
+      [
+        source?.minAge,
+        source?.minimumAge,
+        source?.ageFrom,
+        source?.fromAge,
+        source?.ageMin,
+      ],
+      fallbackMin,
+    ),
+    maxAge: firstUsableNumber(
+      [
+        source?.maxAge,
+        source?.maximumAge,
+        source?.ageTo,
+        source?.toAge,
+        source?.ageMax,
+      ],
+      fallbackMax,
+    ),
+  };
+}
+
+function formatAgeRange(minAge, maxAge) {
+  const min = Number(minAge || 0);
+  const max = Number(maxAge || 0);
+
+  if (min && max) return `${min}-${max} years`;
+  if (min) return `${min}+ years`;
+  if (max) return `Up to ${max} years`;
+  return "All ages";
+}
+
+function normalizePackage(item, index = 0, activityFallback = null) {
+  const ageRange = getAgeRangeFromSource(item, activityFallback || {});
+
   return {
     ...item,
     id: item?.id || item?._id || `package-${index + 1}`,
@@ -63,8 +124,9 @@ function normalizePackage(item, index = 0) {
     description: item?.description || "",
     price: item?.price || 0,
     currency: item?.currency || "QAR",
-    minAge: item?.minAge ?? 0,
-    maxAge: item?.maxAge ?? 18,
+    minAge: ageRange.minAge,
+    maxAge: ageRange.maxAge,
+    ageGroup: item?.ageGroup || item?.ageRange || item?.ageLabel || "",
     isDefault: Boolean(item?.isDefault),
     active: item?.active !== false,
     displayOrder: item?.displayOrder || 0,
@@ -1076,15 +1138,21 @@ export default function ActivityPackagesSlotsPage() {
 
   async function loadActivity() {
     const { data } = await api.get(`/academy/activities/${id}`);
-    setActivity(data?.activity || null);
+    const nextActivity = data?.activity || null;
+
+    setActivity(nextActivity);
+
+    return nextActivity;
   }
 
-  async function loadPackages(silent = false) {
+  async function loadPackages(silent = false, activityFallback = activity) {
     try {
       if (!silent) setPackagesLoading(true);
 
       const { data } = await api.get(`/academy/activities/${id}/packages`);
-      const rows = toArray(data?.packages).map(normalizePackage);
+      const rows = toArray(data?.packages).map((item, index) =>
+        normalizePackage(item, index, activityFallback),
+      );
 
       setPackages(rows);
 
@@ -1121,7 +1189,9 @@ export default function ActivityPackagesSlotsPage() {
     try {
       setLoading(true);
       setError("");
-      await Promise.all([loadActivity(), loadPackages(true)]);
+
+      const nextActivity = await loadActivity();
+      await loadPackages(true, nextActivity);
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to load activity data.");
     } finally {
@@ -1146,12 +1216,14 @@ export default function ActivityPackagesSlotsPage() {
 
   function openCreatePackage() {
     setPackageModalMode("create");
+    const courseAgeRange = getAgeRangeFromSource(activity);
+
     setPackageForm({
       ...initialPackageForm,
       currency: activity?.currency || "QAR",
       bookingMode: activity?.bookingMode || "BOTH",
-      minAge: String(activity?.minAge ?? 0),
-      maxAge: String(activity?.maxAge ?? 18),
+      minAge: String(courseAgeRange.minAge),
+      maxAge: String(courseAgeRange.maxAge),
       sessionCount: String(activity?.totalSessions || 0),
       maxSelectableSessions: String(activity?.totalSessions || 0),
     });
@@ -1689,7 +1761,7 @@ export default function ActivityPackagesSlotsPage() {
                             </span>
 
                             <span className="rounded-full bg-white px-3 py-1 font-semibold text-slate-700 ring-1 ring-slate-200">
-                              Age {item.minAge ?? 0} - {item.maxAge ?? 18}
+                              Age {item.ageGroup || formatAgeRange(item.minAge, item.maxAge)}
                             </span>
                           </div>
 
@@ -1933,8 +2005,9 @@ export default function ActivityPackagesSlotsPage() {
               {selectedPackage.sessionCount || 0} sessions ·{" "}
               {selectedPackage.bookingMode ||
                 selectedPackage.bookingPattern ||
-                "BOTH"} · Age {selectedPackage.minAge ?? 0} -{" "}
-              {selectedPackage.maxAge ?? 18}
+                "BOTH"} · Age{" "}
+              {selectedPackage.ageGroup ||
+                formatAgeRange(selectedPackage.minAge, selectedPackage.maxAge)}
             </div>
           ) : null}
         </div>
