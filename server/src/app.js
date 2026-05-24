@@ -34,6 +34,7 @@ import socialAuthRoutes from "./routes/socialAuth.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import academyAttendanceRoutes from "./routes/academy.attendance.routes.js";
 import superAdminSmtpRoutes from "./routes/superadmin.smtp.routes.js";
+import superAdminEmailTemplatesRoutes from "./routes/superadmin.emailTemplates.routes.js";
 
 export const app = express();
 

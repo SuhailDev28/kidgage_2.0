@@ -430,6 +430,69 @@ api.testSuperAdminSmtpSettings = function testSuperAdminSmtpSettings(
   );
 };
 
+/* -------------------------------------------------------------------------- */
+/* SUPER ADMIN EMAIL TEMPLATES                                                */
+/* -------------------------------------------------------------------------- */
+
+api.superAdminEmailTemplates = function superAdminEmailTemplates(params = {}) {
+  return unwrap(api.get(`/super-admin/email-templates${buildQuery(params)}`));
+};
+
+api.superAdminEmailTemplateDetails = function superAdminEmailTemplateDetails(
+  id,
+) {
+  return unwrap(
+    api.get(`/super-admin/email-templates/${requireId(id, "Template ID")}`),
+  );
+};
+
+api.updateSuperAdminEmailTemplate = function updateSuperAdminEmailTemplate(
+  id,
+  payload = {},
+) {
+  return unwrap(
+    api.put(
+      `/super-admin/email-templates/${requireId(id, "Template ID")}`,
+      payload,
+    ),
+  );
+};
+
+api.previewSuperAdminEmailTemplate = function previewSuperAdminEmailTemplate(
+  id,
+  payload = {},
+) {
+  return unwrap(
+    api.post(
+      `/super-admin/email-templates/${requireId(id, "Template ID")}/preview`,
+      payload,
+    ),
+  );
+};
+
+api.testSuperAdminEmailTemplate = function testSuperAdminEmailTemplate(
+  id,
+  payload = {},
+) {
+  return unwrap(
+    api.post(
+      `/super-admin/email-templates/${requireId(id, "Template ID")}/test`,
+      payload,
+    ),
+  );
+};
+
+api.resetSuperAdminEmailTemplate = function resetSuperAdminEmailTemplate(id) {
+  return unwrap(
+    api.post(
+      `/super-admin/email-templates/${requireId(id, "Template ID")}/reset`,
+    ),
+  );
+};
+
+api.seedSuperAdminEmailTemplates = function seedSuperAdminEmailTemplates() {
+  return unwrap(api.post("/super-admin/email-templates/seed"));
+};
 /*
   Usage:
 

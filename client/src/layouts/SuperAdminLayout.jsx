@@ -141,6 +141,11 @@ const navItems = [
         icon: Mail,
         to: "/super-admin/smtp-settings",
       },
+      {
+        label: "Email Templates",
+        icon: Mail,
+        to: "/super-admin/email-templates",
+      },
     ],
   },
 ];

@@ -80,6 +80,7 @@ import ContentPagesManager from "../pages/superadmin/ContentPagesManager.jsx";
 import SuperAdminChildrenPage from "../pages/superadmin/ChildrenPage.jsx";
 import CertificateTemplatesPage from "../pages/superadmin/CertificateTemplatesPage.jsx";
 import SmtpSettingsPage from "../pages/superadmin/SmtpSettingsPage.jsx";
+import EmailTemplatesPage from "../pages/superadmin/EmailTemplatesPage.jsx";
 
 function SuperAdminGuard({ children }) {
   if (!isLoggedIn()) {
@@ -305,6 +306,7 @@ export function AppRouter() {
 
           <Route path="settings" element={<SettingsPage />} />
           <Route path="smtp-settings" element={<SmtpSettingsPage />} />
+          <Route path="email-templates" element={<EmailTemplatesPage />} />
 
           <Route path="*" element={<KidgageFallbackPage />} />
         </Route>
