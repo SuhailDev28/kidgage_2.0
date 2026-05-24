@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from "react";
+import { api } from "../../lib/api.js";
 
 const BRAND_PRIMARY = "#ec7a3b";
-const BRAND_PRIMARY_DARK = "#d9682f";
-const BRAND_SECONDARY = "#ffd84d";
-const BRAND_PURPLE = "#6557f5";
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+}
 
 export default function ContactPage() {
   const [form, setForm] = useState({
@@ -14,18 +16,21 @@ export default function ContactPage() {
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const isReady = useMemo(() => {
     return (
-      form.name.trim() &&
-      form.email.trim() &&
-      form.subject.trim() &&
-      form.message.trim()
+      form.name.trim().length >= 2 &&
+      isValidEmail(form.email) &&
+      form.subject.trim().length >= 2 &&
+      form.message.trim().length >= 5
     );
   }, [form]);
 
   function updateField(name, value) {
     setSubmitted(false);
+    setError("");
 
     setForm((prev) => ({
       ...prev,
@@ -33,19 +38,46 @@ export default function ContactPage() {
     }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
 
-    if (!isReady) return;
+    if (!isReady || submitting) {
+      setError("Please fill all fields with valid details.");
+      return;
+    }
 
-    setSubmitted(true);
+    try {
+      setSubmitting(true);
+      setSubmitted(false);
+      setError("");
 
-    setForm({
-      name: "",
-      email: "",
-      subject: "",
-      message: "",
-    });
+      const payload = {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        subject: form.subject.trim(),
+        message: form.message.trim(),
+      };
+
+      await api.post("/public/contact", payload);
+
+      setSubmitted(true);
+
+      setForm({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+      });
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        "Unable to send your message right now. Please try again.";
+
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -151,6 +183,12 @@ export default function ContactPage() {
               </div>
             ) : null}
 
+            {error ? (
+              <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
+                {error}
+              </div>
+            ) : null}
+
             <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label="Your name">
@@ -199,11 +237,13 @@ export default function ContactPage() {
 
               <button
                 type="submit"
-                disabled={!isReady}
+                disabled={!isReady || submitting}
                 className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#ec7a3b] px-6 py-4 text-sm font-black text-white shadow-sm transition hover:bg-[#d9682f] disabled:cursor-not-allowed disabled:bg-slate-300 sm:w-auto"
               >
-                Submit message
-                <span className="transition group-hover:translate-x-1">→</span>
+                {submitting ? "Sending..." : "Submit message"}
+                <span className="transition group-hover:translate-x-1">
+                  {submitting ? "⏳" : "→"}
+                </span>
               </button>
             </form>
           </div>
