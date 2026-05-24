@@ -95,10 +95,7 @@ function normalizeModesValue(value) {
     const text = String(item || "").trim();
     if (!text) return;
 
-    const normalized = text
-      .replace(/_/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
+    const normalized = text.replace(/_/g, " ").replace(/\s+/g, " ").trim();
 
     if (!normalized) return;
 
@@ -388,9 +385,10 @@ function BookingConfigSummary({ course }) {
   );
 }
 
-
 function getApprovalStatus(course = {}) {
-  return String(course?.approvalStatus || course?.raw?.approvalStatus || "PENDING_APPROVAL")
+  return String(
+    course?.approvalStatus || course?.raw?.approvalStatus || "PENDING_APPROVAL",
+  )
     .trim()
     .toUpperCase();
 }
@@ -2280,15 +2278,15 @@ export default function AcademyActivitiesPage() {
 
   return (
     <div className="min-h-screen w-full bg-[#fff8f4] px-4 py-5 text-slate-950 md:px-8 md:py-6">
-      <section className="relative overflow-hidden rounded-[36px] border border-orange-100 bg-gradient-to-br from-white via-orange-50/80 to-blue-50 p-6 shadow-sm">
+      <section className="relative overflow-hidden rounded-[36px] border border-orange-100 bg-gradient-to-br from-white via-orange-50/80 to-blue-50 p-5 shadow-sm sm:p-6">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-200/60 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 left-1/3 h-80 w-80 rounded-full bg-blue-200/50 blur-3xl" />
 
-        <div className="relative flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
-          <div className="flex-1">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-black uppercase tracking-[0.14em] text-[#ff7a3d] ring-1 ring-orange-100">
-              <Sparkles className="h-3.5 w-3.5" />
-              KidGage Program Management
+        <div className="relative grid gap-6 2xl:grid-cols-[0.95fr_1.05fr]">
+          <div className="min-w-0">
+            <div className="inline-flex max-w-full items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-black uppercase tracking-[0.14em] text-[#ff7a3d] ring-1 ring-orange-100">
+              <Sparkles className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">KidGage Program Management</span>
             </div>
 
             <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950">
@@ -2300,7 +2298,7 @@ export default function AcademyActivitiesPage() {
               parent-friendly KidGage workflow.
             </p>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
               <StatMini
                 icon={BookOpen}
                 label="Courses"
@@ -2339,7 +2337,7 @@ export default function AcademyActivitiesPage() {
             </div>
           </div>
 
-          <div className="flex w-full flex-col gap-4 xl:w-auto xl:min-w-[560px]">
+          <div className="flex w-full min-w-0 flex-col gap-4">
             <div className="relative">
               <Search className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
 
@@ -2352,13 +2350,13 @@ export default function AcademyActivitiesPage() {
               />
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[26px] border border-white bg-white/90 p-4 shadow-sm backdrop-blur">
-              <div>
-                <div className="text-base font-black text-slate-950">
+            <div className="flex flex-col gap-4 rounded-[26px] border border-white bg-white/90 p-4 shadow-sm backdrop-blur xl:flex-row xl:items-center xl:justify-between">
+              <div className="min-w-0">
+                <div className="truncate text-base font-black text-slate-950">
                   {academyName}
                 </div>
 
-                <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-slate-500">
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
                   <span className="inline-flex items-center gap-2">
                     <BookOpen className="h-4 w-4 text-[#ff7a3d]" />
                     {toNumber(publishedCount)} courses
@@ -2376,12 +2374,12 @@ export default function AcademyActivitiesPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex w-full flex-col gap-3 sm:flex-row xl:w-auto">
                 <button
                   type="button"
                   onClick={() => loadData({ silent: true })}
                   disabled={refreshing}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-slate-100 px-3 py-2.5 text-sm font-black text-slate-700 transition hover:bg-slate-200 disabled:opacity-60"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-200 disabled:opacity-60 sm:w-auto"
                 >
                   <RefreshCw
                     className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
@@ -2392,7 +2390,7 @@ export default function AcademyActivitiesPage() {
                 <button
                   type="button"
                   onClick={openCreateModal}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-[#ff7a3d] px-4 py-3 text-sm font-black text-white shadow-[0_14px_30px_rgba(255,122,61,0.25)] transition hover:bg-[#ec6f35]"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#ff7a3d] px-4 py-3 text-sm font-black text-white shadow-[0_14px_30px_rgba(255,122,61,0.25)] transition hover:bg-[#ec6f35] sm:w-auto"
                 >
                   <Plus className="h-4 w-4" />
                   Add Course
