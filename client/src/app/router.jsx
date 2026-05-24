@@ -79,7 +79,7 @@ import SuperAdminReportsPage from "../pages/superadmin/SuperAdminReportsPage.jsx
 import ContentPagesManager from "../pages/superadmin/ContentPagesManager.jsx";
 import SuperAdminChildrenPage from "../pages/superadmin/ChildrenPage.jsx";
 import CertificateTemplatesPage from "../pages/superadmin/CertificateTemplatesPage.jsx";
-import SmtpSettingsPage from "./pages/superadmin/SmtpSettingsPage.jsx";
+import SmtpSettingsPage from "../pages/superadmin/SmtpSettingsPage.jsx";
 
 function SuperAdminGuard({ children }) {
   if (!isLoggedIn()) {
@@ -161,13 +161,11 @@ export function AppRouter() {
           />
           <Route path="/payment/myfatoorah" element={<MyFatoorahEmbedPage />} />
 
-          {/* Specific success route must stay available for BookingSuccessPage */}
           <Route
             path="/payment/success/:bookingId"
             element={<BookingSuccessPage />}
           />
 
-          {/* Optional aliases for safer redirects */}
           <Route
             path="/payment/booking-success/:bookingId"
             element={<BookingSuccessPage />}
@@ -177,7 +175,6 @@ export function AppRouter() {
             element={<BookingSuccessPage />}
           />
 
-          {/* Generic payment result pages */}
           <Route
             path="/payment/success"
             element={<PaymentResultPage type="success" />}
@@ -272,6 +269,7 @@ export function AppRouter() {
             path="activity-approvals"
             element={<ActivityApprovalsPage />}
           />
+
           <Route path="bookings" element={<SuperAdminBookingEnquiriesPage />} />
           <Route path="parents" element={<SuperAdminParentsPage />} />
           <Route path="children" element={<SuperAdminChildrenPage />} />
@@ -288,17 +286,15 @@ export function AppRouter() {
           <Route path="blogs" element={<KidgageNewsPage />} />
           <Route path="banners" element={<BannersPage />} />
           <Route path="categories" element={<CategoriesPage />} />
-          <Route path="requests" element={<RequestsPage />} />
-          <Route
-            path="/super-admin/smtp-settings"
-            element={<SmtpSettingsPage />}
-          />
 
           <Route
             path="certificate-templates"
             element={<CertificateTemplatesPage />}
           />
 
+          <Route path="content-pages" element={<ContentPagesManager />} />
+
+          <Route path="requests" element={<RequestsPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="reports" element={<SuperAdminReportsPage />} />
 
@@ -307,11 +303,12 @@ export function AppRouter() {
             element={<SuperAdminPlaceholderPage title="Audit Logs" />}
           />
 
-          <Route path="content-pages" element={<ContentPagesManager />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="smtp-settings" element={<SmtpSettingsPage />} />
 
           <Route path="*" element={<KidgageFallbackPage />} />
         </Route>
+
         {/* GLOBAL FALLBACK */}
         <Route path="*" element={<KidgageFallbackPage />} />
       </Routes>
