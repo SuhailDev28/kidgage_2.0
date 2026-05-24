@@ -17,6 +17,7 @@ import Activity from "../models/Activity.js";
 import ContactMessage from "../models/ContactMessage.js";
 
 import { notifyAcademyRegistrationSubmitted } from "../services/notification.service.js";
+import { sendKidgageEmail } from "../services/email/smtp.service.js";
 
 import {
   academyDetails,
@@ -82,6 +83,15 @@ const registrationUpload = multer({
  * -------------------------------- */
 function isValidObjectId(value) {
   return mongoose.Types.ObjectId.isValid(String(value || ""));
+}
+
+function escapeHtml(value = "") {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 const PUBLIC_ACTIVITY_FILTER = {
@@ -876,9 +886,85 @@ router.post("/contact", async (req, res, next) => {
         "",
     });
 
+    let emailSent = false;
+    let emailError = "";
+
+    try {
+      const appSettings =
+        (await AppSetting.findOne({ key: "GLOBAL" }).lean()) ||
+        (await AppSetting.findOne({}).sort({ createdAt: -1 }).lean()) ||
+        {};
+
+      const receiverEmail =
+        String(appSettings.contactEmail || "").trim() ||
+        String(process.env.CONTACT_RECEIVER_EMAIL || "").trim();
+
+      if (!receiverEmail) {
+        throw new Error(
+          "Contact receiver email is not configured. Set Contact Email in Platform Settings or CONTACT_RECEIVER_EMAIL in Render env.",
+        );
+      }
+
+      await sendKidgageEmail({
+        to: receiverEmail,
+        replyTo: email,
+        subject: `KidGage Contact Form: ${subject}`,
+        text: `
+New contact message from KidGage
+
+Name: ${name}
+Email: ${email}
+Subject: ${subject}
+
+Message:
+${message}
+        `.trim(),
+        html: `
+          <div style="font-family:Arial,sans-serif;background:#f8fafc;padding:24px;color:#0f172a">
+            <div style="max-width:680px;margin:auto;background:#ffffff;border-radius:18px;padding:24px;border:1px solid #e2e8f0">
+              <h2 style="margin:0 0 12px;color:#ec7a3b">New Contact Message</h2>
+
+              <table style="width:100%;border-collapse:collapse;margin-top:16px">
+                <tr>
+                  <td style="padding:8px 0;font-weight:bold;width:120px">Name</td>
+                  <td style="padding:8px 0">${escapeHtml(name)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;font-weight:bold">Email</td>
+                  <td style="padding:8px 0">${escapeHtml(email)}</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 0;font-weight:bold">Subject</td>
+                  <td style="padding:8px 0">${escapeHtml(subject)}</td>
+                </tr>
+              </table>
+
+              <div style="margin-top:20px;padding:16px;border-radius:14px;background:#fff7ed;border:1px solid #fed7aa">
+                <div style="font-weight:bold;margin-bottom:8px">Message</div>
+                <div style="white-space:pre-line;line-height:1.6">${escapeHtml(message)}</div>
+              </div>
+
+              <p style="margin-top:18px;font-size:12px;color:#64748b">
+                Reply directly to this email to contact ${escapeHtml(name)}.
+              </p>
+            </div>
+          </div>
+        `,
+      });
+
+      emailSent = true;
+    } catch (mailError) {
+      emailError = mailError?.message || "Email sending failed.";
+      console.error("Contact email send error:", mailError);
+    }
+
     return res.status(201).json({
       success: true,
-      message: "Your message has been received.",
+      message: emailSent
+        ? "Your message has been received and emailed."
+        : "Your message has been received, but email delivery failed.",
+      emailSent,
+      emailError,
       contactMessage,
     });
   } catch (error) {
