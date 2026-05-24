@@ -39,11 +39,13 @@ function isPublicUrl(url = "") {
     text.startsWith("/legal") ||
     text.startsWith("/terms") ||
     text.startsWith("/privacy") ||
+    text.startsWith("/contact") ||
     text.includes("/public/settings") ||
     text.includes("/public/content-pages") ||
     text.includes("/public/legal") ||
     text.includes("/public/terms") ||
-    text.includes("/public/privacy")
+    text.includes("/public/privacy") ||
+    text.includes("/public/contact")
   );
 }
 
@@ -209,9 +211,7 @@ api.activityPackages = function activityPackages(params = {}) {
 };
 
 api.activityPackageDetails = function activityPackageDetails(id) {
-  return unwrap(
-    api.get(`/activity-packages/${requireId(id, "Package ID")}`),
-  );
+  return unwrap(api.get(`/activity-packages/${requireId(id, "Package ID")}`));
 };
 
 api.createActivityPackage = function createActivityPackage(payload = {}) {
@@ -267,17 +267,19 @@ api.academyAttendanceCourses = function academyAttendanceCourses(params = {}) {
   return unwrap(api.get(`/academy/attendance/courses${buildQuery(params)}`));
 };
 
-api.academyCourseAttendanceStudents =
-  function academyCourseAttendanceStudents(courseId, params = {}) {
-    return unwrap(
-      api.get(
-        `/academy/attendance/course/${requireId(
-          courseId,
-          "Course ID",
-        )}/students${buildQuery(params)}`,
-      ),
-    );
-  };
+api.academyCourseAttendanceStudents = function academyCourseAttendanceStudents(
+  courseId,
+  params = {},
+) {
+  return unwrap(
+    api.get(
+      `/academy/attendance/course/${requireId(
+        courseId,
+        "Course ID",
+      )}/students${buildQuery(params)}`,
+    ),
+  );
+};
 
 api.markAcademyCourseAttendance = function markAcademyCourseAttendance(
   payload = {},
@@ -300,6 +302,7 @@ api.issueAcademyCourseCertificate = function issueAcademyCourseCertificate(
     ),
   );
 };
+
 /* -------------------------------------------------------------------------- */
 /* PUBLIC SETTINGS / CONTENT                                                  */
 /* -------------------------------------------------------------------------- */
@@ -345,6 +348,36 @@ publicApi.privacy = function publicPrivacyViaPublicApi() {
 };
 
 /* -------------------------------------------------------------------------- */
+/* PUBLIC CONTACT                                                             */
+/* -------------------------------------------------------------------------- */
+
+api.publicContact = function publicContact(payload = {}) {
+  const body = {
+    name: String(payload.name || "").trim(),
+    email: String(payload.email || "")
+      .trim()
+      .toLowerCase(),
+    subject: String(payload.subject || "").trim(),
+    message: String(payload.message || "").trim(),
+  };
+
+  return unwrap(api.post("/public/contact", body));
+};
+
+publicApi.contact = function publicContactViaPublicApi(payload = {}) {
+  const body = {
+    name: String(payload.name || "").trim(),
+    email: String(payload.email || "")
+      .trim()
+      .toLowerCase(),
+    subject: String(payload.subject || "").trim(),
+    message: String(payload.message || "").trim(),
+  };
+
+  return unwrap(publicApi.post("/contact", body));
+};
+
+/* -------------------------------------------------------------------------- */
 /* SUPER ADMIN ACTIVITY APPROVALS                                             */
 /* -------------------------------------------------------------------------- */
 
@@ -359,10 +392,7 @@ api.superAdminActivityApprovals = function superAdminActivityApprovals(
 api.approveActivity = function approveActivity(id) {
   return unwrap(
     api.patch(
-      `/super-admin/activity-approvals/${requireId(
-        id,
-        "Activity ID",
-      )}/approve`,
+      `/super-admin/activity-approvals/${requireId(id, "Activity ID")}/approve`,
     ),
   );
 };
@@ -370,10 +400,7 @@ api.approveActivity = function approveActivity(id) {
 api.rejectActivity = function rejectActivity(id, reason = "") {
   return unwrap(
     api.patch(
-      `/super-admin/activity-approvals/${requireId(
-        id,
-        "Activity ID",
-      )}/reject`,
+      `/super-admin/activity-approvals/${requireId(id, "Activity ID")}/reject`,
       { reason },
     ),
   );
@@ -397,6 +424,21 @@ api.rejectActivity = function rejectActivity(id, reason = "") {
   publicApi.settings()
   api.publicContentPage("privacy-policy")
   publicApi.contentPage("terms-and-conditions")
+
+  Public contact helpers:
+  api.publicContact({
+    name: "Parent Name",
+    email: "parent@example.com",
+    subject: "Booking help",
+    message: "I need help with my booking.",
+  })
+
+  publicApi.contact({
+    name: "Parent Name",
+    email: "parent@example.com",
+    subject: "Booking help",
+    message: "I need help with my booking.",
+  })
 
   Super admin activity approval helpers:
   api.superAdminActivityApprovals({ status: "PENDING_APPROVAL" })
