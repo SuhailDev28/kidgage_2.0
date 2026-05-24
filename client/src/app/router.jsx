@@ -79,6 +79,7 @@ import SuperAdminReportsPage from "../pages/superadmin/SuperAdminReportsPage.jsx
 import ContentPagesManager from "../pages/superadmin/ContentPagesManager.jsx";
 import SuperAdminChildrenPage from "../pages/superadmin/ChildrenPage.jsx";
 import CertificateTemplatesPage from "../pages/superadmin/CertificateTemplatesPage.jsx";
+import SmtpSettingsPage from "./pages/superadmin/SmtpSettingsPage.jsx";
 
 function SuperAdminGuard({ children }) {
   if (!isLoggedIn()) {
@@ -288,6 +289,10 @@ export function AppRouter() {
           <Route path="banners" element={<BannersPage />} />
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="requests" element={<RequestsPage />} />
+          <Route
+            path="/super-admin/smtp-settings"
+            element={<SmtpSettingsPage />}
+          />
 
           <Route
             path="certificate-templates"

@@ -14,6 +14,7 @@ import {
   UserCog,
   CreditCard,
   Bell,
+  Mail,
   CheckCheck,
   Clock,
   ExternalLink,
@@ -126,7 +127,22 @@ const navItems = [
     ],
   },
 
-  { label: "Settings", icon: Settings, to: "/super-admin/settings" },
+  {
+    label: "Settings",
+    icon: Settings,
+    children: [
+      {
+        label: "Platform Settings",
+        icon: Settings,
+        to: "/super-admin/settings",
+      },
+      {
+        label: "SMTP Settings",
+        icon: Mail,
+        to: "/super-admin/smtp-settings",
+      },
+    ],
+  },
 ];
 
 function readInitialCollapsed() {

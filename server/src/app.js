@@ -33,6 +33,7 @@ import emailRoutes from "./routes/email.routes.js";
 import socialAuthRoutes from "./routes/socialAuth.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import academyAttendanceRoutes from "./routes/academy.attendance.routes.js";
+import superAdminSmtpRoutes from "./routes/superadmin.smtp.routes.js";
 
 export const app = express();
 
@@ -40,8 +41,7 @@ export const app = express();
  * CORS
  * -------------------------------- */
 const allowedOrigins = (
-  process.env.CLIENT_URL ||
-  "http://localhost:5173,http://127.0.0.1:5173"
+  process.env.CLIENT_URL || "http://localhost:5173,http://127.0.0.1:5173"
 )
   .split(",")
   .map((v) => v.trim())
@@ -191,6 +191,7 @@ app.use("/api/academy", academySettingsRoutes);
 app.use("/api/auth/social", socialAuthRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/academy/attendance", academyAttendanceRoutes);
+app.use("/api/super-admin", superAdminSmtpRoutes);
 
 /* ---------------------------------
  * Payment routes

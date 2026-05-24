@@ -406,6 +406,30 @@ api.rejectActivity = function rejectActivity(id, reason = "") {
   );
 };
 
+/* -------------------------------------------------------------------------- */
+/* SUPER ADMIN SMTP SETTINGS                                                  */
+/* -------------------------------------------------------------------------- */
+
+api.superAdminSmtpSettings = function superAdminSmtpSettings() {
+  return unwrap(api.get("/super-admin/smtp-settings"));
+};
+
+api.updateSuperAdminSmtpSettings = function updateSuperAdminSmtpSettings(
+  payload = {},
+) {
+  return unwrap(api.put("/super-admin/smtp-settings", payload));
+};
+
+api.testSuperAdminSmtpSettings = function testSuperAdminSmtpSettings(
+  testEmail,
+) {
+  return unwrap(
+    api.post("/super-admin/smtp-settings/test", {
+      testEmail: String(testEmail || "").trim(),
+    }),
+  );
+};
+
 /*
   Usage:
 
