@@ -5,6 +5,7 @@ import {
   AlertCircle,
   ArrowRight,
   Building2,
+  CalendarDays,
   CheckCircle2,
   FileText,
   Globe2,
@@ -101,6 +102,30 @@ function hexToRgb(hex, fallback = "236, 122, 59") {
   return `${r}, ${g}, ${b}`;
 }
 
+function getCompletionPercent(form) {
+  const requiredFields = [
+    form.academyName,
+    form.location,
+    form.bio,
+    form.address,
+    form.crNumber,
+    form.phone,
+    form.email,
+    form.fullName,
+    form.designation,
+  ];
+
+  const completed = requiredFields.filter((value) =>
+    String(value || "").trim(),
+  ).length;
+
+  const agreement = form.agreed ? 1 : 0;
+
+  return Math.round(
+    ((completed + agreement) / (requiredFields.length + 1)) * 100,
+  );
+}
+
 function Field({
   label,
   name,
@@ -114,23 +139,20 @@ function Field({
   primaryRgb = "236, 122, 59",
 }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <div className="mb-2 flex items-center gap-1.5 text-sm font-black text-slate-800">
         {label}
         {required ? <span style={{ color: primary }}>*</span> : null}
       </div>
 
       <div
-        className="group flex h-[56px] items-center gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 transition focus-within:bg-white focus-within:ring-4"
+        className="group flex h-[56px] min-w-0 items-center gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 transition focus-within:bg-white focus-within:ring-4"
         style={{
           "--tw-ring-color": `rgba(${primaryRgb}, 0.14)`,
         }}
       >
         {Icon ? (
-          <Icon
-            className="h-5 w-5 shrink-0 text-slate-400 transition group-focus-within:text-slate-700"
-            style={{ color: undefined }}
-          />
+          <Icon className="h-5 w-5 shrink-0 text-slate-400 transition group-focus-within:text-slate-700" />
         ) : null}
 
         <input
@@ -139,7 +161,7 @@ function Field({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className="h-full w-full bg-transparent text-sm font-semibold text-slate-800 outline-none placeholder:font-normal placeholder:text-slate-400"
+          className="h-full min-w-0 flex-1 bg-transparent text-sm font-semibold text-slate-800 outline-none placeholder:font-normal placeholder:text-slate-400"
           onFocus={(e) => {
             e.currentTarget.parentElement.style.borderColor = primary;
           }}
@@ -164,7 +186,7 @@ function TextArea({
   primaryRgb = "236, 122, 59",
 }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <div className="mb-2 flex items-center gap-1.5 text-sm font-black text-slate-800">
         {label}
         {required ? <span style={{ color: primary }}>*</span> : null}
@@ -176,7 +198,7 @@ function TextArea({
         onChange={onChange}
         placeholder={placeholder}
         rows={rows}
-        className="w-full rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-semibold text-slate-800 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:bg-white focus:ring-4"
+        className="w-full resize-none rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-semibold text-slate-800 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:bg-white focus:ring-4"
         style={{
           "--tw-ring-color": `rgba(${primaryRgb}, 0.14)`,
         }}
@@ -198,15 +220,21 @@ function FileField({
   fileName,
   required = false,
   primary = DEFAULT_THEME.primaryColor,
+  primaryRgb = "236, 122, 59",
 }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <div className="mb-2 flex items-center gap-1.5 text-sm font-black text-slate-800">
         {label}
         {required ? <span style={{ color: primary }}>*</span> : null}
       </div>
 
-      <div className="rounded-[20px] border border-dashed border-slate-300 bg-slate-50 p-4 transition hover:bg-white">
+      <div
+        className="rounded-[22px] border border-dashed border-slate-300 bg-slate-50 p-4 transition hover:bg-white hover:shadow-sm"
+        style={{
+          boxShadow: fileName ? `0 0 0 4px rgba(${primaryRgb}, 0.08)` : "",
+        }}
+      >
         <div className="flex items-start gap-3">
           <div
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white"
@@ -219,8 +247,9 @@ function FileField({
             <div className="text-sm font-black text-slate-800">
               Upload CR document
             </div>
+
             <div className="mt-1 text-xs leading-5 text-slate-500">
-              PDF format only. Keep file size reasonable for faster upload.
+              PDF format only. This helps KidGage verify your provider request.
             </div>
 
             <input
@@ -252,11 +281,57 @@ function InfoCard({ icon: Icon, title, text }) {
           <Icon className="h-5 w-5" />
         </div>
 
-        <div>
+        <div className="min-w-0">
           <div className="text-sm font-black text-white">{title}</div>
           <div className="mt-1 text-xs leading-5 text-white/80">{text}</div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function FormSection({ icon: Icon, title, subtitle, children, primary }) {
+  return (
+    <section className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5 md:p-6">
+      <div className="mb-5 flex items-start gap-3">
+        <div
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white"
+          style={{ backgroundColor: primary }}
+        >
+          <Icon className="h-5 w-5" />
+        </div>
+
+        <div className="min-w-0">
+          <h3 className="text-lg font-black leading-tight text-slate-900">
+            {title}
+          </h3>
+          <p className="mt-1 text-sm leading-6 text-slate-500">{subtitle}</p>
+        </div>
+      </div>
+
+      {children}
+    </section>
+  );
+}
+
+function StepBadge({ number, title, active = false, primary }) {
+  return (
+    <div
+      className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${
+        active ? "bg-white" : "bg-white/60"
+      }`}
+      style={{
+        borderColor: active ? primary : "rgba(226,232,240,1)",
+      }}
+    >
+      <div
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-black text-white"
+        style={{ backgroundColor: primary }}
+      >
+        {number}
+      </div>
+
+      <div className="min-w-0 text-sm font-black text-slate-800">{title}</div>
     </div>
   );
 }
@@ -271,6 +346,7 @@ export default function AcademyRegisterPage() {
   const primary = theme.primaryColor || DEFAULT_THEME.primaryColor;
   const secondary = theme.secondaryColor || DEFAULT_THEME.secondaryColor;
   const primaryRgb = useMemo(() => hexToRgb(primary), [primary]);
+  const progress = useMemo(() => getCompletionPercent(form), [form]);
 
   const isValid = useMemo(() => {
     return (
@@ -292,8 +368,6 @@ export default function AcademyRegisterPage() {
 
     async function loadSettings() {
       const endpoints = [
-        () => publicApi.get("/public/settings"),
-        () => publicApi.get("/settings/public"),
         () => publicApi.get("/settings"),
         () => api.get("/public/settings"),
       ];
@@ -301,6 +375,7 @@ export default function AcademyRegisterPage() {
       for (const request of endpoints) {
         try {
           const res = await request();
+
           if (!mounted) return;
 
           setTheme(normalizeSettingsPayload(res.data));
@@ -388,14 +463,14 @@ export default function AcademyRegisterPage() {
 
   return (
     <section
-      className="min-h-[calc(100vh-90px)] px-3 py-6 sm:px-5 sm:py-8 lg:px-8 lg:py-12"
+      className="min-h-[100svh] overflow-x-hidden px-0 py-0 sm:px-5 sm:py-6 md:px-6 md:py-8 lg:px-8 lg:py-10"
       style={{
         background: `radial-gradient(circle at top left, rgba(${primaryRgb}, 0.15), transparent 34%), radial-gradient(circle at bottom right, ${secondary}33, transparent 30%), linear-gradient(180deg, #fff7ed 0%, #ffffff 42%, #f8fafc 100%)`,
       }}
     >
-      <div className="mx-auto grid w-full max-w-[1220px] overflow-hidden rounded-[30px] border border-white/70 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.12)] lg:grid-cols-[0.9fr_1.1fr]">
+      <div className="mx-auto grid w-full max-w-[1240px] overflow-hidden rounded-none border border-white/70 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.12)] sm:rounded-[30px] xl:grid-cols-[0.88fr_1.12fr]">
         <aside
-          className="relative hidden overflow-hidden p-8 text-white lg:flex lg:flex-col lg:justify-between xl:p-10"
+          className="relative hidden overflow-hidden p-8 text-white xl:flex xl:flex-col xl:justify-between xl:p-10"
           style={{ backgroundColor: primary }}
         >
           <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
@@ -407,17 +482,18 @@ export default function AcademyRegisterPage() {
           <div className="absolute bottom-40 left-10 h-16 w-16 rounded-full border border-white/15" />
 
           <div className="relative">
-            <div className="inline-flex items-center gap-3 rounded-full bg-white/15 px-4 py-2 text-sm font-black uppercase tracking-[0.16em] text-white backdrop-blur">
+            <div className="inline-flex max-w-full items-center gap-3 rounded-full bg-white/15 px-4 py-2 text-sm font-black uppercase tracking-[0.16em] text-white backdrop-blur">
               {theme.logo ? (
                 <img
                   src={theme.logo}
                   alt={theme.siteName}
-                  className="h-6 w-6 rounded-lg object-contain"
+                  className="h-6 w-6 shrink-0 rounded-lg object-contain"
                 />
               ) : (
-                <Sparkles className="h-4 w-4" />
+                <Sparkles className="h-4 w-4 shrink-0" />
               )}
-              {theme.siteName}
+
+              <span className="truncate">{theme.siteName}</span>
             </div>
 
             <h1 className="mt-8 max-w-md text-4xl font-black leading-tight tracking-tight xl:text-5xl">
@@ -438,7 +514,7 @@ export default function AcademyRegisterPage() {
               />
 
               <InfoCard
-                icon={CalendarDaysIcon}
+                icon={CalendarDays}
                 title="Activity bookings"
                 text="Create activities, packages, and available slots after approval."
               />
@@ -467,36 +543,38 @@ export default function AcademyRegisterPage() {
           </div>
         </aside>
 
-        <div className="p-4 sm:p-6 md:p-8 lg:p-10">
-          <div className="mx-auto max-w-[760px]">
-            <div className="mb-8 flex items-center gap-3 lg:hidden">
-              <div
-                className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl text-white"
-                style={{ backgroundColor: primary }}
-              >
-                {theme.logo ? (
-                  <img
-                    src={theme.logo}
-                    alt={theme.siteName}
-                    className="h-full w-full object-contain p-1.5"
-                  />
-                ) : (
-                  <Sparkles className="h-6 w-6" />
-                )}
-              </div>
-
-              <div>
-                <div className="text-2xl font-black tracking-tight text-slate-900">
-                  {theme.siteName}
+        <div className="min-w-0 px-5 py-7 sm:p-6 md:p-8 lg:p-10">
+          <div className="mx-auto max-w-[820px] min-w-0">
+            <div className="mb-7 xl:hidden">
+              <div className="flex min-w-0 items-center gap-3 overflow-hidden">
+                <div
+                  className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-white"
+                  style={{ backgroundColor: primary }}
+                >
+                  {theme.logo ? (
+                    <img
+                      src={theme.logo}
+                      alt={theme.siteName}
+                      className="h-full w-full object-contain p-1.5"
+                    />
+                  ) : (
+                    <Sparkles className="h-6 w-6" />
+                  )}
                 </div>
-                <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-                  Provider onboarding
+
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  <div className="truncate text-2xl font-black tracking-tight text-slate-900">
+                    {theme.siteName}
+                  </div>
+                  <div className="truncate text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+                    Provider onboarding
+                  </div>
                 </div>
               </div>
             </div>
 
             <div
-              className="inline-flex rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] ring-1"
+              className="inline-flex max-w-full rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] ring-1"
               style={{
                 color: primary,
                 backgroundColor: `rgba(${primaryRgb}, 0.08)`,
@@ -506,15 +584,61 @@ export default function AcademyRegisterPage() {
               Academy registration
             </div>
 
-            <h2 className="mt-5 text-3xl font-black leading-tight tracking-tight text-slate-950 sm:text-4xl md:text-5xl">
-              Join our provider list, it&apos;s free.
-            </h2>
+            <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_240px] lg:items-end">
+              <div className="min-w-0">
+                <h2 className="text-[34px] font-black leading-[1.08] tracking-tight text-slate-950 sm:text-4xl md:text-5xl">
+                  Join our provider list, it&apos;s free.
+                </h2>
 
-            <p className="mt-4 text-sm leading-7 text-slate-500 sm:text-base">
-              Please complete the form below. Required fields are marked with an
-              asterisk. Currently, KidGage is onboarding companies registered in
-              Qatar.
-            </p>
+                <p className="mt-4 text-sm leading-7 text-slate-500 sm:text-base">
+                  Please complete the form below. Required fields are marked
+                  with an asterisk. Currently, KidGage is onboarding companies
+                  registered in Qatar.
+                </p>
+              </div>
+
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
+                    Completion
+                  </span>
+                  <span className="text-sm font-black text-slate-900">
+                    {progress}%
+                  </span>
+                </div>
+
+                <div className="mt-3 h-3 overflow-hidden rounded-full bg-white ring-1 ring-slate-200">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${progress}%`,
+                      backgroundColor: primary,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-7 grid gap-3 sm:grid-cols-3">
+              <StepBadge
+                number="1"
+                title="Academy details"
+                active={progress >= 10}
+                primary={primary}
+              />
+              <StepBadge
+                number="2"
+                title="Verification"
+                active={progress >= 40}
+                primary={primary}
+              />
+              <StepBadge
+                number="3"
+                title="Admin review"
+                active={progress >= 80}
+                primary={primary}
+              />
+            </div>
 
             {message ? (
               <div className="mt-6 rounded-[22px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm font-semibold leading-6 text-emerald-700">
@@ -534,26 +658,13 @@ export default function AcademyRegisterPage() {
               </div>
             ) : null}
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-8">
-              <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                <div className="mb-5 flex items-center gap-3">
-                  <div
-                    className="flex h-11 w-11 items-center justify-center rounded-2xl text-white"
-                    style={{ backgroundColor: primary }}
-                  >
-                    <Building2 className="h-5 w-5" />
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900">
-                      Academy details
-                    </h3>
-                    <p className="text-sm text-slate-500">
-                      Basic information about your academy.
-                    </p>
-                  </div>
-                </div>
-
+            <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+              <FormSection
+                icon={Building2}
+                title="Academy details"
+                subtitle="Basic information about your academy."
+                primary={primary}
+              >
                 <div className="grid gap-5 lg:grid-cols-2">
                   <Field
                     label="Academy Name"
@@ -607,27 +718,14 @@ export default function AcademyRegisterPage() {
                     />
                   </div>
                 </div>
-              </div>
+              </FormSection>
 
-              <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                <div className="mb-5 flex items-center gap-3">
-                  <div
-                    className="flex h-11 w-11 items-center justify-center rounded-2xl text-white"
-                    style={{ backgroundColor: primary }}
-                  >
-                    <FileText className="h-5 w-5" />
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900">
-                      Company verification
-                    </h3>
-                    <p className="text-sm text-slate-500">
-                      CR details used by admin for review.
-                    </p>
-                  </div>
-                </div>
-
+              <FormSection
+                icon={FileText}
+                title="Company verification"
+                subtitle="CR details used by admin for review."
+                primary={primary}
+              >
                 <div className="grid gap-5 lg:grid-cols-2">
                   <Field
                     label="CR Number"
@@ -647,29 +745,17 @@ export default function AcademyRegisterPage() {
                     onChange={handleChange}
                     fileName={form.crDocument?.name || ""}
                     primary={primary}
+                    primaryRgb={primaryRgb}
                   />
                 </div>
-              </div>
+              </FormSection>
 
-              <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                <div className="mb-5 flex items-center gap-3">
-                  <div
-                    className="flex h-11 w-11 items-center justify-center rounded-2xl text-white"
-                    style={{ backgroundColor: primary }}
-                  >
-                    <UserRound className="h-5 w-5" />
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900">
-                      Contact person
-                    </h3>
-                    <p className="text-sm text-slate-500">
-                      Admin will contact this person if needed.
-                    </p>
-                  </div>
-                </div>
-
+              <FormSection
+                icon={UserRound}
+                title="Contact person"
+                subtitle="Admin will contact this person if needed."
+                primary={primary}
+              >
                 <div className="grid gap-5 lg:grid-cols-2">
                   <Field
                     label="Full Name"
@@ -720,27 +806,14 @@ export default function AcademyRegisterPage() {
                     primaryRgb={primaryRgb}
                   />
                 </div>
-              </div>
+              </FormSection>
 
-              <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-                <div className="mb-5 flex items-center gap-3">
-                  <div
-                    className="flex h-11 w-11 items-center justify-center rounded-2xl text-white"
-                    style={{ backgroundColor: primary }}
-                  >
-                    <Globe2 className="h-5 w-5" />
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900">
-                      Online links
-                    </h3>
-                    <p className="text-sm text-slate-500">
-                      Optional public links for your academy.
-                    </p>
-                  </div>
-                </div>
-
+              <FormSection
+                icon={Globe2}
+                title="Online links"
+                subtitle="Optional public links for your academy."
+                primary={primary}
+              >
                 <div className="grid gap-5 lg:grid-cols-2">
                   <Field
                     label="Website"
@@ -764,9 +837,9 @@ export default function AcademyRegisterPage() {
                     primaryRgb={primaryRgb}
                   />
                 </div>
-              </div>
+              </FormSection>
 
-              <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-4 sm:p-5">
+              <div className="sticky bottom-0 z-10 -mx-5 border-t border-slate-200 bg-white/90 px-5 py-4 backdrop-blur sm:static sm:mx-0 sm:rounded-[28px] sm:border sm:bg-slate-50 sm:p-5 sm:backdrop-blur-0">
                 <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
                   <label className="flex cursor-pointer items-start gap-3 rounded-[22px] bg-white p-4 ring-1 ring-slate-200">
                     <input
@@ -774,7 +847,7 @@ export default function AcademyRegisterPage() {
                       name="agreed"
                       checked={form.agreed}
                       onChange={handleChange}
-                      className="mt-1 h-5 w-5 rounded border-slate-300"
+                      className="mt-1 h-5 w-5 shrink-0 rounded border-slate-300"
                       style={{ accentColor: primary }}
                     />
 
@@ -803,9 +876,4 @@ export default function AcademyRegisterPage() {
       </div>
     </section>
   );
-}
-
-/* lucide-react version-safe alias */
-function CalendarDaysIcon(props) {
-  return <Building2 {...props} />;
 }
