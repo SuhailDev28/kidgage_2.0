@@ -14,6 +14,7 @@ import Event from "../models/Event.js";
 import ContentPage from "../models/ContentPage.js";
 import Booking from "../models/Booking.js";
 import Activity from "../models/Activity.js";
+import ContactMessage from "../models/ContactMessage.js";
 
 import { notifyAcademyRegistrationSubmitted } from "../services/notification.service.js";
 
@@ -595,6 +596,7 @@ router.use(async (req, res, next) => {
     const allowedPaths = new Set([
       "/settings",
       "/provider-joining-form",
+      "/contact",
 
       "/terms-and-conditions",
       "/terms-conditions",
@@ -815,6 +817,73 @@ router.get("/home", async (req, res, next) => {
     return home(req, res, next);
   } catch (error) {
     next(error);
+  }
+});
+
+/* ---------------------------------
+ * Contact form
+ * -------------------------------- */
+router.post("/contact", async (req, res, next) => {
+  try {
+    const name = String(req.body?.name || "").trim();
+    const email = String(req.body?.email || "")
+      .trim()
+      .toLowerCase();
+    const subject = String(req.body?.subject || "").trim();
+    const message = String(req.body?.message || "").trim();
+
+    if (!name || name.length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: "Name is required.",
+      });
+    }
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid email is required.",
+      });
+    }
+
+    if (!subject || subject.length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: "Subject is required.",
+      });
+    }
+
+    if (!message || message.length < 5) {
+      return res.status(400).json({
+        success: false,
+        message: "Message is required.",
+      });
+    }
+
+    const contactMessage = await ContactMessage.create({
+      name,
+      email,
+      subject,
+      message,
+      source: "CONTACT_PAGE",
+      status: "NEW",
+      userAgent: req.get("user-agent") || "",
+      ip:
+        String(req.headers["x-forwarded-for"] || "")
+          .split(",")[0]
+          .trim() ||
+        req.socket?.remoteAddress ||
+        "",
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Your message has been received.",
+      contactMessage,
+    });
+  } catch (error) {
+    console.error("Public contact submit error:", error);
+    return next(error);
   }
 });
 
