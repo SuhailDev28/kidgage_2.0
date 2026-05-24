@@ -1,7 +1,58 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+
 import User from "../models/User.js";
 import Academy from "../models/Academy.js";
+import AppSetting from "../models/AppSetting.js";
+
+import { sendKidgageEmail } from "../services/email/smtp.service.js";
+import { renderEmailTemplate } from "../services/email/emailTemplate.service.js";
+
+function normalizeClientUrl() {
+  const raw =
+    process.env.CLIENT_URL?.split(",")?.[0] ||
+    process.env.APP_URL ||
+    "https://kidgage.com";
+
+  return String(raw || "")
+    .trim()
+    .replace(/\/$/, "");
+}
+
+async function sendParentWelcomeEmail({ user, plainPassword }) {
+  try {
+    if (!user?.email || !plainPassword) return;
+
+    const appSettings =
+      (await AppSetting.findOne({ key: "GLOBAL" }).lean()) ||
+      (await AppSetting.findOne({}).sort({ createdAt: -1 }).lean()) ||
+      {};
+
+    const siteName = appSettings.siteName || "KidGage";
+    const appUrl = normalizeClientUrl();
+
+    const rendered = await renderEmailTemplate("PARENT_ACCOUNT_WELCOME", {
+      siteName,
+      parentName: user.fullName || user.name || "Parent",
+      email: user.email,
+      password: plainPassword,
+      loginUrl: `${appUrl}/login`,
+      supportEmail:
+        appSettings.contactEmail ||
+        process.env.CONTACT_RECEIVER_EMAIL ||
+        "support@kidgage.com",
+    });
+
+    await sendKidgageEmail({
+      to: user.email,
+      subject: rendered.subject,
+      html: rendered.html,
+      text: rendered.text,
+    });
+  } catch (emailError) {
+    console.error("Parent welcome email failed:", emailError);
+  }
+}
 
 export async function registerParent(req, res, next) {
   try {
@@ -10,7 +61,13 @@ export async function registerParent(req, res, next) {
       .trim()
       .toLowerCase();
     const phone = String(req.body.phone || "").trim();
-    const password = String(req.body.password || "");
+
+    /*
+      Keep this original password before hashing.
+      It is needed only for the requested welcome email template.
+    */
+    const plainPassword = String(req.body.password || "");
+    const password = plainPassword;
 
     if (!fullName) {
       return res.status(400).json({ message: "Full name is required" });
@@ -41,6 +98,11 @@ export async function registerParent(req, res, next) {
       passwordHash,
       role: "PARENT",
       status: "ACTIVE",
+    });
+
+    await sendParentWelcomeEmail({
+      user,
+      plainPassword,
     });
 
     const token = jwt.sign(
