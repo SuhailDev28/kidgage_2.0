@@ -138,9 +138,9 @@ function hexToRgb(hex) {
 
 function FeaturePill({ icon: Icon, title, text }) {
   return (
-    <div className="rounded-[22px] border border-white/20 bg-white/15 p-4 shadow-sm backdrop-blur-xl sm:p-5">
+    <div className="rounded-[22px] border border-white/20 bg-white/15 p-4 shadow-sm backdrop-blur-xl xl:p-5">
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/20 text-white">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/20 text-white xl:h-11 xl:w-11">
           <Icon className="h-5 w-5" />
         </div>
 
@@ -183,8 +183,6 @@ export default function LoginPage() {
 
     async function loadSettings() {
       const endpoints = [
-        () => publicApi.get("/public/settings"),
-        () => publicApi.get("/settings/public"),
         () => publicApi.get("/settings"),
         () => api.get("/public/settings"),
       ];
@@ -401,14 +399,14 @@ export default function LoginPage() {
 
   return (
     <section
-      className="min-h-[calc(100vh-90px)] px-3 py-6 sm:px-5 sm:py-8 lg:px-8 lg:py-12"
+      className="min-h-[100svh] px-3 py-4 sm:px-5 sm:py-6 md:px-6 md:py-8 lg:px-8 lg:py-10"
       style={{
         background: `radial-gradient(circle at top left, rgba(${primaryRgb}, 0.16), transparent 34%), radial-gradient(circle at bottom right, rgba(${secondaryRgb}, 0.2), transparent 30%), linear-gradient(180deg, #fff7ed 0%, #ffffff 42%, #f8fafc 100%)`,
       }}
     >
-      <div className="mx-auto grid w-full max-w-[1180px] overflow-hidden rounded-[30px] border border-white/70 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.12)] lg:min-h-[720px] lg:grid-cols-[0.92fr_1.08fr]">
+      <div className="mx-auto grid w-full max-w-[1180px] overflow-hidden rounded-[26px] border border-white/70 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.12)] sm:rounded-[30px] lg:min-h-[680px] xl:min-h-[720px] xl:grid-cols-[0.92fr_1.08fr]">
         <aside
-          className="relative hidden overflow-hidden p-8 text-white lg:flex lg:flex-col lg:justify-between xl:p-10"
+          className="relative hidden overflow-hidden p-7 text-white xl:flex xl:flex-col xl:justify-between xl:p-10"
           style={{ backgroundColor: primary }}
         >
           <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-white/15 blur-3xl" />
@@ -420,17 +418,18 @@ export default function LoginPage() {
           <div className="absolute bottom-40 left-10 h-16 w-16 rounded-full border border-white/15" />
 
           <div className="relative">
-            <div className="inline-flex items-center gap-3 rounded-full bg-white/15 px-4 py-2 text-sm font-black uppercase tracking-[0.16em] text-white backdrop-blur">
+            <div className="inline-flex max-w-full items-center gap-3 rounded-full bg-white/15 px-4 py-2 text-sm font-black uppercase tracking-[0.16em] text-white backdrop-blur">
               {theme.logo ? (
                 <img
                   src={theme.logo}
                   alt={theme.siteName}
-                  className="h-5 w-5 rounded object-contain"
+                  className="h-5 w-5 shrink-0 rounded object-contain"
                 />
               ) : (
-                <Sparkles className="h-4 w-4" />
+                <Sparkles className="h-4 w-4 shrink-0" />
               )}
-              {theme.siteName}
+
+              <span className="truncate">{theme.siteName}</span>
             </div>
 
             <h2 className="mt-8 max-w-md text-4xl font-black leading-tight tracking-tight xl:text-5xl">
@@ -483,12 +482,12 @@ export default function LoginPage() {
           </div>
         </aside>
 
-        <div className="flex min-h-[680px] items-center justify-center p-4 sm:p-6 md:p-8 lg:p-10">
+        <div className="flex min-h-[calc(100svh-32px)] items-center justify-center p-4 sm:min-h-[640px] sm:p-6 md:p-8 lg:p-10 xl:min-h-[720px]">
           <div className="w-full max-w-[470px]">
-            <div className="mb-8 flex items-center justify-between gap-4 lg:hidden">
-              <Link to="/" className="flex items-center gap-3">
+            <div className="mb-7 flex items-center justify-between gap-4 xl:hidden">
+              <Link to="/" className="flex min-w-0 items-center gap-3">
                 <div
-                  className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl"
                   style={{
                     backgroundColor: `rgba(${primaryRgb}, 0.1)`,
                     color: primary,
@@ -505,11 +504,11 @@ export default function LoginPage() {
                   )}
                 </div>
 
-                <div>
-                  <div className="text-2xl font-black tracking-tight text-slate-900">
+                <div className="min-w-0">
+                  <div className="truncate text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
                     {theme.siteName}
                   </div>
-                  <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                  <div className="truncate text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 sm:text-xs">
                     {theme.tagline}
                   </div>
                 </div>
@@ -517,7 +516,7 @@ export default function LoginPage() {
             </div>
 
             <div
-              className="rounded-full px-4 py-2 text-center text-xs font-black uppercase tracking-[0.16em] ring-1 sm:inline-flex"
+              className="inline-flex rounded-full px-4 py-2 text-center text-[11px] font-black uppercase tracking-[0.16em] ring-1 sm:text-xs"
               style={{
                 backgroundColor: `rgba(${primaryRgb}, 0.1)`,
                 color: primary,
@@ -536,14 +535,14 @@ export default function LoginPage() {
               {theme.siteName} super admin panel.
             </p>
 
-            <form className="mt-8 space-y-5" onSubmit={submit}>
+            <form className="mt-7 space-y-5 sm:mt-8" onSubmit={submit}>
               <label className="block">
                 <div className="mb-2 text-sm font-black text-slate-800">
                   Email address
                 </div>
 
                 <div
-                  className="group flex h-[58px] items-center gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 transition focus-within:bg-white focus-within:ring-4"
+                  className="group flex h-[56px] items-center gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 transition focus-within:bg-white focus-within:ring-4 sm:h-[58px]"
                   style={{
                     "--tw-ring-color": `rgba(${primaryRgb}, 0.16)`,
                   }}
@@ -556,7 +555,7 @@ export default function LoginPage() {
                     value={form.email}
                     onChange={(e) => updateField("email", e.target.value)}
                     autoComplete="email"
-                    className="h-full w-full bg-transparent text-[15px] font-semibold text-slate-800 outline-none placeholder:font-normal placeholder:text-slate-400"
+                    className="h-full min-w-0 flex-1 bg-transparent text-[15px] font-semibold text-slate-800 outline-none placeholder:font-normal placeholder:text-slate-400"
                   />
                 </div>
               </label>
@@ -567,7 +566,7 @@ export default function LoginPage() {
                 </div>
 
                 <div
-                  className="group flex h-[58px] items-center gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 transition focus-within:bg-white focus-within:ring-4"
+                  className="group flex h-[56px] items-center gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 transition focus-within:bg-white focus-within:ring-4 sm:h-[58px]"
                   style={{
                     "--tw-ring-color": `rgba(${primaryRgb}, 0.16)`,
                   }}
@@ -580,7 +579,7 @@ export default function LoginPage() {
                     value={form.password}
                     onChange={(e) => updateField("password", e.target.value)}
                     autoComplete="current-password"
-                    className="h-full w-full bg-transparent text-[15px] font-semibold text-slate-800 outline-none placeholder:font-normal placeholder:text-slate-400"
+                    className="h-full min-w-0 flex-1 bg-transparent text-[15px] font-semibold text-slate-800 outline-none placeholder:font-normal placeholder:text-slate-400"
                   />
 
                   <button
@@ -630,7 +629,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={submitting || socialSubmitting || !canSubmit}
-                className="group flex h-[60px] w-full items-center justify-center gap-2 rounded-[20px] px-5 text-base font-black text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                className="group flex h-[58px] w-full items-center justify-center gap-2 rounded-[20px] px-5 text-base font-black text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60 sm:h-[60px]"
                 style={{
                   backgroundColor: primary,
                   boxShadow: `0 16px 34px rgba(${primaryRgb}, 0.25)`,
@@ -643,16 +642,16 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="my-7 flex items-center gap-3">
+            <div className="my-6 flex items-center gap-3 sm:my-7">
               <div className="h-px flex-1 bg-slate-200" />
-              <span className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 sm:text-xs">
                 Or continue with
               </span>
               <div className="h-px flex-1 bg-slate-200" />
             </div>
 
             <div className="grid gap-3">
-              <div className="mx-auto w-full max-w-[360px]">
+              <div className="mx-auto w-full max-w-[360px] overflow-hidden">
                 <GoogleLogin
                   onSuccess={handleGoogleLogin}
                   onError={() => setError("Google login failed")}
@@ -694,7 +693,7 @@ export default function LoginPage() {
               </Link>
             </div>
 
-            <div className="mt-6 grid gap-3 text-xs text-slate-500 sm:grid-cols-3">
+            <div className="mt-5 grid grid-cols-1 gap-3 text-xs text-slate-500 xs:grid-cols-3 sm:mt-6 sm:grid-cols-3">
               <div className="rounded-2xl bg-white p-3 text-center ring-1 ring-slate-200">
                 Parent portal
               </div>
