@@ -168,6 +168,7 @@ export default function BlogDetailsPage() {
         setAllBlogs(blogsRows);
       } catch (error) {
         if (!active) return;
+
         if (error?.response?.status === 404) {
           setNotFound(true);
         }
@@ -197,26 +198,6 @@ export default function BlogDetailsPage() {
     () => buildSections(blog?.description || blog?.excerpt || ""),
     [blog],
   );
-
-  const galleryImages = useMemo(() => {
-    const source = allBlogs
-      .filter(
-        (item) =>
-          String(item?._id || item?.id || item?.slug || "") !==
-          String(blog?._id || blog?.id || blog?.slug || ""),
-      )
-      .slice(0, 2)
-      .map((item) =>
-        normalizeImage(
-          item?.image || item?.thumbnail || item?.coverImage || "",
-        ),
-      )
-      .filter(Boolean);
-
-    if (source.length) return source;
-
-    return image ? [image, image] : [];
-  }, [allBlogs, blog, image]);
 
   const filteredRecentPosts = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -259,6 +240,7 @@ export default function BlogDetailsPage() {
     const set = new Set(
       allBlogs.map((item) => getCategoryLabel(item)).filter(Boolean),
     );
+
     return Array.from(set).slice(0, 6);
   }, [allBlogs]);
 
@@ -307,7 +289,7 @@ export default function BlogDetailsPage() {
         <div className="absolute inset-x-0 bottom-0 h-12 bg-[radial-gradient(circle_at_20px_-2px,white_22px,transparent_23px)] bg-[length:60px_60px] bg-repeat-x" />
       </div>
 
-      <div className="container-main -mt-8 relative z-20">
+      <div className="container-main relative z-20 -mt-8">
         <div className="grid gap-8 lg:grid-cols-[300px_1fr]">
           <aside className="space-y-6">
             <SidebarCard title="Search">
@@ -464,23 +446,6 @@ export default function BlogDetailsPage() {
                 </div>
               ))}
             </div>
-
-            {galleryImages.length > 0 ? (
-              <div className="mt-8 grid gap-4 md:grid-cols-2">
-                {galleryImages.slice(0, 2).map((src, index) => (
-                  <div
-                    key={`${src}-${index}`}
-                    className="overflow-hidden rounded-[18px] bg-slate-100"
-                  >
-                    <img
-                      src={src}
-                      alt={`Gallery ${index + 1}`}
-                      className="h-[200px] w-full object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : null}
 
             <div className="mt-8 flex flex-col gap-4 border-t border-slate-200 pt-6 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-wrap items-center gap-3">
