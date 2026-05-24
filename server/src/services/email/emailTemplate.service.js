@@ -54,47 +54,81 @@ Message:
   },
 
   {
-    key: "BOOKING_CONFIRMATION",
-    name: "Booking Confirmation",
-    description: "Sent to parent after successful booking confirmation.",
-    category: "BOOKING",
-    subject: "Booking Confirmed: {{activityName}}",
+    key: "PASSWORD_RESET",
+    name: "Password Reset",
+    description: "Sent when a user requests a password reset link.",
+    category: "AUTH",
+    subject: "Reset your {{siteName}} password",
     variables: [
-      "parentName",
-      "childName",
-      "activityName",
-      "academyName",
-      "bookingId",
-      "bookingDate",
       "siteName",
+      "userName",
+      "email",
+      "resetUrl",
+      "supportEmail",
+      "expiresIn",
     ],
-    text: `Hi {{parentName}},
+    text: `Hi {{userName}},
 
-Your booking has been confirmed.
+We received a request to reset your {{siteName}} account password.
 
-Child: {{childName}}
-Activity: {{activityName}}
-Academy: {{academyName}}
-Booking ID: {{bookingId}}
-Date: {{bookingDate}}
+Reset your password here:
+{{resetUrl}}
+
+This link will expire in {{expiresIn}}.
+
+If you did not request this, you can safely ignore this email.
+
+Need help? Contact us at {{supportEmail}}.
 
 Thank you,
 {{siteName}}`,
     html: `
-<div style="font-family:Arial,sans-serif;background:#fff7ed;padding:24px;color:#0f172a">
-  <div style="max-width:680px;margin:auto;background:#ffffff;border-radius:22px;padding:28px;border:1px solid #fed7aa">
-    <h2 style="margin:0;color:#ec7a3b;font-size:28px">Booking Confirmed 🎉</h2>
-    <p style="line-height:1.7;color:#475569">Hi {{parentName}}, your booking is confirmed.</p>
-
-    <div style="margin-top:20px;background:#f8fafc;border-radius:18px;padding:18px;border:1px solid #e2e8f0">
-      <p><strong>Child:</strong> {{childName}}</p>
-      <p><strong>Activity:</strong> {{activityName}}</p>
-      <p><strong>Academy:</strong> {{academyName}}</p>
-      <p><strong>Booking ID:</strong> {{bookingId}}</p>
-      <p><strong>Date:</strong> {{bookingDate}}</p>
+<div style="font-family:Arial,sans-serif;background:#f8fafc;padding:24px;color:#0f172a">
+  <div style="max-width:680px;margin:auto;background:#ffffff;border-radius:24px;overflow:hidden;border:1px solid #e2e8f0">
+    <div style="background:linear-gradient(135deg,#ec7a3b,#f59e0b);padding:28px;color:#ffffff">
+      <div style="font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.14em;opacity:.9">
+        {{siteName}} Security
+      </div>
+      <h1 style="margin:14px 0 0;font-size:30px;line-height:1.2">
+        Reset your password
+      </h1>
+      <p style="margin:12px 0 0;line-height:1.7;font-size:15px;opacity:.95">
+        We received a request to reset your account password.
+      </p>
     </div>
 
-    <p style="margin-top:22px;color:#64748b">Thank you for using {{siteName}}.</p>
+    <div style="padding:28px">
+      <p style="margin:0 0 18px;font-size:16px;line-height:1.7;color:#334155">
+        Hi <strong>{{userName}}</strong>,
+      </p>
+
+      <p style="margin:0 0 22px;font-size:15px;line-height:1.7;color:#475569">
+        Click the button below to create a new password for your {{siteName}} account.
+      </p>
+
+      <a href="{{resetUrl}}" style="display:inline-block;background:#ec7a3b;color:#ffffff;text-decoration:none;font-weight:900;border-radius:16px;padding:14px 24px">
+        Reset Password
+      </a>
+
+      <div style="margin-top:24px;background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:16px">
+        <div style="font-weight:900;color:#9a3412;margin-bottom:6px">Security note</div>
+        <div style="font-size:14px;line-height:1.6;color:#9a3412">
+          This password reset link will expire in {{expiresIn}}. If you did not request this, please ignore this email.
+        </div>
+      </div>
+
+      <p style="margin:24px 0 0;font-size:13px;line-height:1.7;color:#64748b">
+        If the button does not work, copy and paste this link into your browser:
+      </p>
+
+      <p style="word-break:break-all;font-size:12px;line-height:1.7;color:#64748b">
+        {{resetUrl}}
+      </p>
+
+      <p style="margin:20px 0 0;font-size:13px;line-height:1.7;color:#64748b">
+        Need help? Contact us at <strong>{{supportEmail}}</strong>.
+      </p>
+    </div>
   </div>
 </div>`,
   },
@@ -197,6 +231,200 @@ Thank you,
   },
 
   {
+    key: "BOOKING_CONFIRMATION",
+    name: "Booking Confirmation",
+    description: "Sent to parent after successful booking confirmation.",
+    category: "BOOKING",
+    subject: "Booking Confirmed: {{activityName}}",
+    variables: [
+      "parentName",
+      "childName",
+      "activityName",
+      "academyName",
+      "bookingId",
+      "bookingDate",
+      "siteName",
+    ],
+    text: `Hi {{parentName}},
+
+Your booking has been confirmed.
+
+Child: {{childName}}
+Activity: {{activityName}}
+Academy: {{academyName}}
+Booking ID: {{bookingId}}
+Date: {{bookingDate}}
+
+Thank you,
+{{siteName}}`,
+    html: `
+<div style="font-family:Arial,sans-serif;background:#fff7ed;padding:24px;color:#0f172a">
+  <div style="max-width:680px;margin:auto;background:#ffffff;border-radius:22px;padding:28px;border:1px solid #fed7aa">
+    <h2 style="margin:0;color:#ec7a3b;font-size:28px">Booking Confirmed 🎉</h2>
+    <p style="line-height:1.7;color:#475569">Hi {{parentName}}, your booking is confirmed.</p>
+
+    <div style="margin-top:20px;background:#f8fafc;border-radius:18px;padding:18px;border:1px solid #e2e8f0">
+      <p><strong>Child:</strong> {{childName}}</p>
+      <p><strong>Activity:</strong> {{activityName}}</p>
+      <p><strong>Academy:</strong> {{academyName}}</p>
+      <p><strong>Booking ID:</strong> {{bookingId}}</p>
+      <p><strong>Date:</strong> {{bookingDate}}</p>
+    </div>
+
+    <p style="margin-top:22px;color:#64748b">Thank you for using {{siteName}}.</p>
+  </div>
+</div>`,
+  },
+
+  {
+    key: "CANCELLATION_REQUEST_SUBMITTED",
+    name: "Cancellation Request Submitted",
+    description:
+      "Sent to parent after submitting a booking cancellation request.",
+    category: "BOOKING",
+    subject: "Cancellation request received - {{bookingNo}}",
+    variables: [
+      "siteName",
+      "parentName",
+      "childName",
+      "activityName",
+      "academyName",
+      "bookingNo",
+      "reason",
+      "supportEmail",
+    ],
+    text: `Hi {{parentName}},
+
+Your cancellation request has been received.
+
+Booking: {{bookingNo}}
+Child: {{childName}}
+Activity: {{activityName}}
+Academy: {{academyName}}
+
+Reason:
+{{reason}}
+
+Our team will review your request and update you soon.
+
+Thank you,
+{{siteName}}`,
+    html: `
+<div style="font-family:Arial,sans-serif;background:#fff7ed;padding:24px;color:#0f172a">
+  <div style="max-width:680px;margin:auto;background:#ffffff;border-radius:24px;overflow:hidden;border:1px solid #fed7aa">
+    <div style="background:linear-gradient(135deg,#f97316,#fb923c);padding:28px;color:#ffffff">
+      <div style="font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.14em;opacity:.9">
+        {{siteName}} Booking Update
+      </div>
+      <h1 style="margin:14px 0 0;font-size:30px;line-height:1.2">
+        Cancellation request received
+      </h1>
+      <p style="margin:12px 0 0;line-height:1.7;font-size:15px;opacity:.95">
+        Our team will review your request and update you soon.
+      </p>
+    </div>
+
+    <div style="padding:28px">
+      <p style="margin:0 0 18px;font-size:16px;line-height:1.7;color:#334155">
+        Hi <strong>{{parentName}}</strong>,
+      </p>
+
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:18px;padding:20px;margin:22px 0">
+        <p><strong>Booking:</strong> {{bookingNo}}</p>
+        <p><strong>Child:</strong> {{childName}}</p>
+        <p><strong>Activity:</strong> {{activityName}}</p>
+        <p><strong>Academy:</strong> {{academyName}}</p>
+      </div>
+
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:16px">
+        <div style="font-weight:900;color:#9a3412;margin-bottom:8px">Cancellation reason</div>
+        <div style="white-space:pre-line;font-size:14px;line-height:1.7;color:#9a3412">{{reason}}</div>
+      </div>
+
+      <p style="margin:24px 0 0;font-size:13px;line-height:1.7;color:#64748b">
+        Need help? Contact us at <strong>{{supportEmail}}</strong>.
+      </p>
+    </div>
+  </div>
+</div>`,
+  },
+
+  {
+    key: "CANCELLATION_REQUEST_APPROVED",
+    name: "Cancellation Request Approved",
+    description:
+      "Sent to parent when admin approves a booking cancellation request.",
+    category: "BOOKING",
+    subject: "Cancellation approved - {{bookingNo}}",
+    variables: [
+      "siteName",
+      "parentName",
+      "childName",
+      "activityName",
+      "academyName",
+      "bookingNo",
+      "adminNote",
+      "refundStatus",
+      "supportEmail",
+    ],
+    text: `Hi {{parentName}},
+
+Your cancellation request has been approved.
+
+Booking: {{bookingNo}}
+Child: {{childName}}
+Activity: {{activityName}}
+Academy: {{academyName}}
+
+Refund Status: {{refundStatus}}
+
+Admin Note:
+{{adminNote}}
+
+Thank you,
+{{siteName}}`,
+    html: `
+<div style="font-family:Arial,sans-serif;background:#f0fdf4;padding:24px;color:#0f172a">
+  <div style="max-width:680px;margin:auto;background:#ffffff;border-radius:24px;overflow:hidden;border:1px solid #bbf7d0">
+    <div style="background:linear-gradient(135deg,#16a34a,#22c55e);padding:28px;color:#ffffff">
+      <div style="font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.14em;opacity:.9">
+        {{siteName}} Booking Update
+      </div>
+      <h1 style="margin:14px 0 0;font-size:30px;line-height:1.2">
+        Cancellation approved
+      </h1>
+      <p style="margin:12px 0 0;line-height:1.7;font-size:15px;opacity:.95">
+        Your booking cancellation request has been approved.
+      </p>
+    </div>
+
+    <div style="padding:28px">
+      <p style="margin:0 0 18px;font-size:16px;line-height:1.7;color:#334155">
+        Hi <strong>{{parentName}}</strong>,
+      </p>
+
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:18px;padding:20px;margin:22px 0">
+        <p><strong>Booking:</strong> {{bookingNo}}</p>
+        <p><strong>Child:</strong> {{childName}}</p>
+        <p><strong>Activity:</strong> {{activityName}}</p>
+        <p><strong>Academy:</strong> {{academyName}}</p>
+        <p><strong>Refund Status:</strong> {{refundStatus}}</p>
+      </div>
+
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:16px;padding:16px">
+        <div style="font-weight:900;color:#166534;margin-bottom:8px">Admin note</div>
+        <div style="white-space:pre-line;font-size:14px;line-height:1.7;color:#166534">{{adminNote}}</div>
+      </div>
+
+      <p style="margin:24px 0 0;font-size:13px;line-height:1.7;color:#64748b">
+        Need help? Contact us at <strong>{{supportEmail}}</strong>.
+      </p>
+    </div>
+  </div>
+</div>`,
+  },
+
+  {
     key: "PAYMENT_SUCCESS",
     name: "Payment Success",
     description: "Sent after successful online payment.",
@@ -233,6 +461,82 @@ Thank you,
     </div>
 
     <p style="margin-top:22px;color:#64748b">Thank you for using {{siteName}}.</p>
+  </div>
+</div>`,
+  },
+
+  {
+    key: "CERTIFICATE_ISSUED",
+    name: "Certificate Issued",
+    description:
+      "Sent to parent when a child course/activity certificate is issued.",
+    category: "CERTIFICATE",
+    subject: "Certificate issued for {{childName}} - {{courseName}}",
+    variables: [
+      "siteName",
+      "parentName",
+      "childName",
+      "courseName",
+      "academyName",
+      "certificateTitle",
+      "certificateUrl",
+      "issueDate",
+      "supportEmail",
+    ],
+    text: `Hi {{parentName}},
+
+A certificate has been issued for {{childName}}.
+
+Certificate: {{certificateTitle}}
+Course: {{courseName}}
+Academy: {{academyName}}
+Issue Date: {{issueDate}}
+
+View / download certificate:
+{{certificateUrl}}
+
+Thank you,
+{{siteName}}`,
+    html: `
+<div style="font-family:Arial,sans-serif;background:#f8fafc;padding:24px;color:#0f172a">
+  <div style="max-width:680px;margin:auto;background:#ffffff;border-radius:24px;overflow:hidden;border:1px solid #e2e8f0">
+    <div style="background:linear-gradient(135deg,#7c3aed,#ec4899);padding:28px;color:#ffffff">
+      <div style="font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.14em;opacity:.9">
+        {{siteName}} Certificate
+      </div>
+      <h1 style="margin:14px 0 0;font-size:30px;line-height:1.2">
+        Certificate issued 🎓
+      </h1>
+      <p style="margin:12px 0 0;line-height:1.7;font-size:15px;opacity:.95">
+        A new certificate is ready for {{childName}}.
+      </p>
+    </div>
+
+    <div style="padding:28px">
+      <p style="margin:0 0 18px;font-size:16px;line-height:1.7;color:#334155">
+        Hi <strong>{{parentName}}</strong>,
+      </p>
+
+      <p style="margin:0 0 22px;font-size:15px;line-height:1.7;color:#475569">
+        Congratulations! A certificate has been issued and is ready to view or download.
+      </p>
+
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:18px;padding:20px;margin:22px 0">
+        <p><strong>Child:</strong> {{childName}}</p>
+        <p><strong>Certificate:</strong> {{certificateTitle}}</p>
+        <p><strong>Course:</strong> {{courseName}}</p>
+        <p><strong>Academy:</strong> {{academyName}}</p>
+        <p><strong>Issue Date:</strong> {{issueDate}}</p>
+      </div>
+
+      <a href="{{certificateUrl}}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:900;border-radius:16px;padding:14px 24px">
+        View Certificate
+      </a>
+
+      <p style="margin:24px 0 0;font-size:13px;line-height:1.7;color:#64748b">
+        Need help? Contact us at <strong>{{supportEmail}}</strong>.
+      </p>
+    </div>
   </div>
 </div>`,
   },

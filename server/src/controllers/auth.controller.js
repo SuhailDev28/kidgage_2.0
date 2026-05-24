@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -19,16 +20,49 @@ function normalizeClientUrl() {
     .replace(/\/$/, "");
 }
 
+function createResetToken() {
+  const token = crypto.randomBytes(32).toString("hex");
+
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+  return {
+    token,
+    tokenHash,
+  };
+}
+
+function hashResetToken(token = "") {
+  return crypto
+    .createHash("sha256")
+    .update(String(token || ""))
+    .digest("hex");
+}
+
+async function getEmailRuntimeDefaults() {
+  const appSettings =
+    (await AppSetting.findOne({ key: "GLOBAL" }).lean()) ||
+    (await AppSetting.findOne({}).sort({ createdAt: -1 }).lean()) ||
+    {};
+
+  const siteName = appSettings.siteName || "KidGage";
+
+  const supportEmail =
+    appSettings.contactEmail ||
+    process.env.CONTACT_RECEIVER_EMAIL ||
+    "support@kidgage.com";
+
+  return {
+    appSettings,
+    siteName,
+    supportEmail,
+  };
+}
+
 async function sendParentWelcomeEmail({ user, plainPassword }) {
   try {
     if (!user?.email || !plainPassword) return;
 
-    const appSettings =
-      (await AppSetting.findOne({ key: "GLOBAL" }).lean()) ||
-      (await AppSetting.findOne({}).sort({ createdAt: -1 }).lean()) ||
-      {};
-
-    const siteName = appSettings.siteName || "KidGage";
+    const { siteName, supportEmail } = await getEmailRuntimeDefaults();
     const appUrl = normalizeClientUrl();
 
     const rendered = await renderEmailTemplate("PARENT_ACCOUNT_WELCOME", {
@@ -37,10 +71,7 @@ async function sendParentWelcomeEmail({ user, plainPassword }) {
       email: user.email,
       password: plainPassword,
       loginUrl: `${appUrl}/login`,
-      supportEmail:
-        appSettings.contactEmail ||
-        process.env.CONTACT_RECEIVER_EMAIL ||
-        "support@kidgage.com",
+      supportEmail,
     });
 
     await sendKidgageEmail({
@@ -54,6 +85,35 @@ async function sendParentWelcomeEmail({ user, plainPassword }) {
   }
 }
 
+async function sendPasswordResetEmail({ user, resetUrl }) {
+  try {
+    if (!user?.email || !resetUrl) return false;
+
+    const { siteName, supportEmail } = await getEmailRuntimeDefaults();
+
+    const rendered = await renderEmailTemplate("PASSWORD_RESET", {
+      siteName,
+      userName: user.fullName || user.name || "User",
+      email: user.email,
+      resetUrl,
+      expiresIn: "15 minutes",
+      supportEmail,
+    });
+
+    await sendKidgageEmail({
+      to: user.email,
+      subject: rendered.subject,
+      html: rendered.html,
+      text: rendered.text,
+    });
+
+    return true;
+  } catch (emailError) {
+    console.error("Password reset email failed:", emailError);
+    return false;
+  }
+}
+
 export async function registerParent(req, res, next) {
   try {
     const fullName = String(req.body.fullName || "").trim();
@@ -61,11 +121,6 @@ export async function registerParent(req, res, next) {
       .trim()
       .toLowerCase();
     const phone = String(req.body.phone || "").trim();
-
-    /*
-      Keep this original password before hashing.
-      It is needed only for the requested welcome email template.
-    */
     const plainPassword = String(req.body.password || "");
     const password = plainPassword;
 
@@ -130,6 +185,123 @@ export async function registerParent(req, res, next) {
         academyCode: "",
         academyStatus: "",
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function forgotPassword(req, res, next) {
+  try {
+    const email = String(req.body.email || "")
+      .trim()
+      .toLowerCase();
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const genericMessage =
+      "If an account exists for this email, a password reset link has been sent.";
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.json({
+        success: true,
+        message: genericMessage,
+      });
+    }
+
+    const status = String(user.status || "ACTIVE").toUpperCase();
+
+    if (status !== "ACTIVE") {
+      return res.json({
+        success: true,
+        message: genericMessage,
+      });
+    }
+
+    const { token, tokenHash } = createResetToken();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    user.resetPasswordTokenHash = tokenHash;
+    user.resetPasswordExpiresAt = expiresAt;
+    user.resetPasswordRequestedAt = new Date();
+
+    await user.save();
+
+    const appUrl = normalizeClientUrl();
+    const resetUrl = `${appUrl}/reset-password?token=${encodeURIComponent(
+      token,
+    )}&email=${encodeURIComponent(user.email)}`;
+
+    await sendPasswordResetEmail({
+      user,
+      resetUrl,
+    });
+
+    return res.json({
+      success: true,
+      message: genericMessage,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function resetPassword(req, res, next) {
+  try {
+    const email = String(req.body.email || "")
+      .trim()
+      .toLowerCase();
+    const token = String(req.body.token || "").trim();
+    const password = String(req.body.password || "");
+    const confirmPassword = String(req.body.confirmPassword || password || "");
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    if (!token) {
+      return res.status(400).json({ message: "Reset token is required" });
+    }
+
+    if (!password || password.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 6 characters" });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match" });
+    }
+
+    const tokenHash = hashResetToken(token);
+
+    const user = await User.findOne({
+      email,
+      resetPasswordTokenHash: tokenHash,
+      resetPasswordExpiresAt: { $gt: new Date() },
+    }).select("+resetPasswordTokenHash +resetPasswordExpiresAt");
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Password reset link is invalid or expired",
+      });
+    }
+
+    user.passwordHash = await bcrypt.hash(password, 10);
+    user.resetPasswordTokenHash = "";
+    user.resetPasswordExpiresAt = null;
+    user.resetPasswordRequestedAt = null;
+    user.passwordChangedAt = new Date();
+
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: "Password has been reset successfully. You can now login.",
     });
   } catch (error) {
     next(error);

@@ -22,6 +22,8 @@ import PublicAcademiesPage from "../pages/public/AcademiesPage.jsx";
 import PublicAcademyDetailsPage from "../pages/public/PublicAcademyDetailsPage.jsx";
 import LoginPage from "../pages/public/LoginPage.jsx";
 import RegisterPage from "../pages/public/RegisterPage.jsx";
+import ForgotPasswordPage from "../pages/public/ForgotPasswordPage.jsx";
+import ResetPasswordPage from "../pages/public/ResetPasswordPage.jsx";
 import AcademyRegisterPage from "../pages/public/AcademyRegisterPage.jsx";
 import TermsPage from "../pages/public/TermsPage.jsx";
 import PrivacyPage from "../pages/public/PrivacyPage.jsx";
@@ -145,6 +147,8 @@ export function AppRouter() {
 
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           <Route
             path="/provider-joining-form"

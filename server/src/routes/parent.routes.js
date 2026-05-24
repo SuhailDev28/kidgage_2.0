@@ -6,6 +6,10 @@ import { auth } from "../middleware/auth.js";
 import { requireRole } from "../middleware/requireRole.js";
 
 import Payment from "../models/Payment.js";
+import AppSetting from "../models/AppSetting.js";
+
+import { sendKidgageEmail } from "../services/email/smtp.service.js";
+import { renderEmailTemplate } from "../services/email/emailTemplate.service.js";
 
 import {
   createParentBooking,
@@ -57,6 +61,101 @@ function normalizeUpper(value, fallback = "N/A") {
     .toUpperCase();
 
   return text || fallback;
+}
+
+async function getEmailRuntimeDefaults() {
+  const settings =
+    (await AppSetting.findOne({ key: "GLOBAL" }).lean()) ||
+    (await AppSetting.findOne({}).sort({ createdAt: -1 }).lean()) ||
+    {};
+
+  const siteName = settings.siteName || "KidGage";
+
+  const supportEmail =
+    settings.contactEmail ||
+    process.env.CONTACT_RECEIVER_EMAIL ||
+    "support@kidgage.com";
+
+  return {
+    settings,
+    siteName,
+    supportEmail,
+  };
+}
+
+function pickDisplayName(entity, fallback = "") {
+  return (
+    entity?.fullName ||
+    entity?.name ||
+    entity?.title ||
+    entity?.academyName ||
+    fallback
+  );
+}
+
+function pickBookingNumber(booking) {
+  return (
+    booking?.bookingNo ||
+    booking?.referenceNo ||
+    booking?.invoiceNo ||
+    String(booking?._id || "")
+  );
+}
+
+async function sendCancellationRequestSubmittedEmail({
+  booking,
+  reason = "",
+  fallbackParentEmail = "",
+} = {}) {
+  try {
+    if (!booking) return false;
+
+    const parentEmail =
+      booking?.parentId?.email ||
+      booking?.guestParent?.email ||
+      booking?.guestParentSnapshot?.email ||
+      booking?.parentEmail ||
+      fallbackParentEmail ||
+      "";
+
+    if (!parentEmail) return false;
+
+    const { siteName, supportEmail } = await getEmailRuntimeDefaults();
+
+    const rendered = await renderEmailTemplate(
+      "CANCELLATION_REQUEST_SUBMITTED",
+      {
+        siteName,
+        parentName: pickDisplayName(booking.parentId, "Parent"),
+        childName:
+          pickDisplayName(booking.childId, "") ||
+          booking?.guestChild?.fullName ||
+          booking?.guestChild?.name ||
+          booking?.childSnapshot?.fullName ||
+          "Child",
+        activityName: pickDisplayName(booking.activityId, "Activity"),
+        academyName: pickDisplayName(booking.academyId, "Academy"),
+        bookingNo: pickBookingNumber(booking),
+        reason:
+          String(reason || "").trim() ||
+          booking?.cancellationReason ||
+          "Cancellation requested by parent.",
+        supportEmail,
+      },
+    );
+
+    await sendKidgageEmail({
+      to: parentEmail,
+      subject: rendered.subject,
+      html: rendered.html,
+      text: rendered.text,
+    });
+
+    return true;
+  } catch (emailError) {
+    console.error("Cancellation request submitted email failed:", emailError);
+    return false;
+  }
 }
 
 function pickBookingAmount(booking) {
@@ -570,7 +669,9 @@ async function getParentHistory(req, limit = 300) {
       const normalizedPayment = normalizePaymentForParent(payment);
       const paymentPage =
         normalizedPayment.bookingId && normalizeId(normalizedPayment.bookingId)
-          ? `/payment/myfatoorah/${normalizeId(normalizedPayment.bookingId)}?paymentId=${normalizeId(normalizedPayment.id)}`
+          ? `/payment/myfatoorah/${normalizeId(
+              normalizedPayment.bookingId,
+            )}?paymentId=${normalizeId(normalizedPayment.id)}`
           : normalizedPayment.gatewayCheckoutUrl || "";
 
       return {
@@ -919,7 +1020,7 @@ router.patch("/bookings/:id/cancel-request", async (req, res, next) => {
     await booking.save();
 
     const updatedBooking = await Booking.findById(booking._id)
-      .populate("academyId", "name slug city logo")
+      .populate("academyId", "name slug city logo email phone")
       .populate("parentId", "fullName name email phone")
       .populate("childId", "fullName name")
       .populate(
@@ -935,8 +1036,17 @@ router.patch("/bookings/:id/cancel-request", async (req, res, next) => {
       .sort({ createdAt: -1 })
       .lean();
 
+    const emailSent = await sendCancellationRequestSubmittedEmail({
+      booking: updatedBooking,
+      reason,
+      fallbackParentEmail: req.user?.email || "",
+    });
+
     return res.json({
-      message: "Cancellation request submitted successfully",
+      message: emailSent
+        ? "Cancellation request submitted successfully and email sent"
+        : "Cancellation request submitted successfully, but email was not sent",
+      emailSent,
       booking: normalizeBookingForParent(updatedBooking, payment),
     });
   } catch (error) {

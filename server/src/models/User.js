@@ -43,6 +43,28 @@ const userSchema = new mongoose.Schema(
       sparse: true,
     },
 
+    resetPasswordTokenHash: {
+      type: String,
+      default: "",
+      select: false,
+    },
+
+    resetPasswordExpiresAt: {
+      type: Date,
+      default: null,
+      select: false,
+    },
+
+    resetPasswordRequestedAt: {
+      type: Date,
+      default: null,
+    },
+
+    passwordChangedAt: {
+      type: Date,
+      default: null,
+    },
+
     /**
      * LOCAL = normal email/password login
      * GOOGLE = Google social login
@@ -120,6 +142,8 @@ userSchema.index({ academyId: 1 });
 userSchema.index({ parentId: 1 });
 userSchema.index({ status: 1 });
 userSchema.index({ authProvider: 1 });
+userSchema.index({ resetPasswordTokenHash: 1 });
+userSchema.index({ resetPasswordExpiresAt: 1 });
 
 userSchema.index(
   { googleId: 1 },

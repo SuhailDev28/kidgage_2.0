@@ -614,13 +614,23 @@ export default function LoginPage() {
                   Remember me
                 </label>
 
-                <Link
-                  to="/register"
-                  className="text-sm font-black transition hover:opacity-80"
-                  style={{ color: primary }}
-                >
-                  Create parent account
-                </Link>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm font-black transition hover:opacity-80"
+                    style={{ color: primary }}
+                  >
+                    Forgot password?
+                  </Link>
+
+                  <Link
+                    to="/register"
+                    className="text-sm font-black transition hover:opacity-80"
+                    style={{ color: primary }}
+                  >
+                    Create parent account
+                  </Link>
+                </div>
               </div>
 
               {error ? (

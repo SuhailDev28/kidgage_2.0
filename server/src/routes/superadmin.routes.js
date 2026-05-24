@@ -26,6 +26,8 @@ import AcademySettlement from "../models/AcademySettlement.js";
 import Event from "../models/Event.js";
 import ContentPage from "../models/ContentPage.js";
 import Child from "../models/Child.js";
+import { sendKidgageEmail } from "../services/email/smtp.service.js";
+import { renderEmailTemplate } from "../services/email/emailTemplate.service.js";
 
 import {
   notifyAcademyRegistrationApproved,
@@ -304,6 +306,129 @@ async function getAppSettingsDoc() {
   }
 
   return settings;
+}
+
+async function getEmailRuntimeDefaults() {
+  const settings =
+    (await AppSetting.findOne({ key: "GLOBAL" }).lean()) ||
+    (await AppSetting.findOne({}).sort({ createdAt: -1 }).lean()) ||
+    {};
+
+  const siteName = settings.siteName || "KidGage";
+
+  const supportEmail =
+    settings.contactEmail ||
+    process.env.CONTACT_RECEIVER_EMAIL ||
+    "support@kidgage.com";
+
+  return {
+    settings,
+    siteName,
+    supportEmail,
+  };
+}
+
+function pickDisplayName(entity, fallback = "") {
+  return (
+    entity?.fullName ||
+    entity?.name ||
+    entity?.title ||
+    entity?.academyName ||
+    fallback
+  );
+}
+
+function pickBookingNumber(booking) {
+  return (
+    booking?.bookingNo ||
+    booking?.referenceNo ||
+    booking?.bookingReference ||
+    String(booking?._id || "")
+  );
+}
+
+function normalizeRefundStatusForEmail(value, booking) {
+  const explicit = String(value || "").trim();
+
+  if (explicit) return explicit;
+
+  const paymentStatus = normalizeStatus(booking?.paymentStatus);
+
+  if (paymentStatus === "REFUNDED") return "Refunded";
+  if (paymentStatus === "PAID") return "Pending refund review";
+  if (paymentStatus === "CANCELLED") return "No paid payment found";
+
+  return "Pending review";
+}
+
+async function sendCancellationApprovedEmail({
+  bookingId,
+  adminNote = "",
+  refundStatus = "",
+} = {}) {
+  try {
+    if (!Booking || !bookingId || !isValidObjectId(bookingId)) {
+      return false;
+    }
+
+    const booking = await Booking.findById(bookingId)
+      .populate("academyId", "name email phone")
+      .populate("parentId", "fullName name email phone")
+      .populate("childId", "fullName name")
+      .populate("activityId", "title name")
+      .lean();
+
+    if (!booking) {
+      return false;
+    }
+
+    const parentEmail =
+      booking?.parentId?.email ||
+      booking?.guestParent?.email ||
+      booking?.guestParentSnapshot?.email ||
+      booking?.parentEmail ||
+      "";
+
+    if (!parentEmail) {
+      return false;
+    }
+
+    const { siteName, supportEmail } = await getEmailRuntimeDefaults();
+
+    const rendered = await renderEmailTemplate(
+      "CANCELLATION_REQUEST_APPROVED",
+      {
+        siteName,
+        parentName: pickDisplayName(booking.parentId, "Parent"),
+        childName:
+          pickDisplayName(booking.childId, "") ||
+          booking?.guestChild?.fullName ||
+          booking?.guestChild?.name ||
+          booking?.childSnapshot?.fullName ||
+          "Child",
+        activityName: pickDisplayName(booking.activityId, "Activity"),
+        academyName: pickDisplayName(booking.academyId, "Academy"),
+        bookingNo: pickBookingNumber(booking),
+        adminNote:
+          String(adminNote || "").trim() ||
+          "Your cancellation request has been approved.",
+        refundStatus: normalizeRefundStatusForEmail(refundStatus, booking),
+        supportEmail,
+      },
+    );
+
+    await sendKidgageEmail({
+      to: parentEmail,
+      subject: rendered.subject,
+      html: rendered.html,
+      text: rendered.text,
+    });
+
+    return true;
+  } catch (emailError) {
+    console.error("Cancellation approval email failed:", emailError);
+    return false;
+  }
 }
 
 function toMoney(value, fallback = 0) {
@@ -624,7 +749,6 @@ function normalizeActivityApprovalForClient(item) {
     updatedAt: item.updatedAt || null,
   };
 }
-
 
 async function dispatchManualPaymentPaidNotifications({
   payment,
@@ -947,7 +1071,6 @@ router.delete(
   },
 );
 
-
 /* ---------------------------------
  * Activity Approval Requests
  * -------------------------------- */
@@ -961,7 +1084,12 @@ router.get(
         .trim()
         .toUpperCase();
 
-      const allowedStatuses = ["PENDING_APPROVAL", "APPROVED", "REJECTED", "ALL"];
+      const allowedStatuses = [
+        "PENDING_APPROVAL",
+        "APPROVED",
+        "REJECTED",
+        "ALL",
+      ];
       const approvalStatus = allowedStatuses.includes(status)
         ? status
         : "PENDING_APPROVAL";
@@ -991,7 +1119,9 @@ router.get(
         filter.academyId = req.query.academyId;
       }
 
-      const q = String(req.query.q || "").trim().toLowerCase();
+      const q = String(req.query.q || "")
+        .trim()
+        .toLowerCase();
       const limit = Math.min(Math.max(Number(req.query.limit || 200), 1), 500);
 
       let activities = await Activity.find(filter)
@@ -3831,6 +3961,83 @@ router.get(
       return res.json({
         count: activities.length,
         activities,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.patch(
+  "/bookings/:id/cancellation/approve",
+  auth,
+  requireRole("SUPER_ADMIN"),
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+
+      if (!isValidObjectId(id)) {
+        return res.status(400).json({ message: "Invalid booking id" });
+      }
+
+      if (!Booking) {
+        return res.status(500).json({ message: "Booking model unavailable" });
+      }
+
+      const booking = await Booking.findById(id);
+
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      const adminNote = String(
+        req.body.adminNote ||
+          req.body.cancellationAdminNote ||
+          "Your cancellation request has been approved.",
+      ).trim();
+
+      booking.bookingStatus = "CANCELLED";
+      booking.status = "CANCELLED";
+      booking.cancellationStatus = "APPROVED";
+      booking.cancellationAdminNote = adminNote;
+      booking.cancellationReviewedAt = new Date();
+      booking.cancellationReviewedBy = req.user?._id || null;
+
+      if (normalizeStatus(booking.paymentStatus) === "PENDING") {
+        booking.paymentStatus = "CANCELLED";
+      }
+
+      await booking.save();
+
+      if (booking.paymentId) {
+        await Payment.updateMany(
+          {
+            $or: [{ _id: booking.paymentId }, { bookingId: booking._id }],
+            paymentStatus: { $ne: "PAID" },
+          },
+          {
+            $set: {
+              paymentStatus: "CANCELLED",
+              cancelledAt: new Date(),
+            },
+          },
+        );
+      }
+
+      const emailSent = await sendCancellationApprovedEmail({
+        bookingId: booking._id,
+        adminNote,
+        refundStatus: req.body.refundStatus || "",
+      });
+
+      const populatedBooking = await populateSuperAdminBookingById(booking._id);
+
+      return res.json({
+        message: emailSent
+          ? "Cancellation approved and email sent successfully"
+          : "Cancellation approved, but email was not sent",
+        emailSent,
+        booking: populatedBooking,
       });
     } catch (error) {
       next(error);
