@@ -399,12 +399,12 @@ export default function LoginPage() {
 
   return (
     <section
-      className="min-h-[100svh] px-3 py-4 sm:px-5 sm:py-6 md:px-6 md:py-8 lg:px-8 lg:py-10"
+      className="min-h-[100svh] overflow-x-hidden px-0 py-0 sm:px-5 sm:py-6 md:px-6 md:py-8 lg:px-8 lg:py-10"
       style={{
         background: `radial-gradient(circle at top left, rgba(${primaryRgb}, 0.16), transparent 34%), radial-gradient(circle at bottom right, rgba(${secondaryRgb}, 0.2), transparent 30%), linear-gradient(180deg, #fff7ed 0%, #ffffff 42%, #f8fafc 100%)`,
       }}
     >
-      <div className="mx-auto grid w-full max-w-[1180px] overflow-hidden rounded-[26px] border border-white/70 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.12)] sm:rounded-[30px] lg:min-h-[680px] xl:min-h-[720px] xl:grid-cols-[0.92fr_1.08fr]">
+      <div className="mx-auto grid w-full max-w-[1180px] overflow-hidden rounded-none border border-white/70 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.12)] sm:rounded-[30px] lg:min-h-[680px] xl:min-h-[720px] xl:grid-cols-[0.92fr_1.08fr]">
         <aside
           className="relative hidden overflow-hidden p-7 text-white xl:flex xl:flex-col xl:justify-between xl:p-10"
           style={{ backgroundColor: primary }}
@@ -482,10 +482,13 @@ export default function LoginPage() {
           </div>
         </aside>
 
-        <div className="flex min-h-[calc(100svh-32px)] items-center justify-center p-4 sm:min-h-[640px] sm:p-6 md:p-8 lg:p-10 xl:min-h-[720px]">
-          <div className="w-full max-w-[470px]">
-            <div className="mb-7 flex items-center justify-between gap-4 xl:hidden">
-              <Link to="/" className="flex min-w-0 items-center gap-3">
+        <div className="flex min-h-[100svh] min-w-0 items-start justify-center px-5 py-7 sm:min-h-[640px] sm:items-center sm:p-6 md:p-8 lg:p-10 xl:min-h-[720px]">
+          <div className="min-w-0 w-full max-w-[470px] overflow-hidden">
+            <div className="mb-7 xl:hidden">
+              <Link
+                to="/"
+                className="flex min-w-0 items-center gap-3 overflow-hidden"
+              >
                 <div
                   className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl"
                   style={{
@@ -504,11 +507,11 @@ export default function LoginPage() {
                   )}
                 </div>
 
-                <div className="min-w-0">
-                  <div className="truncate text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  <div className="truncate text-2xl font-black tracking-tight text-slate-900">
                     {theme.siteName}
                   </div>
-                  <div className="truncate text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 sm:text-xs">
+                  <div className="max-w-full truncate text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
                     {theme.tagline}
                   </div>
                 </div>
@@ -516,7 +519,7 @@ export default function LoginPage() {
             </div>
 
             <div
-              className="inline-flex rounded-full px-4 py-2 text-center text-[11px] font-black uppercase tracking-[0.16em] ring-1 sm:text-xs"
+              className="inline-flex max-w-full rounded-full px-4 py-2 text-center text-[11px] font-black uppercase tracking-[0.16em] ring-1 sm:text-xs"
               style={{
                 backgroundColor: `rgba(${primaryRgb}, 0.1)`,
                 color: primary,
@@ -526,7 +529,7 @@ export default function LoginPage() {
               Welcome back
             </div>
 
-            <h1 className="mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl md:text-5xl">
+            <h1 className="mt-5 text-[34px] font-black leading-[1.08] tracking-tight text-slate-950 sm:text-4xl md:text-5xl">
               Sign in to your account
             </h1>
 
@@ -542,7 +545,7 @@ export default function LoginPage() {
                 </div>
 
                 <div
-                  className="group flex h-[56px] items-center gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 transition focus-within:bg-white focus-within:ring-4 sm:h-[58px]"
+                  className="group flex h-[56px] min-w-0 items-center gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 transition focus-within:bg-white focus-within:ring-4 sm:h-[58px]"
                   style={{
                     "--tw-ring-color": `rgba(${primaryRgb}, 0.16)`,
                   }}
@@ -566,7 +569,7 @@ export default function LoginPage() {
                 </div>
 
                 <div
-                  className="group flex h-[56px] items-center gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 transition focus-within:bg-white focus-within:ring-4 sm:h-[58px]"
+                  className="group flex h-[56px] min-w-0 items-center gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 transition focus-within:bg-white focus-within:ring-4 sm:h-[58px]"
                   style={{
                     "--tw-ring-color": `rgba(${primaryRgb}, 0.16)`,
                   }}
@@ -644,14 +647,14 @@ export default function LoginPage() {
 
             <div className="my-6 flex items-center gap-3 sm:my-7">
               <div className="h-px flex-1 bg-slate-200" />
-              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 sm:text-xs">
+              <span className="whitespace-nowrap text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 sm:text-xs">
                 Or continue with
               </span>
               <div className="h-px flex-1 bg-slate-200" />
             </div>
 
             <div className="grid gap-3">
-              <div className="mx-auto w-full max-w-[360px] overflow-hidden">
+              <div className="mx-auto flex w-full max-w-[360px] justify-center overflow-hidden">
                 <GoogleLogin
                   onSuccess={handleGoogleLogin}
                   onError={() => setError("Google login failed")}
@@ -660,7 +663,7 @@ export default function LoginPage() {
                   size="large"
                   shape="pill"
                   text="continue_with"
-                  width="360"
+                  width="320"
                 />
               </div>
 
@@ -693,7 +696,7 @@ export default function LoginPage() {
               </Link>
             </div>
 
-            <div className="mt-5 grid grid-cols-1 gap-3 text-xs text-slate-500 xs:grid-cols-3 sm:mt-6 sm:grid-cols-3">
+            <div className="mt-5 grid grid-cols-1 gap-3 text-xs text-slate-500 sm:mt-6 sm:grid-cols-3">
               <div className="rounded-2xl bg-white p-3 text-center ring-1 ring-slate-200">
                 Parent portal
               </div>
