@@ -21,20 +21,21 @@ import authRoutes from "./routes/auth.routes.js";
 import publicRoutes from "./routes/public.routes.js";
 import parentRoutes from "./routes/parent.routes.js";
 import academyRoutes from "./routes/academy.routes.js";
+
 import superAdminRoutes from "./routes/superadmin.routes.js";
 import superAdminCategoriesRoutes from "./routes/superadmin.categories.routes.js";
 import superAdminCertificateTemplatesRoutes from "./routes/superadmin.certificateTemplates.routes.js";
+import superAdminPaymentsRoutes from "./routes/superadmin.payments.routes.js";
+import superAdminSmtpRoutes from "./routes/superadmin.smtp.routes.js";
+import superAdminEmailTemplatesRoutes from "./routes/superadmin.emailTemplates.routes.js";
 
 import paymentRoutes from "./routes/payment.routes.js";
 import myfatoorahRoutes from "./routes/myfatoorah.routes.js";
-import superAdminPaymentsRoutes from "./routes/superadmin.payments.routes.js";
 import academySettingsRoutes from "./routes/academy.settings.routes.js";
 import emailRoutes from "./routes/email.routes.js";
 import socialAuthRoutes from "./routes/socialAuth.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import academyAttendanceRoutes from "./routes/academy.attendance.routes.js";
-import superAdminSmtpRoutes from "./routes/superadmin.smtp.routes.js";
-import superAdminEmailTemplatesRoutes from "./routes/superadmin.emailTemplates.routes.js";
 
 export const app = express();
 
@@ -184,15 +185,25 @@ app.use("/api/public", publicRoutes);
 app.use("/api/parent", parentRoutes);
 app.use("/api/academy", academyRoutes);
 
+/*
+ * Specific Super Admin modules must be mounted BEFORE main superAdminRoutes.
+ * This prevents generic /api/super-admin handlers from catching these routes first.
+ */
 app.use("/api/super-admin/categories", superAdminCategoriesRoutes);
-app.use("/api/super-admin", superAdminRoutes);
 app.use("/api/super-admin", superAdminCertificateTemplatesRoutes);
+app.use("/api/super-admin", superAdminSmtpRoutes);
+app.use("/api/super-admin", superAdminEmailTemplatesRoutes);
+app.use("/api/super-admin", superAdminPaymentsRoutes);
+
+/*
+ * Main Super Admin routes should come after the specific modules.
+ */
+app.use("/api/super-admin", superAdminRoutes);
 
 app.use("/api/academy", academySettingsRoutes);
 app.use("/api/auth/social", socialAuthRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/academy/attendance", academyAttendanceRoutes);
-app.use("/api/super-admin", superAdminSmtpRoutes);
 
 /* ---------------------------------
  * Payment routes
@@ -203,7 +214,6 @@ app.use("/api/super-admin", superAdminSmtpRoutes);
  * -------------------------------- */
 app.use("/api/payments/myfatoorah", myfatoorahRoutes);
 app.use("/api/payments", paymentRoutes);
-app.use("/api/super-admin", superAdminPaymentsRoutes);
 
 /* ---------------------------------
  * Email routes
