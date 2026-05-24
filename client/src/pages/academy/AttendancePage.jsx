@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Award,
+  BookOpen,
   CalendarDays,
   CheckCircle2,
   ClipboardCheck,
@@ -9,7 +10,6 @@ import {
   Loader2,
   RefreshCw,
   Search,
-  ShieldCheck,
   UserRound,
   Users,
   XCircle,
@@ -56,202 +56,20 @@ function getStudentRowKey(student) {
   );
 }
 
-function getStatusMeta(status) {
-  const value = String(status || "").toUpperCase();
-
-  if (value === "PRESENT") {
-    return {
-      label: "Present",
-      className: "kg-status-pill present",
-      icon: CheckCircle2,
-    };
-  }
-
-  if (value === "ABSENT") {
-    return {
-      label: "Absent",
-      className: "kg-status-pill absent",
-      icon: XCircle,
-    };
-  }
-
-  if (value === "LATE") {
-    return {
-      label: "Late",
-      className: "kg-status-pill late",
-      icon: Clock3,
-    };
-  }
-
-  if (value === "EXCUSED") {
-    return {
-      label: "Excused",
-      className: "kg-status-pill excused",
-      icon: ShieldCheck,
-    };
-  }
-
-  return {
-    label: "Not Marked",
-    className: "kg-status-pill neutral",
-    icon: Clock3,
-  };
+function attendanceRate(summary) {
+  if (!summary.total) return 0;
+  return Math.round((summary.present / summary.total) * 100);
 }
 
-function StatCard({ icon: Icon, label, value, tone = "green" }) {
+function StatMini({ icon: Icon, label, value, color, bg }) {
   return (
-    <div className={`kg-stat-card ${tone}`}>
-      <div className="kg-stat-icon">
-        <Icon size={20} />
+    <div className="kg-stat-card">
+      <div className={cx("kg-stat-icon", bg, color)}>
+        <Icon size={22} />
       </div>
       <div>
-        <span>{label}</span>
-        <strong>{value}</strong>
-      </div>
-    </div>
-  );
-}
-
-function StudentCard({
-  student,
-  rowKey,
-  savingKey,
-  certificateKey,
-  markAttendance,
-  issueCertificate,
-}) {
-  const required = Number(student.requiredSessions || 0);
-  const completed = Number(student.completedSessions || 0);
-  const progress =
-    required > 0 ? Math.min(100, Math.round((completed / required) * 100)) : 0;
-  const statusMeta = getStatusMeta(student.status);
-  const StatusIcon = statusMeta.icon;
-
-  return (
-    <div className="kg-student-card">
-      <div className="kg-student-card-head">
-        <div className="kg-child-cell">
-          <div className="kg-avatar">
-            <UserRound size={18} />
-          </div>
-
-          <div>
-            <div className="kg-child-name">
-              {student.childName || "Student"}
-            </div>
-
-            <div className="kg-muted">
-              Age: {student.age || "N/A"}
-              {student.gender ? ` • ${student.gender}` : ""}
-            </div>
-
-            <div className="kg-badges">
-              {student.isGuestBooking ? (
-                <span className="kg-badge guest">Guest</span>
-              ) : (
-                <span className="kg-badge">Registered</span>
-              )}
-
-              {student.bookingNo ? (
-                <span className="kg-badge">{student.bookingNo}</span>
-              ) : null}
-
-              {student.paymentStatus ? (
-                <span
-                  className={cx(
-                    "kg-badge",
-                    student.paymentStatus === "PAID" ? "paid" : "pending",
-                  )}
-                >
-                  {student.paymentStatus}
-                </span>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        <div className={statusMeta.className}>
-          <StatusIcon size={14} />
-          {statusMeta.label}
-        </div>
-      </div>
-
-      <div className="kg-mobile-info-grid">
-        <div>
-          <span>Parent</span>
-          <strong>{student.parentName || "N/A"}</strong>
-          {student.parentPhone ? <small>{student.parentPhone}</small> : null}
-          {student.parentEmail ? <small>{student.parentEmail}</small> : null}
-        </div>
-
-        <div>
-          <span>Progress</span>
-          <strong>
-            {completed}/{required || "-"} sessions
-          </strong>
-          <div className="kg-progress-line">
-            <div
-              className="kg-progress-fill"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <small>{progress}% completed</small>
-        </div>
-      </div>
-
-      <div className="kg-status-buttons">
-        {STATUSES.map((item) => {
-          const active = student.status === item.value;
-          const key = `${rowKey}-${item.value}`;
-
-          return (
-            <button
-              key={item.value}
-              type="button"
-              className={cx(
-                "kg-status-btn",
-                item.value === "ABSENT" && "absent",
-                item.value === "LATE" && "late",
-                item.value === "EXCUSED" && "excused",
-                active && "active",
-              )}
-              onClick={() => markAttendance(student, item.value)}
-              disabled={savingKey === key}
-            >
-              {savingKey === key ? (
-                <Loader2 size={14} className="spin" />
-              ) : item.value === "ABSENT" ? (
-                <XCircle size={14} />
-              ) : (
-                <CheckCircle2 size={14} />
-              )}
-              {item.label}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="kg-card-footer">
-        {student.certificate ? (
-          <div className="kg-cert-issued">
-            <Award size={15} />
-            Issued: {student.certificate.certificateNo}
-          </div>
-        ) : (
-          <button
-            type="button"
-            className="kg-cert-btn"
-            disabled={!student.isCompleted || certificateKey === rowKey}
-            onClick={() => issueCertificate(student)}
-          >
-            {certificateKey === rowKey ? (
-              <Loader2 size={16} className="spin" />
-            ) : (
-              <Award size={16} />
-            )}
-            Issue Certificate
-          </button>
-        )}
+        <div className="kg-stat-label">{label}</div>
+        <div className="kg-stat-value">{value}</div>
       </div>
     </div>
   );
@@ -362,10 +180,7 @@ export default function AttendancePage() {
     return { total, present, absent, late, completed };
   }, [students]);
 
-  const attendanceRate = useMemo(() => {
-    if (!summary.total) return 0;
-    return Math.round((summary.present / summary.total) * 100);
-  }, [summary.present, summary.total]);
+  const rate = attendanceRate(summary);
 
   async function markAttendance(student, status) {
     const rowKey = getStudentRowKey(student);
@@ -421,169 +236,229 @@ export default function AttendancePage() {
           min-height: 100vh;
           background:
             radial-gradient(circle at top left, rgba(236, 122, 59, 0.16), transparent 34%),
-            radial-gradient(circle at top right, rgba(22, 163, 74, 0.14), transparent 30%),
-            radial-gradient(circle at bottom right, rgba(24, 119, 242, 0.08), transparent 28%),
-            #f8fafc;
+            radial-gradient(circle at top right, rgba(24, 119, 242, 0.10), transparent 30%),
+            linear-gradient(180deg, #fff8f4 0%, #f8fafc 44%, #ffffff 100%);
           padding: 24px;
           color: #0f172a;
         }
 
         .kg-attendance-shell {
-          max-width: 1320px;
+          width: 100%;
+          max-width: 1480px;
           margin: 0 auto;
         }
 
-        .kg-attendance-hero {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
-          gap: 20px;
-          align-items: stretch;
-          margin-bottom: 20px;
-        }
-
-        .kg-hero-main {
+        .kg-attendance-hero-card {
           position: relative;
           overflow: hidden;
-          border-radius: 32px;
-          background: rgba(255, 255, 255, 0.92);
-          border: 1px solid rgba(15, 23, 42, 0.08);
-          box-shadow: 0 22px 55px rgba(15, 23, 42, 0.08);
-          padding: 24px;
+          border: 1px solid rgba(236, 122, 59, 0.18);
+          border-radius: 36px;
+          background:
+            radial-gradient(circle at right top, rgba(255, 216, 77, 0.30), transparent 32%),
+            linear-gradient(135deg, rgba(255,255,255,0.96), rgba(255,247,237,0.72), rgba(239,246,255,0.74));
+          box-shadow: 0 24px 70px rgba(15, 23, 42, 0.08);
+          padding: 30px;
         }
 
-        .kg-hero-main::before {
-          content: "";
+        .kg-hero-glow-a,
+        .kg-hero-glow-b {
+          pointer-events: none;
           position: absolute;
+          border-radius: 999px;
+          filter: blur(44px);
+        }
+
+        .kg-hero-glow-a {
           right: -80px;
           top: -80px;
-          width: 230px;
-          height: 230px;
-          border-radius: 999px;
-          background: rgba(236, 122, 59, 0.16);
-          filter: blur(4px);
+          width: 280px;
+          height: 280px;
+          background: rgba(236, 122, 59, 0.22);
         }
 
-        .kg-hero-main::after {
-          content: "";
-          position: absolute;
-          left: 42%;
+        .kg-hero-glow-b {
+          left: 38%;
           bottom: -120px;
-          width: 260px;
-          height: 260px;
-          border-radius: 999px;
-          background: rgba(22, 163, 74, 0.12);
-          filter: blur(6px);
+          width: 320px;
+          height: 320px;
+          background: rgba(24, 119, 242, 0.12);
         }
 
-        .kg-attendance-title {
+        .kg-hero-content {
           position: relative;
           z-index: 1;
-          display: flex;
-          gap: 16px;
-          align-items: center;
-          min-width: 0;
+          display: grid;
+          gap: 24px;
         }
 
-        .kg-attendance-icon {
-          width: 60px;
-          height: 60px;
-          border-radius: 22px;
-          background: linear-gradient(135deg, ${GREEN}, ${ORANGE});
+        .kg-hero-top {
           display: grid;
-          place-items: center;
-          color: white;
-          box-shadow: 0 18px 35px rgba(22, 163, 74, 0.22);
-          flex: 0 0 auto;
+          grid-template-columns: minmax(0, 1fr) 280px;
+          gap: 20px;
+          align-items: center;
+        }
+
+        .kg-hero-title-wrap {
+          min-width: 0;
         }
 
         .kg-kicker {
           display: inline-flex;
           align-items: center;
           gap: 8px;
+          max-width: 100%;
           border-radius: 999px;
-          background: #fff7ed;
-          border: 1px solid #fed7aa;
-          color: #c2410c;
-          padding: 7px 10px;
-          font-size: 11px;
-          font-weight: 950;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-          margin-bottom: 10px;
-        }
-
-        .kg-attendance-title h1 {
-          margin: 0;
-          font-size: 34px;
-          line-height: 1.05;
-          font-weight: 950;
-          letter-spacing: -0.05em;
-        }
-
-        .kg-attendance-title p {
-          margin: 8px 0 0;
-          color: #64748b;
-          font-weight: 650;
-          line-height: 1.7;
-          max-width: 720px;
-        }
-
-        .kg-hero-side {
-          min-width: 250px;
-          border-radius: 32px;
-          background: linear-gradient(135deg, #0f172a, #1e293b);
-          color: white;
-          padding: 22px;
-          box-shadow: 0 22px 55px rgba(15, 23, 42, 0.16);
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          gap: 18px;
-        }
-
-        .kg-hero-side span {
-          color: rgba(255, 255, 255, 0.62);
+          background: #ffffff;
+          color: ${ORANGE};
+          border: 1px solid rgba(236, 122, 59, 0.18);
+          padding: 8px 14px;
           font-size: 12px;
           font-weight: 950;
           text-transform: uppercase;
-          letter-spacing: 0.12em;
+          letter-spacing: 0.15em;
+          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
         }
 
-        .kg-hero-side strong {
-          display: block;
+        .kg-hero-title {
+          margin: 16px 0 0;
+          font-size: clamp(34px, 4vw, 58px);
+          line-height: 0.98;
+          font-weight: 950;
+          letter-spacing: -0.07em;
+          color: #020617;
+        }
+
+        .kg-hero-description {
+          margin: 12px 0 0;
+          max-width: 760px;
+          color: #64748b;
+          font-size: 16px;
+          line-height: 1.8;
+          font-weight: 650;
+        }
+
+        .kg-rate-card {
+          justify-self: end;
+          width: 100%;
+          max-width: 280px;
+          border-radius: 30px;
+          background: rgba(255, 255, 255, 0.92);
+          border: 1px solid rgba(15, 23, 42, 0.06);
+          padding: 18px;
+          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+        }
+
+        .kg-rate-label {
+          color: #94a3b8;
+          font-size: 12px;
+          font-weight: 950;
+          text-transform: uppercase;
+          letter-spacing: 0.13em;
+        }
+
+        .kg-rate-value {
           margin-top: 8px;
+          display: flex;
+          align-items: baseline;
+          gap: 6px;
+          color: #020617;
           font-size: 42px;
           line-height: 1;
           font-weight: 950;
+          letter-spacing: -0.06em;
         }
 
-        .kg-rate-line {
+        .kg-rate-value span {
+          font-size: 18px;
+          color: #64748b;
+          letter-spacing: 0;
+        }
+
+        .kg-rate-track {
           height: 10px;
           border-radius: 999px;
-          background: rgba(255, 255, 255, 0.14);
+          background: #e2e8f0;
           overflow: hidden;
+          margin-top: 14px;
         }
 
         .kg-rate-fill {
           height: 100%;
-          border-radius: 999px;
+          border-radius: inherit;
           background: linear-gradient(90deg, ${GREEN}, ${ORANGE});
         }
 
-        .kg-card {
-          background: rgba(255, 255, 255, 0.92);
-          border: 1px solid rgba(15, 23, 42, 0.08);
-          border-radius: 26px;
-          box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+        .kg-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          gap: 16px;
         }
 
-        .kg-toolbar {
+        .kg-stat-card {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          min-width: 0;
+          border-radius: 28px;
+          background: rgba(255, 255, 255, 0.92);
+          border: 1px solid rgba(15, 23, 42, 0.04);
           padding: 18px;
+          box-shadow: 0 18px 42px rgba(15, 23, 42, 0.06);
+          backdrop-filter: blur(10px);
+        }
+
+        .kg-stat-icon {
+          width: 58px;
+          height: 58px;
+          border-radius: 22px;
           display: grid;
-          grid-template-columns: minmax(0, 1.35fr) 220px minmax(0, 1fr) auto;
+          place-items: center;
+          flex: 0 0 auto;
+        }
+
+        .kg-bg-orange { background: #fff1e8; }
+        .kg-bg-blue { background: #eff6ff; }
+        .kg-bg-green { background: #ecfdf5; }
+        .kg-bg-red { background: #fef2f2; }
+        .kg-bg-amber { background: #fffbeb; }
+        .kg-text-orange { color: ${ORANGE}; }
+        .kg-text-blue { color: ${BLUE}; }
+        .kg-text-green { color: ${GREEN}; }
+        .kg-text-red { color: #ef4444; }
+        .kg-text-amber { color: #d97706; }
+
+        .kg-stat-label {
+          color: #94a3b8;
+          font-size: 12px;
+          font-weight: 950;
+          text-transform: uppercase;
+          letter-spacing: 0.14em;
+          white-space: nowrap;
+        }
+
+        .kg-stat-value {
+          margin-top: 4px;
+          color: #020617;
+          font-size: 32px;
+          line-height: 1;
+          font-weight: 950;
+          letter-spacing: -0.06em;
+        }
+
+        .kg-toolbar-card {
+          margin-top: 22px;
+          border-radius: 30px;
+          background: rgba(255, 255, 255, 0.92);
+          border: 1px solid rgba(255, 255, 255, 0.92);
+          padding: 18px;
+          box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+          backdrop-filter: blur(12px);
+        }
+
+        .kg-toolbar-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1.25fr) 220px minmax(0, 1fr);
           gap: 14px;
-          margin-bottom: 18px;
-          align-items: end;
         }
 
         .kg-field {
@@ -594,11 +469,11 @@ export default function AttendancePage() {
         }
 
         .kg-field label {
+          color: #64748b;
           font-size: 12px;
           font-weight: 950;
           text-transform: uppercase;
-          letter-spacing: 0.08em;
-          color: #64748b;
+          letter-spacing: 0.1em;
         }
 
         .kg-input-wrap {
@@ -607,7 +482,7 @@ export default function AttendancePage() {
 
         .kg-input-wrap svg {
           position: absolute;
-          left: 14px;
+          left: 16px;
           top: 50%;
           transform: translateY(-50%);
           color: #94a3b8;
@@ -617,48 +492,85 @@ export default function AttendancePage() {
         .kg-field select,
         .kg-field input {
           width: 100%;
-          border: 1px solid rgba(15, 23, 42, 0.12);
-          border-radius: 18px;
-          background: white;
-          padding: 13px 14px;
+          min-height: 56px;
+          box-sizing: border-box;
+          border: 1px solid rgba(236, 122, 59, 0.18);
+          border-radius: 22px;
+          background: #ffffff;
+          padding: 0 16px;
+          color: #0f172a;
+          font-size: 14px;
           font-weight: 850;
           outline: none;
-          min-height: 52px;
-          box-sizing: border-box;
+          transition: border-color 0.16s ease, box-shadow 0.16s ease;
         }
 
         .kg-input-wrap input {
-          padding-left: 44px;
+          padding-left: 48px;
         }
 
         .kg-field select:focus,
         .kg-field input:focus {
-          border-color: ${GREEN};
-          box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.12);
+          border-color: ${ORANGE};
+          box-shadow: 0 0 0 4px rgba(236, 122, 59, 0.13);
+        }
+
+        .kg-selected-card {
+          margin-top: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          border-radius: 30px;
+          background: rgba(255,255,255,0.92);
+          border: 1px solid rgba(15, 23, 42, 0.05);
+          padding: 20px;
+          box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+        }
+
+        .kg-selected-title {
+          color: #020617;
+          font-size: 22px;
+          font-weight: 950;
+          letter-spacing: -0.04em;
+        }
+
+        .kg-selected-meta {
+          margin-top: 8px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 16px;
+          color: #64748b;
+          font-size: 14px;
+          font-weight: 750;
+        }
+
+        .kg-selected-meta span {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
         }
 
         .kg-refresh-btn {
-          min-height: 52px;
           border: 0;
-          border-radius: 18px;
-          padding: 0 16px;
-          background: #0f172a;
-          color: white;
-          font-weight: 950;
+          border-radius: 22px;
+          background: #f1f5f9;
+          color: #334155;
+          min-height: 56px;
+          padding: 0 22px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
+          gap: 10px;
+          font-size: 15px;
+          font-weight: 950;
           cursor: pointer;
-          transition:
-            transform 0.16s ease,
-            box-shadow 0.16s ease,
-            background 0.16s ease;
+          transition: transform 0.16s ease, background 0.16s ease;
         }
 
         .kg-refresh-btn:hover:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow: 0 14px 24px rgba(15, 23, 42, 0.16);
+          background: #e2e8f0;
         }
 
         .kg-refresh-btn:disabled {
@@ -666,177 +578,113 @@ export default function AttendancePage() {
           cursor: wait;
         }
 
-        .kg-course-note {
-          margin: -4px 0 18px;
-          color: #64748b;
-          font-size: 13px;
-          font-weight: 750;
-        }
-
-        .kg-course-note strong {
-          color: #0f172a;
-        }
-
-        .kg-summary-grid {
-          display: grid;
-          grid-template-columns: repeat(5, minmax(0, 1fr));
-          gap: 14px;
-          margin-bottom: 18px;
-        }
-
-        .kg-stat-card {
-          padding: 18px;
-          border-radius: 24px;
-          background: white;
-          border: 1px solid rgba(15, 23, 42, 0.08);
-          box-shadow: 0 14px 30px rgba(15, 23, 42, 0.05);
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          min-width: 0;
-        }
-
-        .kg-stat-icon {
-          width: 46px;
-          height: 46px;
-          border-radius: 17px;
-          display: grid;
-          place-items: center;
-          flex: 0 0 auto;
-        }
-
-        .kg-stat-card.green .kg-stat-icon {
-          background: #dcfce7;
-          color: #166534;
-        }
-
-        .kg-stat-card.orange .kg-stat-icon {
-          background: #fff7ed;
-          color: #c2410c;
-        }
-
-        .kg-stat-card.red .kg-stat-icon {
-          background: #fef2f2;
-          color: #b91c1c;
-        }
-
-        .kg-stat-card.blue .kg-stat-icon {
-          background: #eff6ff;
-          color: ${BLUE};
-        }
-
-        .kg-stat-card.slate .kg-stat-icon {
-          background: #f1f5f9;
-          color: #334155;
-        }
-
-        .kg-stat-card span {
-          color: #64748b;
-          font-size: 11px;
-          font-weight: 950;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-        }
-
-        .kg-stat-card strong {
-          display: block;
-          margin-top: 4px;
-          font-size: 27px;
-          font-weight: 950;
-          line-height: 1;
-        }
-
         .kg-error {
+          margin-top: 20px;
           background: #fef2f2;
           border: 1px solid #fecaca;
           color: #991b1b;
           padding: 14px 16px;
           border-radius: 20px;
           font-weight: 850;
-          margin-bottom: 18px;
         }
 
-        .kg-section-head {
+        .kg-table-section {
+          margin-top: 24px;
+          overflow: hidden;
+          border-radius: 34px;
+          background: rgba(255,255,255,0.96);
+          border: 1px solid rgba(15, 23, 42, 0.08);
+          box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+        }
+
+        .kg-table-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 14px;
-          padding: 18px 18px 0;
+          gap: 16px;
+          padding: 22px;
+          border-bottom: 1px solid rgba(15, 23, 42, 0.07);
         }
 
-        .kg-section-head h2 {
+        .kg-table-title {
           margin: 0;
-          font-size: 20px;
+          color: #020617;
+          font-size: 24px;
+          line-height: 1.1;
           font-weight: 950;
-          letter-spacing: -0.03em;
+          letter-spacing: -0.05em;
         }
 
-        .kg-section-head p {
-          margin: 4px 0 0;
+        .kg-table-subtitle {
+          margin-top: 6px;
           color: #64748b;
-          font-size: 13px;
+          font-size: 14px;
           font-weight: 650;
         }
 
-        .kg-table-card {
-          overflow: hidden;
+        .kg-table-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          border-radius: 999px;
+          background: #fff7ed;
+          color: #c2410c;
+          border: 1px solid #fed7aa;
+          padding: 10px 14px;
+          font-size: 12px;
+          font-weight: 950;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          white-space: nowrap;
         }
 
         .kg-table-scroll {
           overflow-x: auto;
-          padding: 18px;
         }
 
         .kg-table {
           width: 100%;
-          border-collapse: separate;
-          border-spacing: 0 10px;
-          min-width: 1080px;
+          border-collapse: collapse;
+          min-width: 1120px;
         }
 
         .kg-table th {
+          background: #f8fafc;
           color: #64748b;
           font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.08em;
           text-align: left;
-          padding: 0 16px 6px;
+          padding: 15px 18px;
+          border-bottom: 1px solid rgba(15, 23, 42, 0.08);
         }
 
         .kg-table td {
-          padding: 16px;
+          padding: 18px;
+          border-bottom: 1px solid rgba(15, 23, 42, 0.06);
           vertical-align: middle;
           font-weight: 750;
-          background: #ffffff;
-          border-top: 1px solid rgba(15, 23, 42, 0.07);
-          border-bottom: 1px solid rgba(15, 23, 42, 0.07);
         }
 
-        .kg-table td:first-child {
-          border-left: 1px solid rgba(15, 23, 42, 0.07);
-          border-radius: 22px 0 0 22px;
+        .kg-table tr:last-child td {
+          border-bottom: 0;
         }
 
-        .kg-table td:last-child {
-          border-right: 1px solid rgba(15, 23, 42, 0.07);
-          border-radius: 0 22px 22px 0;
-        }
-
-        .kg-table tbody tr:hover td {
-          background: #fff7ed;
+        .kg-table tr:hover td {
+          background: rgba(255, 247, 237, 0.35);
         }
 
         .kg-child-cell {
           display: flex;
-          gap: 12px;
+          gap: 13px;
           align-items: flex-start;
         }
 
         .kg-avatar {
-          width: 42px;
-          height: 42px;
-          border-radius: 16px;
-          background: rgba(22, 163, 74, 0.1);
+          width: 44px;
+          height: 44px;
+          border-radius: 17px;
+          background: #ecfdf5;
           color: ${GREEN};
           display: grid;
           place-items: center;
@@ -844,6 +692,7 @@ export default function AttendancePage() {
         }
 
         .kg-child-name {
+          color: #020617;
           font-weight: 950;
         }
 
@@ -858,14 +707,14 @@ export default function AttendancePage() {
           display: flex;
           flex-wrap: wrap;
           gap: 6px;
-          margin-top: 8px;
+          margin-top: 9px;
         }
 
         .kg-badge {
           display: inline-flex;
           align-items: center;
           border-radius: 999px;
-          padding: 5px 8px;
+          padding: 5px 9px;
           background: #f1f5f9;
           color: #475569;
           font-size: 11px;
@@ -887,41 +736,6 @@ export default function AttendancePage() {
           color: #854d0e;
         }
 
-        .kg-status-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          border-radius: 999px;
-          padding: 8px 11px;
-          font-size: 12px;
-          font-weight: 950;
-        }
-
-        .kg-status-pill.present {
-          background: #dcfce7;
-          color: #166534;
-        }
-
-        .kg-status-pill.absent {
-          background: #fef2f2;
-          color: #b91c1c;
-        }
-
-        .kg-status-pill.late {
-          background: #fff7ed;
-          color: #c2410c;
-        }
-
-        .kg-status-pill.excused {
-          background: #eff6ff;
-          color: ${BLUE};
-        }
-
-        .kg-status-pill.neutral {
-          background: #f1f5f9;
-          color: #475569;
-        }
-
         .kg-status-buttons {
           display: flex;
           flex-wrap: wrap;
@@ -932,17 +746,14 @@ export default function AttendancePage() {
           border: 1px solid rgba(15, 23, 42, 0.1);
           background: white;
           border-radius: 999px;
-          padding: 9px 12px;
+          padding: 10px 13px;
           font-size: 12px;
           font-weight: 950;
           cursor: pointer;
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          transition:
-            transform 0.16s ease,
-            box-shadow 0.16s ease,
-            background 0.16s ease;
+          transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
         }
 
         .kg-status-btn:hover:not(:disabled) {
@@ -971,25 +782,21 @@ export default function AttendancePage() {
           border-color: ${ORANGE};
         }
 
-        .kg-status-btn.excused.active {
-          background: ${BLUE};
-          border-color: ${BLUE};
-        }
-
         .kg-progress {
-          min-width: 150px;
+          min-width: 160px;
         }
 
         .kg-progress strong {
+          color: #020617;
           font-weight: 950;
         }
 
         .kg-progress-line {
-          height: 9px;
+          height: 10px;
           border-radius: 999px;
           background: #e2e8f0;
           overflow: hidden;
-          margin-top: 7px;
+          margin-top: 8px;
         }
 
         .kg-progress-fill {
@@ -1001,7 +808,7 @@ export default function AttendancePage() {
         .kg-cert-btn {
           border: 0;
           border-radius: 16px;
-          padding: 11px 14px;
+          padding: 12px 15px;
           font-weight: 950;
           cursor: pointer;
           display: inline-flex;
@@ -1009,9 +816,7 @@ export default function AttendancePage() {
           gap: 8px;
           background: #0f172a;
           color: white;
-          transition:
-            transform 0.16s ease,
-            box-shadow 0.16s ease;
+          transition: transform 0.16s ease, box-shadow 0.16s ease;
         }
 
         .kg-cert-btn:hover:not(:disabled) {
@@ -1028,18 +833,18 @@ export default function AttendancePage() {
           display: inline-flex;
           gap: 8px;
           align-items: center;
-          padding: 9px 12px;
+          padding: 10px 13px;
           border-radius: 999px;
           background: #dcfce7;
           color: #166534;
           font-size: 12px;
           font-weight: 950;
-          max-width: 240px;
+          max-width: 250px;
           word-break: break-word;
         }
 
         .kg-empty {
-          padding: 42px 20px;
+          padding: 48px 20px;
           text-align: center;
           color: #64748b;
           font-weight: 850;
@@ -1052,101 +857,27 @@ export default function AttendancePage() {
           display: none;
         }
 
-        .kg-student-card {
-          background: white;
-          border: 1px solid rgba(15, 23, 42, 0.08);
-          border-radius: 24px;
-          padding: 16px;
-          box-shadow: 0 14px 30px rgba(15, 23, 42, 0.05);
-        }
-
-        .kg-student-card-head {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          gap: 12px;
-        }
-
-        .kg-mobile-info-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 12px;
-          margin: 14px 0;
-        }
-
-        .kg-mobile-info-grid > div {
-          background: #f8fafc;
-          border-radius: 18px;
-          padding: 12px;
-        }
-
-        .kg-mobile-info-grid span {
-          display: block;
-          color: #64748b;
-          font-size: 11px;
-          font-weight: 950;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-        }
-
-        .kg-mobile-info-grid strong {
-          display: block;
-          margin-top: 5px;
-          font-size: 13px;
-          font-weight: 950;
-        }
-
-        .kg-mobile-info-grid small {
-          display: block;
-          margin-top: 4px;
-          color: #64748b;
-          font-weight: 650;
-        }
-
-        .kg-card-footer {
-          margin-top: 14px;
-          padding-top: 14px;
-          border-top: 1px solid rgba(15, 23, 42, 0.08);
-          display: flex;
-          justify-content: flex-end;
-        }
-
         .spin {
           animation: kg-spin 0.8s linear infinite;
         }
 
         @keyframes kg-spin {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
 
-        @media (max-width: 1180px) {
-          .kg-attendance-hero {
+        @media (max-width: 1200px) {
+          .kg-stats-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+
+          .kg-hero-top {
             grid-template-columns: 1fr;
           }
 
-          .kg-hero-side {
-            min-width: 0;
-          }
-
-          .kg-toolbar {
-            grid-template-columns: 1fr 220px;
-          }
-
-          .kg-toolbar .kg-field:nth-child(3) {
-            grid-column: 1 / -1;
-          }
-
-          .kg-refresh-btn {
-            width: 100%;
-          }
-
-          .kg-summary-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+          .kg-rate-card {
+            justify-self: stretch;
+            max-width: none;
           }
         }
 
@@ -1155,22 +886,35 @@ export default function AttendancePage() {
             padding: 16px;
           }
 
-          .kg-toolbar {
+          .kg-attendance-hero-card {
+            border-radius: 30px;
+            padding: 22px;
+          }
+
+          .kg-toolbar-grid {
             grid-template-columns: 1fr;
           }
 
-          .kg-summary-grid {
+          .kg-stats-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
-          .kg-attendance-title {
+          .kg-selected-card {
+            align-items: stretch;
+            flex-direction: column;
+          }
+
+          .kg-refresh-btn {
+            width: 100%;
+          }
+
+          .kg-table-header {
             align-items: flex-start;
+            flex-direction: column;
           }
+        }
 
-          .kg-attendance-title h1 {
-            font-size: 28px;
-          }
-
+        @media (max-width: 720px) {
           .kg-table-scroll {
             display: none;
           }
@@ -1178,7 +922,36 @@ export default function AttendancePage() {
           .kg-mobile-list {
             display: grid;
             gap: 14px;
-            padding: 18px;
+            padding: 16px;
+          }
+
+          .kg-mobile-card {
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 26px;
+            background: #ffffff;
+            padding: 16px;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.05);
+          }
+
+          .kg-mobile-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+          }
+
+          .kg-mobile-section {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(15, 23, 42, 0.08);
+          }
+
+          .kg-mobile-label {
+            color: #94a3b8;
+            font-size: 11px;
+            font-weight: 950;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 8px;
           }
         }
 
@@ -1187,216 +960,206 @@ export default function AttendancePage() {
             padding: 12px;
           }
 
-          .kg-hero-main,
-          .kg-hero-side,
-          .kg-card {
-            border-radius: 24px;
+          .kg-attendance-hero-card {
+            padding: 18px;
           }
 
-          .kg-attendance-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 18px;
+          .kg-kicker {
+            font-size: 10px;
+            letter-spacing: 0.1em;
           }
 
-          .kg-attendance-title {
-            gap: 12px;
+          .kg-hero-title {
+            font-size: 34px;
           }
 
-          .kg-attendance-title h1 {
-            font-size: 24px;
-          }
-
-          .kg-attendance-title p {
-            font-size: 13px;
-          }
-
-          .kg-summary-grid,
-          .kg-mobile-info-grid {
+          .kg-stats-grid {
             grid-template-columns: 1fr;
           }
 
           .kg-stat-card {
-            padding: 15px;
-          }
-
-          .kg-card-footer {
-            justify-content: stretch;
-          }
-
-          .kg-cert-btn,
-          .kg-cert-issued {
-            width: 100%;
-            justify-content: center;
+            padding: 16px;
           }
         }
       `}</style>
 
       <div className="kg-attendance-shell">
-        <div className="kg-attendance-hero">
-          <div className="kg-hero-main">
-            <div className="kg-attendance-title">
-              <div className="kg-attendance-icon">
-                <ClipboardCheck size={30} />
-              </div>
+        <section className="kg-attendance-hero-card">
+          <div className="kg-hero-glow-a" />
+          <div className="kg-hero-glow-b" />
 
-              <div>
+          <div className="kg-hero-content">
+            <div className="kg-hero-top">
+              <div className="kg-hero-title-wrap">
                 <div className="kg-kicker">
-                  <ShieldCheck size={13} />
-                  Academy Attendance
+                  <ClipboardCheck size={16} />
+                  KidGage Attendance Management
                 </div>
 
-                <h1>Course Attendance</h1>
-                <p>
-                  Mark daily attendance by course, track student progress, and
-                  issue completion certificates once the required sessions are
-                  completed.
+                <h1 className="kg-hero-title">Course Attendance</h1>
+
+                <p className="kg-hero-description">
+                  Mark student attendance by course, monitor progress, and issue
+                  completion certificates when students finish their package.
                 </p>
               </div>
-            </div>
-          </div>
 
-          <div className="kg-hero-side">
-            <div>
-              <span>Attendance Rate</span>
-              <strong>{attendanceRate}%</strong>
-            </div>
-
-            <div>
-              <div className="kg-rate-line">
-                <div
-                  className="kg-rate-fill"
-                  style={{ width: `${attendanceRate}%` }}
-                />
+              <div className="kg-rate-card">
+                <div className="kg-rate-label">Attendance Rate</div>
+                <div className="kg-rate-value">
+                  {rate}
+                  <span>%</span>
+                </div>
+                <div className="kg-rate-track">
+                  <div className="kg-rate-fill" style={{ width: `${rate}%` }} />
+                </div>
+                <div className="kg-muted">
+                  {summary.present} present from {summary.total} students
+                </div>
               </div>
-              <div
-                className="kg-muted"
-                style={{ color: "rgba(255,255,255,0.65)" }}
+            </div>
+
+            <div className="kg-stats-grid">
+              <StatMini
+                icon={Users}
+                label="Students"
+                value={summary.total}
+                color="kg-text-blue"
+                bg="kg-bg-blue"
+              />
+              <StatMini
+                icon={CheckCircle2}
+                label="Present"
+                value={summary.present}
+                color="kg-text-green"
+                bg="kg-bg-green"
+              />
+              <StatMini
+                icon={XCircle}
+                label="Absent"
+                value={summary.absent}
+                color="kg-text-red"
+                bg="kg-bg-red"
+              />
+              <StatMini
+                icon={Clock3}
+                label="Late"
+                value={summary.late}
+                color="kg-text-orange"
+                bg="kg-bg-orange"
+              />
+              <StatMini
+                icon={Award}
+                label="Completed"
+                value={summary.completed}
+                color="kg-text-amber"
+                bg="kg-bg-amber"
+              />
+            </div>
+
+            <div className="kg-toolbar-card">
+              <div className="kg-toolbar-grid">
+                <div className="kg-field">
+                  <label>Course</label>
+                  <select
+                    value={selectedCourseId}
+                    onChange={(e) => setSelectedCourseId(e.target.value)}
+                    disabled={loadingCourses}
+                  >
+                    {loadingCourses ? (
+                      <option>Loading courses...</option>
+                    ) : courses.length === 0 ? (
+                      <option>No courses found</option>
+                    ) : (
+                      courses.map((item) => (
+                        <option key={item._id} value={item._id}>
+                          {item.title} — {item.activityName}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
+                <div className="kg-field">
+                  <label>Date</label>
+                  <div className="kg-input-wrap">
+                    <CalendarDays size={18} />
+                    <input
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="kg-field">
+                  <label>Search</label>
+                  <div className="kg-input-wrap">
+                    <Search size={18} />
+                    <input
+                      type="search"
+                      placeholder="Search child, parent, phone, booking..."
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="kg-selected-card">
+              <div>
+                <div className="kg-selected-title">
+                  {course?.title || "Select a course"}
+                </div>
+
+                <div className="kg-selected-meta">
+                  <span>
+                    <BookOpen size={16} color={ORANGE} />
+                    {course?.activityName || "Course attendance"}
+                  </span>
+                  <span>
+                    <Users size={16} color={BLUE} />
+                    {summary.total} students
+                  </span>
+                  <span>
+                    <CalendarDays size={16} color={GREEN} />
+                    {date}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="kg-refresh-btn"
+                disabled={loadingStudents || !selectedCourseId}
+                onClick={() => loadStudents(selectedCourseId)}
               >
-                {summary.present} present from {summary.total} students
-              </div>
+                <RefreshCw
+                  size={18}
+                  className={loadingStudents ? "spin" : ""}
+                />
+                Refresh
+              </button>
             </div>
           </div>
-        </div>
+        </section>
 
         {error ? <div className="kg-error">{error}</div> : null}
 
-        <div className="kg-card kg-toolbar">
-          <div className="kg-field">
-            <label>Course</label>
-            <select
-              value={selectedCourseId}
-              onChange={(e) => setSelectedCourseId(e.target.value)}
-              disabled={loadingCourses}
-            >
-              {loadingCourses ? (
-                <option>Loading courses...</option>
-              ) : courses.length === 0 ? (
-                <option>No courses found</option>
-              ) : (
-                courses.map((item) => (
-                  <option key={item._id} value={item._id}>
-                    {item.title} — {item.activityName}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
-
-          <div className="kg-field">
-            <label>Date</label>
-            <div className="kg-input-wrap">
-              <CalendarDays size={18} />
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="kg-field">
-            <label>Search</label>
-            <div className="kg-input-wrap">
-              <Search size={18} />
-              <input
-                type="search"
-                placeholder="Search child, parent, phone, booking..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="kg-refresh-btn"
-            onClick={() => loadStudents(selectedCourseId)}
-            disabled={!selectedCourseId || loadingStudents}
-          >
-            <RefreshCw size={16} className={loadingStudents ? "spin" : ""} />
-            Refresh
-          </button>
-        </div>
-
-        {course ? (
-          <div className="kg-course-note">
-            Selected: <strong>{course.title}</strong>
-            {course.activityName ? <> — {course.activityName}</> : null}
-          </div>
-        ) : null}
-
-        <div className="kg-summary-grid">
-          <StatCard
-            icon={Users}
-            label="Total Students"
-            value={summary.total}
-            tone="slate"
-          />
-
-          <StatCard
-            icon={CheckCircle2}
-            label="Present"
-            value={summary.present}
-            tone="green"
-          />
-
-          <StatCard
-            icon={XCircle}
-            label="Absent"
-            value={summary.absent}
-            tone="red"
-          />
-
-          <StatCard
-            icon={Clock3}
-            label="Late"
-            value={summary.late}
-            tone="orange"
-          />
-
-          <StatCard
-            icon={Award}
-            label="Completed"
-            value={summary.completed}
-            tone="blue"
-          />
-        </div>
-
-        <div className="kg-card kg-table-card">
-          <div className="kg-section-head">
+        <section className="kg-table-section">
+          <div className="kg-table-header">
             <div>
-              <h2>Students Attendance</h2>
-              <p>
-                {filteredStudents.length} student
-                {filteredStudents.length === 1 ? "" : "s"} shown for the
-                selected course and date.
-              </p>
+              <h2 className="kg-table-title">Student Attendance</h2>
+              <div className="kg-table-subtitle">
+                Review students, update attendance status, and issue completion
+                certificates.
+              </div>
             </div>
 
-            <div className="kg-status-pill neutral">
-              <CalendarDays size={14} />
-              {date}
+            <div className="kg-table-chip">
+              <Award size={15} />
+              Certificates after completion
             </div>
           </div>
 
@@ -1406,7 +1169,6 @@ export default function AttendancePage() {
                 <tr>
                   <th>Student</th>
                   <th>Parent</th>
-                  <th>Status</th>
                   <th>Attendance</th>
                   <th>Course Progress</th>
                   <th>Certificate</th>
@@ -1416,7 +1178,7 @@ export default function AttendancePage() {
               <tbody>
                 {loadingStudents ? (
                   <tr>
-                    <td colSpan="6">
+                    <td colSpan="5">
                       <div className="kg-empty">
                         <Loader2 size={22} className="spin" />
                         <div>Loading students...</div>
@@ -1425,7 +1187,7 @@ export default function AttendancePage() {
                   </tr>
                 ) : filteredStudents.length === 0 ? (
                   <tr>
-                    <td colSpan="6">
+                    <td colSpan="5">
                       <div className="kg-empty">
                         <Users size={24} />
                         <div>No students found for this course.</div>
@@ -1444,55 +1206,11 @@ export default function AttendancePage() {
                             Math.round((completed / required) * 100),
                           )
                         : 0;
-                    const statusMeta = getStatusMeta(student.status);
-                    const StatusIcon = statusMeta.icon;
 
                     return (
                       <tr key={rowKey}>
                         <td>
-                          <div className="kg-child-cell">
-                            <div className="kg-avatar">
-                              <UserRound size={18} />
-                            </div>
-
-                            <div>
-                              <div className="kg-child-name">
-                                {student.childName || "Student"}
-                              </div>
-
-                              <div className="kg-muted">
-                                Age: {student.age || "N/A"}
-                                {student.gender ? ` • ${student.gender}` : ""}
-                              </div>
-
-                              <div className="kg-badges">
-                                {student.isGuestBooking ? (
-                                  <span className="kg-badge guest">Guest</span>
-                                ) : (
-                                  <span className="kg-badge">Registered</span>
-                                )}
-
-                                {student.bookingNo ? (
-                                  <span className="kg-badge">
-                                    {student.bookingNo}
-                                  </span>
-                                ) : null}
-
-                                {student.paymentStatus ? (
-                                  <span
-                                    className={cx(
-                                      "kg-badge",
-                                      student.paymentStatus === "PAID"
-                                        ? "paid"
-                                        : "pending",
-                                    )}
-                                  >
-                                    {student.paymentStatus}
-                                  </span>
-                                ) : null}
-                              </div>
-                            </div>
-                          </div>
+                          <StudentCell student={student} />
                         </td>
 
                         <td>
@@ -1508,91 +1226,29 @@ export default function AttendancePage() {
                         </td>
 
                         <td>
-                          <div className={statusMeta.className}>
-                            <StatusIcon size={14} />
-                            {statusMeta.label}
-                          </div>
+                          <StatusButtons
+                            student={student}
+                            rowKey={rowKey}
+                            savingKey={savingKey}
+                            onMark={markAttendance}
+                          />
                         </td>
 
                         <td>
-                          <div className="kg-status-buttons">
-                            {STATUSES.map((item) => {
-                              const active = student.status === item.value;
-                              const key = `${rowKey}-${item.value}`;
-
-                              return (
-                                <button
-                                  key={item.value}
-                                  type="button"
-                                  className={cx(
-                                    "kg-status-btn",
-                                    item.value === "ABSENT" && "absent",
-                                    item.value === "LATE" && "late",
-                                    item.value === "EXCUSED" && "excused",
-                                    active && "active",
-                                  )}
-                                  onClick={() =>
-                                    markAttendance(student, item.value)
-                                  }
-                                  disabled={savingKey === key}
-                                >
-                                  {savingKey === key ? (
-                                    <Loader2 size={14} className="spin" />
-                                  ) : item.value === "ABSENT" ? (
-                                    <XCircle size={14} />
-                                  ) : (
-                                    <CheckCircle2 size={14} />
-                                  )}
-                                  {item.label}
-                                </button>
-                              );
-                            })}
-                          </div>
+                          <ProgressBlock
+                            completed={completed}
+                            required={required}
+                            progress={progress}
+                          />
                         </td>
 
                         <td>
-                          <div className="kg-progress">
-                            <strong>
-                              {completed}/{required || "-"} sessions
-                            </strong>
-
-                            <div className="kg-progress-line">
-                              <div
-                                className="kg-progress-fill"
-                                style={{ width: `${progress}%` }}
-                              />
-                            </div>
-
-                            <div className="kg-muted">
-                              {progress}% completed
-                            </div>
-                          </div>
-                        </td>
-
-                        <td>
-                          {student.certificate ? (
-                            <div className="kg-cert-issued">
-                              <Award size={15} />
-                              Issued: {student.certificate.certificateNo}
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              className="kg-cert-btn"
-                              disabled={
-                                !student.isCompleted ||
-                                certificateKey === rowKey
-                              }
-                              onClick={() => issueCertificate(student)}
-                            >
-                              {certificateKey === rowKey ? (
-                                <Loader2 size={16} className="spin" />
-                              ) : (
-                                <Award size={16} />
-                              )}
-                              Issue Certificate
-                            </button>
-                          )}
+                          <CertificateAction
+                            student={student}
+                            rowKey={rowKey}
+                            certificateKey={certificateKey}
+                            onIssue={issueCertificate}
+                          />
                         </td>
                       </tr>
                     );
@@ -1616,23 +1272,185 @@ export default function AttendancePage() {
             ) : (
               filteredStudents.map((student) => {
                 const rowKey = getStudentRowKey(student);
+                const required = Number(student.requiredSessions || 0);
+                const completed = Number(student.completedSessions || 0);
+                const progress =
+                  required > 0
+                    ? Math.min(100, Math.round((completed / required) * 100))
+                    : 0;
 
                 return (
-                  <StudentCard
-                    key={rowKey}
-                    student={student}
-                    rowKey={rowKey}
-                    savingKey={savingKey}
-                    certificateKey={certificateKey}
-                    markAttendance={markAttendance}
-                    issueCertificate={issueCertificate}
-                  />
+                  <div key={rowKey} className="kg-mobile-card">
+                    <div className="kg-mobile-top">
+                      <StudentCell student={student} />
+                    </div>
+
+                    <div className="kg-mobile-section">
+                      <div className="kg-mobile-label">Parent</div>
+                      <div>{student.parentName || "N/A"}</div>
+                      <div className="kg-muted">
+                        {student.parentPhone || ""}
+                      </div>
+                      {student.parentEmail ? (
+                        <div className="kg-muted">{student.parentEmail}</div>
+                      ) : null}
+                    </div>
+
+                    <div className="kg-mobile-section">
+                      <div className="kg-mobile-label">Attendance</div>
+                      <StatusButtons
+                        student={student}
+                        rowKey={rowKey}
+                        savingKey={savingKey}
+                        onMark={markAttendance}
+                      />
+                    </div>
+
+                    <div className="kg-mobile-section">
+                      <div className="kg-mobile-label">Progress</div>
+                      <ProgressBlock
+                        completed={completed}
+                        required={required}
+                        progress={progress}
+                      />
+                    </div>
+
+                    <div className="kg-mobile-section">
+                      <div className="kg-mobile-label">Certificate</div>
+                      <CertificateAction
+                        student={student}
+                        rowKey={rowKey}
+                        certificateKey={certificateKey}
+                        onIssue={issueCertificate}
+                      />
+                    </div>
+                  </div>
                 );
               })
             )}
           </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function StudentCell({ student }) {
+  return (
+    <div className="kg-child-cell">
+      <div className="kg-avatar">
+        <UserRound size={19} />
+      </div>
+
+      <div>
+        <div className="kg-child-name">{student.childName}</div>
+
+        <div className="kg-muted">
+          Age: {student.age || "N/A"}
+          {student.gender ? ` • ${student.gender}` : ""}
+        </div>
+
+        <div className="kg-badges">
+          {student.isGuestBooking ? (
+            <span className="kg-badge guest">Guest</span>
+          ) : (
+            <span className="kg-badge">Registered</span>
+          )}
+
+          {student.bookingNo ? (
+            <span className="kg-badge">{student.bookingNo}</span>
+          ) : null}
+
+          {student.paymentStatus ? (
+            <span
+              className={cx(
+                "kg-badge",
+                student.paymentStatus === "PAID" ? "paid" : "pending",
+              )}
+            >
+              {student.paymentStatus}
+            </span>
+          ) : null}
         </div>
       </div>
     </div>
+  );
+}
+
+function StatusButtons({ student, rowKey, savingKey, onMark }) {
+  return (
+    <div className="kg-status-buttons">
+      {STATUSES.map((item) => {
+        const active = student.status === item.value;
+        const key = `${rowKey}-${item.value}`;
+
+        return (
+          <button
+            key={item.value}
+            type="button"
+            className={cx(
+              "kg-status-btn",
+              item.value === "ABSENT" && "absent",
+              item.value === "LATE" && "late",
+              active && "active",
+            )}
+            onClick={() => onMark(student, item.value)}
+            disabled={savingKey === key}
+          >
+            {savingKey === key ? (
+              <Loader2 size={14} className="spin" />
+            ) : item.value === "ABSENT" ? (
+              <XCircle size={14} />
+            ) : (
+              <CheckCircle2 size={14} />
+            )}
+            {item.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ProgressBlock({ completed, required, progress }) {
+  return (
+    <div className="kg-progress">
+      <strong>
+        {completed}/{required || "-"} sessions
+      </strong>
+
+      <div className="kg-progress-line">
+        <div className="kg-progress-fill" style={{ width: `${progress}%` }} />
+      </div>
+
+      <div className="kg-muted">{progress}% completed</div>
+    </div>
+  );
+}
+
+function CertificateAction({ student, rowKey, certificateKey, onIssue }) {
+  if (student.certificate) {
+    return (
+      <div className="kg-cert-issued">
+        <Award size={15} />
+        Issued: {student.certificate.certificateNo}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className="kg-cert-btn"
+      disabled={!student.isCompleted || certificateKey === rowKey}
+      onClick={() => onIssue(student)}
+    >
+      {certificateKey === rowKey ? (
+        <Loader2 size={16} className="spin" />
+      ) : (
+        <Award size={16} />
+      )}
+      Issue Certificate
+    </button>
   );
 }
