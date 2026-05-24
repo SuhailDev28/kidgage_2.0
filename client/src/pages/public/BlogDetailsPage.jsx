@@ -92,6 +92,35 @@ function buildSections(text = "") {
   ];
 }
 
+function getCurrentPageUrl() {
+  if (typeof window === "undefined") return "";
+  return window.location.href;
+}
+
+function openShareWindow(url) {
+  if (typeof window === "undefined" || !url) return;
+
+  window.open(
+    url,
+    "_blank",
+    "noopener,noreferrer,width=720,height=520,left=120,top=120",
+  );
+}
+
+function buildShareLinks({ url, title, image, description }) {
+  const shareUrl = encodeURIComponent(url || "");
+  const shareTitle = encodeURIComponent(title || "KidGage Blog");
+  const shareDescription = encodeURIComponent(description || title || "");
+  const shareImage = encodeURIComponent(image || "");
+
+  return {
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`,
+    x: `https://twitter.com/intent/tweet?url=${shareUrl}&text=${shareTitle}`,
+    pinterest: `https://pinterest.com/pin/create/button/?url=${shareUrl}&media=${shareImage}&description=${shareDescription}`,
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`,
+  };
+}
+
 function SidebarCard({ title, children }) {
   return (
     <div className="rounded-[24px] border border-[rgba(15,23,42,0.06)] bg-white p-5 shadow-sm">
@@ -99,6 +128,20 @@ function SidebarCard({ title, children }) {
       <div className="mt-4 h-[3px] w-12 rounded-full bg-[#ff8a4d]" />
       <div className="mt-5">{children}</div>
     </div>
+  );
+}
+
+function ShareButton({ label, title, onClick }) {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      onClick={onClick}
+      className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef5ff] text-sm font-bold text-[#1877f2] transition hover:-translate-y-0.5 hover:bg-[#dbeafe] hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1877f2]/30"
+    >
+      {label}
+    </button>
   );
 }
 
@@ -198,6 +241,15 @@ export default function BlogDetailsPage() {
     () => buildSections(blog?.description || blog?.excerpt || ""),
     [blog],
   );
+
+  const shareLinks = useMemo(() => {
+    return buildShareLinks({
+      url: getCurrentPageUrl(),
+      title: blog?.title || "KidGage Blog",
+      image,
+      description: blog?.description || blog?.excerpt || blog?.title || "",
+    });
+  }, [blog, image]);
 
   const filteredRecentPosts = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -461,18 +513,30 @@ export default function BlogDetailsPage() {
                 <span className="text-sm font-semibold text-[#0f172a]">
                   Share:
                 </span>
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef5ff] text-[#1877f2]">
-                  f
-                </span>
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef5ff] text-[#1877f2]">
-                  x
-                </span>
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef5ff] text-[#1877f2]">
-                  p
-                </span>
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef5ff] text-[#1877f2]">
-                  in
-                </span>
+
+                <ShareButton
+                  label="f"
+                  title="Share on Facebook"
+                  onClick={() => openShareWindow(shareLinks.facebook)}
+                />
+
+                <ShareButton
+                  label="x"
+                  title="Share on X"
+                  onClick={() => openShareWindow(shareLinks.x)}
+                />
+
+                <ShareButton
+                  label="p"
+                  title="Share on Pinterest"
+                  onClick={() => openShareWindow(shareLinks.pinterest)}
+                />
+
+                <ShareButton
+                  label="in"
+                  title="Share on LinkedIn"
+                  onClick={() => openShareWindow(shareLinks.linkedin)}
+                />
               </div>
             </div>
 
