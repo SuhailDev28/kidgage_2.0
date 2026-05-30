@@ -1,11 +1,12 @@
 // server/src/routes/voucher.routes.js
 import express from "express";
 import Voucher from "../models/Voucher.js";
-import { requireAuth, requireSuperAdmin } from "../middleware/auth.js";
+import { auth } from "../middleware/auth.js";
+import { requireRole } from "../middleware/requireRole.js";
 
 const router = express.Router();
 
-router.use(requireAuth, requireSuperAdmin);
+router.use(auth, requireRole("SUPER_ADMIN"));
 
 router.get("/", async (req, res, next) => {
   try {
