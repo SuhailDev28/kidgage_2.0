@@ -1,5 +1,5 @@
 import express from "express";
-import Voucher from "../../models/Voucher.js";
+import Voucher from "../models/Voucher.js";
 import { requireAuth, requireSuperAdmin } from "../../middleware/auth.js";
 
 const router = express.Router();
