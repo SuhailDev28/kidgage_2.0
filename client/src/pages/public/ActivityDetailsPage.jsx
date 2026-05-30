@@ -21,6 +21,7 @@ import {
   X,
   CreditCard,
   Banknote,
+  TicketPercent,
 } from "lucide-react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { api, publicApi } from "../../lib/api.js";
@@ -1288,6 +1289,12 @@ export default function ActivityDetailsPage() {
   const [guestChildGender, setGuestChildGender] = useState("");
   const [guestNotes, setGuestNotes] = useState("");
 
+  const [voucherCode, setVoucherCode] = useState("");
+  const [voucherLoading, setVoucherLoading] = useState(false);
+  const [voucherError, setVoucherError] = useState("");
+  const [appliedVoucher, setAppliedVoucher] = useState(null);
+  const [voucherPricing, setVoucherPricing] = useState(null);
+
   const selectedPackage = useMemo(() => {
     return (
       packages.find((item) => String(extractId(item)) === String(selectedPackageId)) ||
@@ -1449,6 +1456,13 @@ export default function ActivityDetailsPage() {
       active = false;
     };
   }, [token, userRole]);
+
+  function resetVoucherState() {
+    setVoucherCode("");
+    setVoucherError("");
+    setAppliedVoucher(null);
+    setVoucherPricing(null);
+  }
 
   function resetScheduleState() {
     setSelectedDate("");
@@ -1735,6 +1749,7 @@ export default function ActivityDetailsPage() {
     else if (activityBookingMode === "FLEXIBLE") setBookingMode("FLEXIBLE");
     else setBookingMode("STRAIGHT");
 
+    resetVoucherState();
     resetScheduleState();
   }
 
@@ -1867,6 +1882,59 @@ export default function ActivityDetailsPage() {
     });
   }
 
+  async function handleApplyVoucher() {
+    const cleanCode = String(voucherCode || "").trim().toUpperCase();
+
+    if (!selectedPackageId) {
+      setVoucherError("Please select a package before applying a voucher.");
+      return;
+    }
+
+    if (!cleanCode) {
+      setVoucherError("Please enter a voucher code.");
+      return;
+    }
+
+    try {
+      setVoucherLoading(true);
+      setVoucherError("");
+      setError("");
+      setMessage("");
+
+      const { data } = await publicApi.post("/vouchers/apply", {
+        code: cleanCode,
+        packageId: selectedPackageId,
+        academyId: activity?.academyId || academy?._id || academy?.id || null,
+        activityId: activity?._id || activity?.id || null,
+        subtotalAmount: summaryPrice,
+        parentUserId: isParentLoggedIn ? user?._id || user?.id || null : null,
+      });
+
+      setAppliedVoucher(data?.voucher || null);
+      setVoucherPricing(data?.pricing || null);
+      setVoucherCode(data?.voucher?.code || cleanCode);
+      setMessage(data?.message || "Voucher applied successfully.");
+    } catch (err) {
+      setAppliedVoucher(null);
+      setVoucherPricing(null);
+      setVoucherError(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Failed to apply voucher.",
+      );
+    } finally {
+      setVoucherLoading(false);
+    }
+  }
+
+  function handleRemoveVoucher() {
+    setVoucherCode("");
+    setVoucherError("");
+    setAppliedVoucher(null);
+    setVoucherPricing(null);
+    setMessage("Voucher removed.");
+  }
+
   async function handleBookNow() {
     if (!selectedPackageId) {
       setError("Please select a package.");
@@ -1983,7 +2051,11 @@ export default function ActivityDetailsPage() {
           activityId: activity._id,
           ...basePayload,
           childId: selectedChildId,
-          amount: summaryPrice,
+          amount: payablePrice,
+          subtotalAmount: summaryPrice,
+          discountAmount: appliedDiscount,
+          totalAmount: payablePrice,
+          voucherCode: appliedVoucher?.code || "",
           currency,
           paymentMethod,
           receiver: "KIDGAGE",
@@ -2014,7 +2086,11 @@ export default function ActivityDetailsPage() {
 
         const { data: paymentData } = await api.post("/payments/create", {
           bookingId,
-          amount: summaryPrice,
+          amount: payablePrice,
+          subtotalAmount: summaryPrice,
+          discountAmount: appliedDiscount,
+          totalAmount: payablePrice,
+          voucherCode: appliedVoucher?.code || "",
           currency,
           paymentMethod: "CASH",
           receiver: "KIDGAGE",
@@ -2054,7 +2130,11 @@ export default function ActivityDetailsPage() {
           gender: guestChildGender,
         },
         notes: guestNotes.trim(),
-        amount: summaryPrice,
+        amount: payablePrice,
+        subtotalAmount: summaryPrice,
+        discountAmount: appliedDiscount,
+        totalAmount: payablePrice,
+        voucherCode: appliedVoucher?.code || "",
         currency,
         paymentMethod,
         receiver: "KIDGAGE",
@@ -2141,6 +2221,14 @@ export default function ActivityDetailsPage() {
   const summaryPrice = Number(
     selectedPackage?.price || activity?.basePrice || 0,
   );
+
+  const appliedDiscount = appliedVoucher
+    ? Number(voucherPricing?.discountAmount || 0)
+    : 0;
+
+  const payablePrice = appliedVoucher
+    ? Math.max(0, Number(voucherPricing?.totalAmount || 0))
+    : summaryPrice;
 
   const canShowStraight =
     activityBookingMode === "STRAIGHT" || activityBookingMode === "BOTH";
@@ -2660,13 +2748,101 @@ export default function ActivityDetailsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-slate-200 pt-4">
-                  <span className="text-base font-semibold text-slate-500">
-                    Total
-                  </span>
-                  <span className="text-2xl font-black text-slate-900">
-                    {toCurrency(summaryPrice, currency)}
-                  </span>
+                <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-[#16A34A]">
+                      <TicketPercent className="h-5 w-5" />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-black text-slate-900">
+                        Voucher / Coupon
+                      </div>
+                      <div className="mt-1 text-sm leading-6 text-slate-500">
+                        Apply a valid KidGage voucher to get a discount on this
+                        booking.
+                      </div>
+
+                      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                        <input
+                          type="text"
+                          value={voucherCode}
+                          disabled={voucherLoading || Boolean(appliedVoucher)}
+                          onChange={(e) => {
+                            setVoucherCode(e.target.value.toUpperCase());
+                            setVoucherError("");
+                          }}
+                          placeholder="Enter voucher code"
+                          className="h-12 min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold uppercase tracking-[0.08em] outline-none transition focus:border-[#16A34A] disabled:bg-slate-100 disabled:text-slate-500"
+                        />
+
+                        {appliedVoucher ? (
+                          <button
+                            type="button"
+                            onClick={handleRemoveVoucher}
+                            className="rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm font-black text-rose-600 transition hover:bg-rose-50"
+                          >
+                            Remove
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleApplyVoucher}
+                            disabled={voucherLoading || !selectedPackageId}
+                            className={kidgagePrimaryButtonClass(
+                              voucherLoading || !selectedPackageId,
+                            )}
+                          >
+                            {voucherLoading ? "Applying..." : "Apply"}
+                          </button>
+                        )}
+                      </div>
+
+                      {voucherError ? (
+                        <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">
+                          {voucherError}
+                        </div>
+                      ) : null}
+
+                      {appliedVoucher ? (
+                        <div className="mt-3 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700">
+                          Voucher {appliedVoucher.code} applied. You saved{" "}
+                          {toCurrency(appliedDiscount, currency)}.
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3 border-t border-slate-200 pt-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-slate-500">
+                      Subtotal
+                    </span>
+                    <span className="text-sm font-black text-slate-800">
+                      {toCurrency(summaryPrice, currency)}
+                    </span>
+                  </div>
+
+                  {appliedVoucher ? (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-emerald-700">
+                        Voucher discount
+                      </span>
+                      <span className="text-sm font-black text-emerald-700">
+                        -{toCurrency(appliedDiscount, currency)}
+                      </span>
+                    </div>
+                  ) : null}
+
+                  <div className="flex items-center justify-between border-t border-slate-200 pt-3">
+                    <span className="text-base font-semibold text-slate-500">
+                      Total
+                    </span>
+                    <span className="text-2xl font-black text-slate-900">
+                      {toCurrency(payablePrice, currency)}
+                    </span>
+                  </div>
                 </div>
 
                 <button

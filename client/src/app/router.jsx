@@ -83,6 +83,7 @@ import SuperAdminChildrenPage from "../pages/superadmin/ChildrenPage.jsx";
 import CertificateTemplatesPage from "../pages/superadmin/CertificateTemplatesPage.jsx";
 import SmtpSettingsPage from "../pages/superadmin/SmtpSettingsPage.jsx";
 import EmailTemplatesPage from "../pages/superadmin/EmailTemplatesPage.jsx";
+import SuperAdminVouchersPage from "../pages/superadmin/SuperAdminVouchersPage.jsx";
 
 function SuperAdminGuard({ children }) {
   if (!isLoggedIn()) {
@@ -175,6 +176,7 @@ export function AppRouter() {
             path="/payment/booking-success/:bookingId"
             element={<BookingSuccessPage />}
           />
+
           <Route
             path="/booking/success/:bookingId"
             element={<BookingSuccessPage />}
@@ -276,6 +278,10 @@ export function AppRouter() {
           />
 
           <Route path="bookings" element={<SuperAdminBookingEnquiriesPage />} />
+          <Route path="payments" element={<SuperAdminPaymentsPage />} />
+          <Route path="vouchers" element={<SuperAdminVouchersPage />} />
+          <Route path="settlements" element={<SettlementsPage />} />
+
           <Route path="parents" element={<SuperAdminParentsPage />} />
           <Route path="children" element={<SuperAdminChildrenPage />} />
 
@@ -283,9 +289,6 @@ export function AppRouter() {
             path="staff"
             element={<SuperAdminPlaceholderPage title="Staff" />}
           />
-
-          <Route path="payments" element={<SuperAdminPaymentsPage />} />
-          <Route path="settlements" element={<SettlementsPage />} />
 
           <Route path="events" element={<EventPostersPage />} />
           <Route path="blogs" element={<KidgageNewsPage />} />

@@ -13,6 +13,7 @@ import {
   Baby,
   UserCog,
   CreditCard,
+  TicketPercent,
   Bell,
   Mail,
   CheckCheck,
@@ -83,6 +84,7 @@ const navItems = [
     children: [
       { label: "Bookings", icon: CalendarDays, to: "/super-admin/bookings" },
       { label: "Payments", icon: CreditCard, to: "/super-admin/payments" },
+      { label: "Vouchers", icon: TicketPercent, to: "/super-admin/vouchers" },
       { label: "Settlements", icon: Landmark, to: "/super-admin/settlements" },
     ],
   },

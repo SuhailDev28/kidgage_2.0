@@ -19,6 +19,7 @@ import {
 
 import authRoutes from "./routes/auth.routes.js";
 import publicRoutes from "./routes/public.routes.js";
+import publicVoucherRoutes from "./routes/public.voucher.routes.js";
 import parentRoutes from "./routes/parent.routes.js";
 import academyRoutes from "./routes/academy.routes.js";
 
@@ -28,6 +29,7 @@ import superAdminCertificateTemplatesRoutes from "./routes/superadmin.certificat
 import superAdminPaymentsRoutes from "./routes/superadmin.payments.routes.js";
 import superAdminSmtpRoutes from "./routes/superadmin.smtp.routes.js";
 import superAdminEmailTemplatesRoutes from "./routes/superadmin.emailTemplates.routes.js";
+import superAdminVoucherRoutes from "./routes/voucher.routes.js";
 
 import paymentRoutes from "./routes/payment.routes.js";
 import myfatoorahRoutes from "./routes/myfatoorah.routes.js";
@@ -181,7 +183,16 @@ app.use("/api/payments", paymentLimiter);
  * API routes
  * -------------------------------- */
 app.use("/api/auth", authRoutes);
+
+/*
+ * Public routes
+ *
+ * Mount voucher routes BEFORE main publicRoutes only if publicRoutes has
+ * generic catch-all handlers. This keeps /api/public/vouchers/apply safe.
+ */
+app.use("/api/public/vouchers", publicVoucherRoutes);
 app.use("/api/public", publicRoutes);
+
 app.use("/api/parent", parentRoutes);
 app.use("/api/academy", academyRoutes);
 
@@ -190,6 +201,7 @@ app.use("/api/academy", academyRoutes);
  * This prevents generic /api/super-admin handlers from catching these routes first.
  */
 app.use("/api/super-admin/categories", superAdminCategoriesRoutes);
+app.use("/api/super-admin/vouchers", superAdminVoucherRoutes);
 app.use("/api/super-admin", superAdminCertificateTemplatesRoutes);
 app.use("/api/super-admin", superAdminSmtpRoutes);
 app.use("/api/super-admin", superAdminEmailTemplatesRoutes);

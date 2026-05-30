@@ -248,6 +248,12 @@ const bookingSchema = new mongoose.Schema(
       min: 0,
     },
 
+    discountAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     taxAmount: {
       type: Number,
       default: 0,
@@ -260,10 +266,37 @@ const bookingSchema = new mongoose.Schema(
       min: 0,
     },
 
+    totalAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     promoCode: {
       type: String,
       default: "",
       trim: true,
+      uppercase: true,
+    },
+
+    voucherCode: {
+      type: String,
+      default: "",
+      trim: true,
+      uppercase: true,
+      index: true,
+    },
+
+    voucherId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Voucher",
+      default: null,
+      index: true,
+    },
+
+    voucherUsageCountedAt: {
+      type: Date,
+      default: null,
     },
 
     paymentId: {
@@ -591,35 +624,49 @@ bookingSchema.pre("validate", function bookingPreValidate(next) {
       this.packageSnapshot?.price ||
         this.subtotalAmount ||
         this.finalAmount ||
+        this.totalAmount ||
         0,
     );
   }
 
   if (!this.subtotalAmount || this.subtotalAmount <= 0) {
     this.subtotalAmount = Number(
-      this.baseAmount || this.packageSnapshot?.price || this.finalAmount || 0,
-    );
-  }
-
-  if (!this.finalAmount || this.finalAmount <= 0) {
-    const subtotal = Number(
-      this.subtotalAmount ||
-        this.baseAmount ||
+      this.baseAmount ||
         this.packageSnapshot?.price ||
+        this.finalAmount ||
+        this.totalAmount ||
         0,
     );
-
-    const discount = Number(this.discount || 0);
-    const tax = Number(this.taxAmount || 0);
-
-    this.finalAmount = Math.max(0, subtotal - discount + tax);
   }
+
+  const subtotal = Number(
+    this.subtotalAmount ||
+      this.baseAmount ||
+      this.packageSnapshot?.price ||
+      0,
+  );
+
+  const voucherDiscount = Number(this.discountAmount || 0);
+  const manualDiscount = Number(this.discount || 0);
+  const effectiveDiscount = Math.max(voucherDiscount, manualDiscount);
+  const tax = Number(this.taxAmount || 0);
+
+  this.discount = effectiveDiscount;
+  this.discountAmount = effectiveDiscount;
+
+  if (!this.finalAmount || this.finalAmount <= 0) {
+    this.finalAmount = Math.max(0, subtotal - effectiveDiscount + tax);
+  }
+
+  this.totalAmount = Number(this.finalAmount || 0);
 
   this.baseAmount = roundMoney(this.baseAmount);
   this.subtotalAmount = roundMoney(this.subtotalAmount);
   this.discount = roundMoney(this.discount);
+  this.discountAmount = roundMoney(this.discountAmount);
   this.taxAmount = roundMoney(this.taxAmount);
   this.finalAmount = roundMoney(this.finalAmount);
+  this.totalAmount = roundMoney(this.totalAmount);
 
   this.currency = normalizeUpper(this.currency, "QAR");
   this.paymentMethod = normalizeUpper(this.paymentMethod, "CASH");
@@ -627,6 +674,8 @@ bookingSchema.pre("validate", function bookingPreValidate(next) {
   this.bookingStatus = normalizeUpper(this.bookingStatus, "PENDING");
   this.bookingSource = normalizeUpper(this.bookingSource, "WEB");
   this.cancellationStatus = normalizeUpper(this.cancellationStatus, "NONE");
+  this.promoCode = normalizeUpper(this.promoCode, "");
+  this.voucherCode = normalizeUpper(this.voucherCode, "");
 
   if (this.paymentMethod === "CASH") {
     this.paymentGateway = "MANUAL";
@@ -869,7 +918,7 @@ bookingSchema.statics.expirePendingBookings = function expirePendingBookings({
 /* -------------------------------------------------------------------------- */
 
 bookingSchema.virtual("payableAmount").get(function payableAmount() {
-  return this.finalAmount;
+  return Number(this.finalAmount || this.totalAmount || 0);
 });
 
 bookingSchema.virtual("isPaid").get(function isPaid() {
@@ -945,6 +994,12 @@ bookingSchema.index({ cancellationStatus: 1 });
 bookingSchema.index({ cancellationRequestedAt: -1 });
 bookingSchema.index({ cancellationRequestedBy: 1 });
 bookingSchema.index({ cancellationReviewedBy: 1 });
+
+bookingSchema.index({ voucherId: 1 });
+bookingSchema.index({ voucherCode: 1 });
+bookingSchema.index({ voucherUsageCountedAt: 1 });
+bookingSchema.index({ parentId: 1, voucherId: 1, paymentStatus: 1 });
+bookingSchema.index({ isGuestBooking: 1, voucherId: 1, paymentStatus: 1 });
 
 bookingSchema.index({ academyId: 1, createdAt: -1 });
 bookingSchema.index({ parentId: 1, createdAt: -1 });

@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 
 import Payment from "../models/Payment.js";
 import Booking from "../models/Booking.js";
+import Voucher from "../models/Voucher.js";
 
 import {
   createMyFatoorahEmbeddedSession,
@@ -192,12 +193,6 @@ function pickLocalPaymentId(req, data = {}) {
     return String(queryLocalPaymentId);
   }
 
-  /*
-    Backward compatibility:
-    Older frontend used ?paymentId=<MongoDB Payment _id>.
-    If paymentId is a valid MongoDB ObjectId, treat it as localPaymentId,
-    not as MyFatoorah PaymentId.
-  */
   const queryPaymentId = String(req.query.paymentId || "").trim();
 
   if (isValidObjectId(queryPaymentId)) {
@@ -241,11 +236,6 @@ function pickGatewayPaymentId(req, data = {}) {
   const queryPaymentId = String(req.query.paymentId || "").trim();
   const bodyPaymentId = String(req.body?.paymentId || "").trim();
 
-  /*
-    Important:
-    MongoDB ObjectId values are local payment ids, not MyFatoorah PaymentIds.
-    Do not pass ObjectId to MyFatoorah as KeyType PaymentId.
-  */
   const safeQueryPaymentId = isValidObjectId(queryPaymentId)
     ? ""
     : queryPaymentId;
@@ -359,6 +349,54 @@ function isGuestPayment(payment) {
   );
 }
 
+async function countVoucherUsageOnce(booking) {
+  if (!booking?._id || !booking?.voucherId) {
+    return null;
+  }
+
+  if (booking.voucherUsageCountedAt) {
+    return {
+      counted: false,
+      reason: "ALREADY_COUNTED",
+    };
+  }
+
+  const updatedBooking = await Booking.findOneAndUpdate(
+    {
+      _id: booking._id,
+      voucherId: booking.voucherId,
+      voucherUsageCountedAt: null,
+      paymentStatus: "PAID",
+    },
+    {
+      $set: {
+        voucherUsageCountedAt: new Date(),
+      },
+    },
+    {
+      new: true,
+    },
+  );
+
+  if (!updatedBooking) {
+    return {
+      counted: false,
+      reason: "BOOKING_NOT_ELIGIBLE",
+    };
+  }
+
+  await Voucher.findByIdAndUpdate(booking.voucherId, {
+    $inc: {
+      usedCount: 1,
+    },
+  });
+
+  return {
+    counted: true,
+    voucherId: String(booking.voucherId),
+  };
+}
+
 async function syncFromRequest(req) {
   const data = pickMyFatoorahPayload(req);
 
@@ -462,6 +500,8 @@ async function dispatchPaymentNotifications(result, reason = "") {
   const events = payment.meta.notificationEvents || {};
 
   if (status === "PAID") {
+    await countVoucherUsageOnce(booking);
+
     if (events.paymentSuccessSentAt) {
       return null;
     }
@@ -742,11 +782,6 @@ router.post("/embed-session", async (req, res, next) => {
         settlementStatus: payment.settlementStatus,
       },
       embedded: {
-        /*
-          Backward compatibility:
-          paymentId remains local MongoDB Payment _id for existing frontend code.
-          New frontend should prefer localPaymentId.
-        */
         paymentId: payment._id,
         localPaymentId: payment._id,
         bookingId: booking._id,
@@ -809,14 +844,6 @@ router.post("/verify", async (req, res, next) => {
   }
 });
 
-/*
-  Compatibility route.
-  Your browser console showed:
-  POST /api/payments/myfatoorah/sync 400
-
-  This route first tries embedded verification when paymentData exists.
-  Otherwise, it falls back to normal sync using real MyFatoorah PaymentId/InvoiceId.
-*/
 router.post("/sync", async (req, res, next) => {
   try {
     const data = pickMyFatoorahPayload(req);
