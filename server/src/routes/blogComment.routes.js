@@ -3,11 +3,15 @@ import mongoose from "mongoose";
 import { z } from "zod";
 
 import BlogComment from "../models/BlogComment.js";
-import News from "../models/News.js";
 import { auth } from "../middleware/auth.js";
 import { requireRole } from "../middleware/requireRole.js";
 
 const router = express.Router();
+
+const blogPostSchema = new mongoose.Schema({}, { strict: false, collection: "news" });
+
+const BlogPost =
+  mongoose.models.News || mongoose.model("News", blogPostSchema);
 
 const createCommentSchema = z.object({
   blogId: z.string().trim().min(1),
@@ -27,9 +31,16 @@ function escapeRegex(value = "") {
 
 function getClientIp(req) {
   const forwarded = String(req.headers["x-forwarded-for"] || "");
-  if (forwarded) return forwarded.split(",")[0].trim();
+
+  if (forwarded) {
+    return forwarded.split(",")[0].trim();
+  }
 
   return req.ip || req.socket?.remoteAddress || "";
+}
+
+function getUserId(req) {
+  return req.user?._id || req.user?.id || req.userId || null;
 }
 
 /**
@@ -47,9 +58,7 @@ router.post("/public/blog-comments", async (req, res, next) => {
       });
     }
 
-    const blog = await News.findById(payload.blogId).select(
-      "title slug isActive active status",
-    );
+    const blog = await BlogPost.findById(payload.blogId).lean();
 
     if (!blog) {
       return res.status(404).json({
@@ -71,9 +80,10 @@ router.post("/public/blog-comments", async (req, res, next) => {
       userAgent: String(req.headers["user-agent"] || "").slice(0, 500),
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
-      message: "Comment submitted successfully. It will be visible after review.",
+      message:
+        "Comment submitted successfully. It will be visible after review.",
       comment: {
         _id: comment._id,
         status: comment.status,
@@ -104,9 +114,10 @@ router.get("/public/blog-comments/:blogId", async (req, res, next) => {
       status: "APPROVED",
     })
       .sort({ createdAt: -1 })
-      .select("name message rating createdAt");
+      .select("name message rating createdAt")
+      .lean();
 
-    res.json({
+    return res.json({
       success: true,
       comments,
     });
@@ -125,21 +136,18 @@ router.get(
   requireRole("SUPER_ADMIN"),
   async (req, res, next) => {
     try {
-      const {
-        search = "",
-        status = "",
-        page = 1,
-        limit = 20,
-      } = req.query;
+      const { search = "", status = "", page = 1, limit = 20 } = req.query;
 
       const filter = {};
 
       const cleanStatus = String(status || "").trim().toUpperCase();
+
       if (["PENDING", "APPROVED", "REJECTED", "SPAM"].includes(cleanStatus)) {
         filter.status = cleanStatus;
       }
 
       const q = String(search || "").trim();
+
       if (q) {
         const regex = new RegExp(escapeRegex(q), "i");
 
@@ -161,8 +169,8 @@ router.get(
           .sort({ createdAt: -1 })
           .skip(skip)
           .limit(safeLimit)
-          .populate("blogId", "title slug image thumbnail coverImage")
-          .populate("reviewedBy", "name email"),
+          .populate("reviewedBy", "name email")
+          .lean(),
 
         BlogComment.countDocuments(filter),
 
@@ -185,18 +193,21 @@ router.get(
       };
 
       statusCounts.forEach((item) => {
-        counts[item._id] = item.count;
-        counts.ALL += item.count;
+        const key = item?._id || "PENDING";
+        const count = Number(item?.count || 0);
+
+        counts[key] = count;
+        counts.ALL += count;
       });
 
-      res.json({
+      return res.json({
         success: true,
         comments,
         pagination: {
           page: safePage,
           limit: safeLimit,
           total,
-          pages: Math.ceil(total / safeLimit),
+          pages: Math.max(Math.ceil(total / safeLimit), 1),
         },
         counts,
       });
@@ -232,7 +243,7 @@ router.patch(
         {
           status: payload.status,
           reviewedAt: new Date(),
-          reviewedBy: req.user?._id || req.user?.id || null,
+          reviewedBy: getUserId(req),
         },
         { new: true },
       );
@@ -244,7 +255,7 @@ router.patch(
         });
       }
 
-      res.json({
+      return res.json({
         success: true,
         message: "Comment status updated successfully.",
         comment,
@@ -283,7 +294,7 @@ router.delete(
         });
       }
 
-      res.json({
+      return res.json({
         success: true,
         message: "Comment deleted successfully.",
       });
