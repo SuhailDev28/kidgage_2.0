@@ -173,14 +173,79 @@ function LoadingState() {
   );
 }
 
+function ApprovedComments({ comments = [] }) {
+  if (!comments.length) {
+    return null;
+  }
+
+  return (
+    <div className="mt-10 border-t border-slate-200 pt-8">
+      <h3 className="text-2xl font-black text-[#0f172a]">
+        Comments ({comments.length})
+      </h3>
+
+      <div className="mt-6 space-y-4">
+        {comments.map((comment) => (
+          <div
+            key={comment?._id || `${comment?.name}-${comment?.createdAt}`}
+            className="rounded-[20px] border border-slate-200 bg-[#f8fbff] p-5"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-base font-black text-[#0f172a]">
+                  {comment?.name || "Guest"}
+                </div>
+                <div className="mt-1 text-xs font-medium text-slate-500">
+                  {formatDate(comment?.createdAt) || "Recently"}
+                </div>
+              </div>
+
+              {Number(comment?.rating || 0) > 0 ? (
+                <div className="flex items-center gap-1 text-yellow-400">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span
+                      key={star}
+                      className={
+                        star <= Number(comment.rating || 0)
+                          ? "text-yellow-400"
+                          : "text-slate-300"
+                      }
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
+            <p className="mt-4 whitespace-pre-line text-sm leading-7 text-[#64748b]">
+              {comment?.message || ""}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function BlogDetailsPage() {
   const { slug } = useParams();
 
   const [blog, setBlog] = useState(null);
   const [allBlogs, setAllBlogs] = useState([]);
+  const [approvedComments, setApprovedComments] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [search, setSearch] = useState("");
+
+  const [commentName, setCommentName] = useState("");
+  const [commentEmail, setCommentEmail] = useState("");
+  const [commentMessage, setCommentMessage] = useState("");
+  const [commentRating, setCommentRating] = useState(0);
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [commentSuccess, setCommentSuccess] = useState("");
+  const [commentError, setCommentError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -189,6 +254,7 @@ export default function BlogDetailsPage() {
       try {
         setLoading(true);
         setNotFound(false);
+        setApprovedComments([]);
 
         const [blogRes, blogsRes] = await Promise.all([
           api.get(`/public/blogs/${slug}`),
@@ -209,6 +275,25 @@ export default function BlogDetailsPage() {
 
         setBlog(item);
         setAllBlogs(blogsRows);
+
+        const blogId = item?._id || item?.id;
+
+        if (blogId) {
+          try {
+            const commentsRes = await api.get(`/public/blog-comments/${blogId}`);
+
+            if (!active) return;
+
+            setApprovedComments(
+              Array.isArray(commentsRes?.data?.comments)
+                ? commentsRes.data.comments
+                : [],
+            );
+          } catch {
+            if (!active) return;
+            setApprovedComments([]);
+          }
+        }
       } catch (error) {
         if (!active) return;
 
@@ -295,6 +380,54 @@ export default function BlogDetailsPage() {
 
     return Array.from(set).slice(0, 6);
   }, [allBlogs]);
+
+  async function handleCommentSubmit(event) {
+    event.preventDefault();
+
+    if (!blog?._id && !blog?.id) {
+      setCommentError("Blog not found.");
+      return;
+    }
+
+    const cleanName = commentName.trim();
+    const cleanEmail = commentEmail.trim();
+    const cleanMessage = commentMessage.trim();
+
+    if (!cleanName || !cleanEmail || !cleanMessage) {
+      setCommentError("Please fill name, email, and message.");
+      return;
+    }
+
+    try {
+      setCommentSubmitting(true);
+      setCommentError("");
+      setCommentSuccess("");
+
+      await api.post("/public/blog-comments", {
+        blogId: blog._id || blog.id,
+        name: cleanName,
+        email: cleanEmail,
+        message: cleanMessage,
+        rating: Number(commentRating || 0),
+      });
+
+      setCommentName("");
+      setCommentEmail("");
+      setCommentMessage("");
+      setCommentRating(0);
+
+      setCommentSuccess(
+        "Comment submitted successfully. It will appear after Super Admin approval.",
+      );
+    } catch (error) {
+      setCommentError(
+        error?.response?.data?.message ||
+          "Failed to submit comment. Please try again.",
+      );
+    } finally {
+      setCommentSubmitting(false);
+    }
+  }
 
   if (notFound) {
     return <Navigate to="/blogs" replace />;
@@ -540,44 +673,93 @@ export default function BlogDetailsPage() {
               </div>
             </div>
 
+            <ApprovedComments comments={approvedComments} />
+
             <div className="mt-10 border-t border-slate-200 pt-8">
               <h3 className="text-2xl font-black text-[#0f172a]">
                 Leave A Comment
               </h3>
 
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
-                <input
-                  type="text"
-                  placeholder="Name"
-                  className="h-[54px] rounded-[14px] border border-slate-200 px-4 text-sm outline-none transition focus:border-[#1877f2]"
+              {commentSuccess ? (
+                <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+                  {commentSuccess}
+                </div>
+              ) : null}
+
+              {commentError ? (
+                <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+                  {commentError}
+                </div>
+              ) : null}
+
+              <form onSubmit={handleCommentSubmit}>
+                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                  <input
+                    type="text"
+                    value={commentName}
+                    onChange={(event) => setCommentName(event.target.value)}
+                    placeholder="Name"
+                    required
+                    className="h-[54px] rounded-[14px] border border-slate-200 px-4 text-sm outline-none transition focus:border-[#ff7a3d]"
+                  />
+
+                  <input
+                    type="email"
+                    value={commentEmail}
+                    onChange={(event) => setCommentEmail(event.target.value)}
+                    placeholder="Email"
+                    required
+                    className="h-[54px] rounded-[14px] border border-slate-200 px-4 text-sm outline-none transition focus:border-[#ff7a3d]"
+                  />
+                </div>
+
+                <textarea
+                  rows={7}
+                  value={commentMessage}
+                  onChange={(event) => setCommentMessage(event.target.value)}
+                  placeholder="Message"
+                  required
+                  className="mt-4 w-full rounded-[14px] border border-slate-200 px-4 py-4 text-sm outline-none transition focus:border-[#ff7a3d]"
                 />
-                <input
-                  type="email"
-                  placeholder="Email"
-                  className="h-[54px] rounded-[14px] border border-slate-200 px-4 text-sm outline-none transition focus:border-[#1877f2]"
-                />
-              </div>
 
-              <textarea
-                rows={7}
-                placeholder="Message"
-                className="mt-4 w-full rounded-[14px] border border-slate-200 px-4 py-4 text-sm outline-none transition focus:border-[#1877f2]"
-              />
+                <label className="mt-4 flex items-center gap-3 text-sm text-[#64748b]">
+                  <input type="checkbox" className="rounded border-slate-300" />
+                  Save my name, email, and website in this browser for the next
+                  time I comment.
+                </label>
 
-              <label className="mt-4 flex items-center gap-3 text-sm text-[#64748b]">
-                <input type="checkbox" className="rounded border-slate-300" />
-                Save my name, email, and website in this browser for the next
-                time I comment.
-              </label>
+                <div className="mt-6">
+                  <div className="text-sm font-bold text-[#64748b]">
+                    Star rating:
+                  </div>
 
-              <div className="mt-6 text-sm text-[#64748b]">Star rating:</div>
+                  <div className="mt-2 flex gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setCommentRating(star)}
+                        className={`text-2xl transition ${
+                          star <= commentRating
+                            ? "text-yellow-400"
+                            : "text-slate-300"
+                        }`}
+                        aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-              <button
-                type="button"
-                className="mt-5 rounded-[12px] bg-[#ff7a3d] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#ea580c]"
-              >
-                Send Comments
-              </button>
+                <button
+                  type="submit"
+                  disabled={commentSubmitting}
+                  className="mt-5 rounded-[12px] bg-[#ff7a3d] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#ea580c] disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {commentSubmitting ? "Sending..." : "Send Comment"}
+                </button>
+              </form>
             </div>
           </article>
         </div>

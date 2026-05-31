@@ -69,6 +69,7 @@ import BannersPage from "../pages/superadmin/BannersPage.jsx";
 import CategoriesPage from "../pages/superadmin/CategoriesPage.jsx";
 import EventPostersPage from "../pages/superadmin/EventPostersPage.jsx";
 import KidgageNewsPage from "../pages/superadmin/KidgageNewsPage.jsx";
+import BlogCommentsPage from "../pages/superadmin/BlogCommentsPage.jsx";
 import RequestsPage from "../pages/superadmin/RequestsPage.jsx";
 import SettingsPage from "../pages/superadmin/SettingsPage.jsx";
 import SuperAdminPaymentsPage from "../pages/superadmin/SuperAdminPayments.jsx";
@@ -292,6 +293,7 @@ export function AppRouter() {
 
           <Route path="events" element={<EventPostersPage />} />
           <Route path="blogs" element={<KidgageNewsPage />} />
+          <Route path="blog-comments" element={<BlogCommentsPage />} />
           <Route path="banners" element={<BannersPage />} />
           <Route path="categories" element={<CategoriesPage />} />
 

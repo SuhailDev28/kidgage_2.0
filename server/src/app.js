@@ -30,6 +30,7 @@ import superAdminPaymentsRoutes from "./routes/superadmin.payments.routes.js";
 import superAdminSmtpRoutes from "./routes/superadmin.smtp.routes.js";
 import superAdminEmailTemplatesRoutes from "./routes/superadmin.emailTemplates.routes.js";
 import superAdminVoucherRoutes from "./routes/voucher.routes.js";
+import blogCommentRoutes from "./routes/blogComment.routes.js";
 
 import paymentRoutes from "./routes/payment.routes.js";
 import myfatoorahRoutes from "./routes/myfatoorah.routes.js";
@@ -195,6 +196,7 @@ app.use("/api/public", publicRoutes);
 
 app.use("/api/parent", parentRoutes);
 app.use("/api/academy", academyRoutes);
+app.use("/api", blogCommentRoutes);
 
 /*
  * Specific Super Admin modules must be mounted BEFORE main superAdminRoutes.

@@ -24,6 +24,7 @@ import {
   Tags,
   Image as ImageIcon,
   Newspaper,
+  MessageCircle,
   BarChart3,
   ShieldCheck,
   LogOut,
@@ -95,6 +96,11 @@ const navItems = [
     children: [
       { label: "Events", icon: FileText, to: "/super-admin/events" },
       { label: "Blogs", icon: Newspaper, to: "/super-admin/blogs" },
+      {
+        label: "Blog Comments",
+        icon: MessageCircle,
+        to: "/super-admin/blog-comments",
+      },
       { label: "Banners", icon: ImageIcon, to: "/super-admin/banners" },
       { label: "Categories", icon: Tags, to: "/super-admin/categories" },
       {
@@ -452,9 +458,7 @@ function SidebarLink({ item, collapsed, onClick, primaryColor }) {
     ? item.children.some((child) => location.pathname.startsWith(child.to))
     : false;
 
-  const isDirectActive = item.to
-    ? location.pathname.startsWith(item.to)
-    : false;
+  const isDirectActive = item.to ? location.pathname.startsWith(item.to) : false;
 
   const isActive = isDirectActive || isChildActive;
 
