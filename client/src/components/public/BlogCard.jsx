@@ -34,7 +34,7 @@ function formatDate(value) {
 
   return date.toLocaleDateString(undefined, {
     day: "numeric",
-    month: "long",
+    month: "short",
     year: "numeric",
   });
 }
@@ -44,16 +44,31 @@ function getCategoryLabel(item) {
 }
 
 function getAuthorLabel(item) {
-  return item?.author || item?.createdBy || "admin";
+  return item?.author || item?.createdBy || "Admin";
+}
+
+function getInitials(name) {
+  const text = String(name || "A").trim();
+
+  if (!text) return "A";
+
+  const parts = text.split(/\s+/).filter(Boolean);
+
+  if (parts.length === 1) {
+    return parts[0].charAt(0).toUpperCase();
+  }
+
+  return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
 }
 
 export function BlogCard({ item }) {
   const slug = item?.slug || item?._id || item?.id || "#";
   const title = item?.title || "Untitled Blog";
+
   const excerpt =
     item?.excerpt ||
     item?.description ||
-    "Latest updates, insights, and stories for kids and parents.";
+    "Latest updates, insights, and stories for kids, parents, and academies.";
 
   const image = normalizeImage(
     item?.image || item?.thumbnail || item?.coverImage || "",
@@ -66,53 +81,79 @@ export function BlogCard({ item }) {
   return (
     <Link
       to={`/blogs/${slug}`}
-      className="group block h-full overflow-hidden rounded-[30px] border border-[rgba(15,23,42,0.10)] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(15,23,42,0.10)]"
+      className="group relative block h-full overflow-hidden rounded-[28px] border border-orange-100 bg-white shadow-[0_14px_40px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-[0_24px_60px_rgba(236,122,59,0.18)]"
     >
-      <div className="overflow-hidden rounded-t-[30px] bg-slate-100">
+      <div className="relative overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50 to-white">
         {image ? (
           <img
             src={image}
             alt={title}
-            className="h-[250px] w-full object-cover transition duration-500 group-hover:scale-[1.04] md:h-[280px] xl:h-[300px]"
+            loading="lazy"
+            className="h-[230px] w-full object-cover transition duration-700 group-hover:scale-105 sm:h-[250px] lg:h-[270px]"
           />
         ) : (
-          <div className="flex h-[250px] w-full items-center justify-center bg-slate-100 text-slate-400 md:h-[280px] xl:h-[300px]">
-            No Image
+          <div className="flex h-[230px] w-full items-center justify-center bg-gradient-to-br from-orange-50 via-yellow-50 to-white sm:h-[250px] lg:h-[270px]">
+            <div className="text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-white text-3xl shadow-sm">
+                🧒
+              </div>
+              <p className="mt-3 text-sm font-semibold text-slate-400">
+                No Image Available
+              </p>
+            </div>
           </div>
         )}
-      </div>
 
-      <div className="p-6">
-        <div className="inline-flex rounded-full bg-[#6b5cff] px-5 py-2 text-sm font-semibold text-white shadow-sm">
-          {category}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent opacity-70 transition duration-300 group-hover:opacity-60" />
+
+        <div className="absolute left-5 top-5">
+          <span className="inline-flex max-w-[190px] items-center rounded-full bg-white/95 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#ec7a3b] shadow-sm backdrop-blur">
+            <span className="mr-2 h-2 w-2 rounded-full bg-[#ffd84d]" />
+            <span className="truncate">{category}</span>
+          </span>
         </div>
 
-        <h3 className="mt-5 line-clamp-2 text-[28px] font-black leading-[1.25] tracking-tight text-[#0b1021]">
+        <div className="absolute bottom-5 right-5">
+          <span className="inline-flex items-center gap-2 rounded-full bg-[#ec7a3b] px-4 py-2 text-sm font-bold text-white shadow-lg shadow-orange-500/25">
+            <span>🗓</span>
+            <span>{date || "Latest"}</span>
+          </span>
+        </div>
+      </div>
+
+      <div className="relative p-5 sm:p-6">
+        <div className="absolute -top-7 left-6 flex h-14 w-14 items-center justify-center rounded-2xl border-4 border-white bg-gradient-to-br from-[#ec7a3b] to-[#ff9f5a] text-sm font-black text-white shadow-lg shadow-orange-500/25">
+          {getInitials(author)}
+        </div>
+
+        <div className="pl-[72px]">
+          <p className="text-sm font-bold text-slate-500">
+            Posted by{" "}
+            <span className="text-[#0b1021]">
+              {author}
+            </span>
+          </p>
+        </div>
+
+        <h3 className="mt-6 line-clamp-2 text-[22px] font-black leading-tight tracking-tight text-[#0b1021] transition duration-300 group-hover:text-[#ec7a3b] sm:text-[24px] lg:text-[26px]">
           {title}
         </h3>
 
-        <p className="mt-4 line-clamp-2 text-[16px] leading-8 text-[#5f6b7a]">
+        <p className="mt-4 line-clamp-3 text-[15px] leading-7 text-slate-600">
           {excerpt}
         </p>
 
-        <div className="mt-6 border-t-2 border-dashed border-[#ffb37b]" />
+        <div className="mt-6 flex items-center justify-between gap-4 border-t border-dashed border-orange-200 pt-5">
+          <span className="inline-flex items-center gap-2 text-sm font-black text-[#ec7a3b]">
+            Read Article
+            <span className="transition duration-300 group-hover:translate-x-1">
+              →
+            </span>
+          </span>
 
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-4 text-sm text-[#5f6b7a]">
-          <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef5ff] text-xs font-bold uppercase text-[#1877f2]">
-              {String(author).charAt(0)}
-            </span>
-            <span className="text-[15px] font-medium text-[#0b1021]">
-              {author}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-[#f97316]">🗓</span>
-            <span className="text-[15px] font-medium">
-              {date || "Latest Update"}
-            </span>
-          </div>
+          <span className="rounded-full bg-orange-50 px-3 py-1.5 text-xs font-bold text-orange-500">
+            KidGage Blog
+          </span>
         </div>
       </div>
     </Link>
