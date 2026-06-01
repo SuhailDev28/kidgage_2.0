@@ -12,8 +12,8 @@ function isStandalone() {
 
 export default function PwaInstallButton() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [canInstall, setCanInstall] = useState(false);
   const [installed, setInstalled] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     setInstalled(isStandalone());
@@ -21,13 +21,13 @@ export default function PwaInstallButton() {
     function handleBeforeInstallPrompt(event) {
       event.preventDefault();
       setDeferredPrompt(event);
-      setCanInstall(true);
+      setMessage("");
     }
 
     function handleInstalled() {
       setInstalled(true);
-      setCanInstall(false);
       setDeferredPrompt(null);
+      setMessage("");
     }
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -43,7 +43,11 @@ export default function PwaInstallButton() {
   }, []);
 
   async function handleInstall() {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      setMessage("Install will be available after the PWA is ready.");
+      window.setTimeout(() => setMessage(""), 3500);
+      return;
+    }
 
     try {
       await deferredPrompt.prompt();
@@ -51,20 +55,28 @@ export default function PwaInstallButton() {
       const choiceResult = await deferredPrompt.userChoice;
 
       if (choiceResult?.outcome === "accepted") {
-        setCanInstall(false);
+        setDeferredPrompt(null);
+        setInstalled(true);
+      } else {
         setDeferredPrompt(null);
       }
     } catch (error) {
       console.error("PWA install failed:", error);
+      setMessage("Install prompt failed. Please refresh and try again.");
+      window.setTimeout(() => setMessage(""), 3500);
     }
   }
 
-  if (installed || !canInstall || !deferredPrompt) {
-    return null;
-  }
+  if (installed) return null;
 
   return (
     <div className="fixed bottom-4 right-4 z-[99998]">
+      {message ? (
+        <div className="mb-2 max-w-[260px] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold leading-5 text-slate-700 shadow-xl">
+          {message}
+        </div>
+      ) : null}
+
       <button
         type="button"
         onClick={handleInstall}
