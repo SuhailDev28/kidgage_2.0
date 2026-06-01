@@ -4,7 +4,10 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
-import { PublicSettingsProvider, usePublicSettings } from "./context/PublicSettingsProvider.jsx";
+import {
+  PublicSettingsProvider,
+  usePublicSettings,
+} from "./context/PublicSettingsProvider.jsx";
 import { AppRouter } from "./app/router.jsx";
 import PwaUpdatePrompt from "./components/PwaUpdatePrompt.jsx";
 import PwaInstallButton from "./components/PwaInstallButton.jsx";
@@ -96,6 +99,7 @@ function PublicHeadManager() {
 
   useEffect(() => {
     const siteName = String(settings.siteName || "KidGage").trim();
+
     const description = String(
       settings.metaDescription ||
         settings.tagline ||
@@ -119,7 +123,6 @@ function PublicHeadManager() {
 
     upsertMetaByName("description", description);
     upsertMetaByName("theme-color", themeColor);
-
     upsertMetaByName("apple-mobile-web-app-title", siteName);
 
     upsertMetaByProperty("og:title", siteName);

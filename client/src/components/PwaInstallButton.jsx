@@ -1,24 +1,19 @@
 // client/src/components/PwaInstallButton.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 function isStandalone() {
+  if (typeof window === "undefined") return false;
+
   return (
     window.matchMedia?.("(display-mode: standalone)")?.matches ||
-    window.navigator.standalone === true
+    window.navigator?.standalone === true
   );
-}
-
-function isIos() {
-  return /iphone|ipad|ipod/i.test(window.navigator.userAgent || "");
 }
 
 export default function PwaInstallButton() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [canInstall, setCanInstall] = useState(false);
   const [installed, setInstalled] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
-
-  const ios = useMemo(() => isIos(), []);
 
   useEffect(() => {
     setInstalled(isStandalone());
@@ -47,51 +42,36 @@ export default function PwaInstallButton() {
     };
   }, []);
 
-  async function handleClick() {
-    if (ios || !deferredPrompt) {
-      setShowHelp(true);
-      return;
+  async function handleInstall() {
+    if (!deferredPrompt) return;
+
+    try {
+      await deferredPrompt.prompt();
+
+      const choiceResult = await deferredPrompt.userChoice;
+
+      if (choiceResult?.outcome === "accepted") {
+        setCanInstall(false);
+        setDeferredPrompt(null);
+      }
+    } catch (error) {
+      console.error("PWA install failed:", error);
     }
-
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-
-    setDeferredPrompt(null);
-    setCanInstall(false);
   }
 
-  if (installed) return null;
+  if (installed || !canInstall || !deferredPrompt) {
+    return null;
+  }
 
   return (
-    <>
+    <div className="fixed bottom-4 right-4 z-[99998]">
       <button
         type="button"
-        onClick={handleClick}
-        className="fixed bottom-4 right-4 z-[99998] rounded-full bg-[#ff7a3d] px-5 py-3 text-sm font-black text-white shadow-2xl"
+        onClick={handleInstall}
+        className="inline-flex items-center justify-center rounded-full bg-[#AEC4A0] px-5 py-3 text-sm font-black text-white shadow-2xl transition hover:brightness-95 active:scale-[0.98]"
       >
-        {canInstall ? "Install App" : "How to Install"}
+        Install App
       </button>
-
-      {showHelp ? (
-        <div className="fixed inset-x-4 bottom-20 z-[99999] mx-auto max-w-sm rounded-3xl border border-slate-200 bg-white p-4 shadow-2xl">
-          <div className="text-base font-black text-slate-950">
-            Install KidGage
-          </div>
-
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            Open Chrome menu ⋮ and tap <b>Add to Home screen</b> or{" "}
-            <b>Install app</b>.
-          </p>
-
-          <button
-            type="button"
-            onClick={() => setShowHelp(false)}
-            className="mt-4 rounded-full bg-[#ff7a3d] px-4 py-2 text-sm font-black text-white"
-          >
-            OK
-          </button>
-        </div>
-      ) : null}
-    </>
+    </div>
   );
 }
