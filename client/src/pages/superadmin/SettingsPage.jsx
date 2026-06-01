@@ -61,8 +61,11 @@ const initialForm = {
 
   logo: null,
   favicon: null,
+  pwaLogo: null,
+
   logoUrl: "",
   faviconUrl: "",
+  pwaLogoUrl: "",
 };
 
 function normalizeImage(value) {
@@ -246,6 +249,7 @@ function UploadBox({
   accept,
   onChange,
   secondaryColor = "#6d28d9",
+  description = "PNG, JPG, SVG or ICO supported where applicable.",
 }) {
   return (
     <div className="rounded-[24px] border border-dashed border-slate-300 bg-slate-50 p-4">
@@ -264,8 +268,8 @@ function UploadBox({
 
         <div className="min-w-0 flex-1">
           <div className="text-sm font-bold text-slate-900">{title}</div>
-          <div className="mt-1 text-xs text-slate-500">
-            PNG, JPG, SVG or ICO supported where applicable.
+          <div className="mt-1 text-xs leading-5 text-slate-500">
+            {description}
           </div>
 
           {fileName ? (
@@ -315,14 +319,25 @@ export default function SettingsPage() {
     [form.favicon, form.faviconUrl],
   );
 
+  const pwaLogoPreview = useMemo(
+    () =>
+      form.pwaLogo
+        ? URL.createObjectURL(form.pwaLogo)
+        : normalizeImage(form.pwaLogoUrl),
+    [form.pwaLogo, form.pwaLogoUrl],
+  );
+
   useEffect(() => {
     return () => {
       if (logoPreview?.startsWith("blob:")) URL.revokeObjectURL(logoPreview);
       if (faviconPreview?.startsWith("blob:")) {
         URL.revokeObjectURL(faviconPreview);
       }
+      if (pwaLogoPreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(pwaLogoPreview);
+      }
     };
-  }, [logoPreview, faviconPreview]);
+  }, [logoPreview, faviconPreview, pwaLogoPreview]);
 
   async function loadSettings({ silent = false } = {}) {
     try {
@@ -388,8 +403,11 @@ export default function SettingsPage() {
 
         logo: null,
         favicon: null,
+        pwaLogo: null,
+
         logoUrl: data.logo || "",
         faviconUrl: data.favicon || "",
+        pwaLogoUrl: data.pwaLogo || "",
       }));
     } catch (err) {
       setError(
@@ -417,6 +435,11 @@ export default function SettingsPage() {
   function onFaviconChange(e) {
     const file = e.target.files?.[0] || null;
     setForm((prev) => ({ ...prev, favicon: file }));
+  }
+
+  function onPwaLogoChange(e) {
+    const file = e.target.files?.[0] || null;
+    setForm((prev) => ({ ...prev, pwaLogo: file }));
   }
 
   async function handleSave(e) {
@@ -477,6 +500,7 @@ export default function SettingsPage() {
 
       if (form.logo) payload.append("logo", form.logo);
       if (form.favicon) payload.append("favicon", form.favicon);
+      if (form.pwaLogo) payload.append("pwaLogo", form.pwaLogo);
 
       const res = await api.put("/super-admin/settings", payload, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -487,10 +511,15 @@ export default function SettingsPage() {
       setForm((prev) => ({
         ...prev,
         ...updated,
+
         logo: null,
         favicon: null,
+        pwaLogo: null,
+
         logoUrl: updated.logo || prev.logoUrl,
         faviconUrl: updated.favicon || prev.faviconUrl,
+        pwaLogoUrl: updated.pwaLogo || prev.pwaLogoUrl,
+
         linkedin: updated.linkedin ?? prev.linkedin,
       }));
 
@@ -543,9 +572,9 @@ export default function SettingsPage() {
             </h2>
 
             <p className="mt-2 text-sm leading-7 text-slate-500">
-              Manage KidGage branding, public platform configuration, menu
-              colors, feature visibility, contact details, SEO content, and
-              maintenance mode.
+              Manage KidGage branding, public platform configuration, PWA app
+              logo, menu colors, feature visibility, contact details, SEO
+              content, and maintenance mode.
             </p>
           </div>
 
@@ -601,11 +630,11 @@ export default function SettingsPage() {
         <SectionCard
           icon={ImageIcon}
           title="Branding & Visual Identity"
-          subtitle="Upload platform logo, favicon, and adjust brand colors."
+          subtitle="Upload platform logo, favicon, PWA app logo, and adjust brand colors."
           primaryColor={form.primaryColor}
         >
           <div className="space-y-5">
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
               <UploadBox
                 title="Platform Logo"
                 preview={logoPreview}
@@ -613,6 +642,7 @@ export default function SettingsPage() {
                 accept="image/*"
                 onChange={onLogoChange}
                 secondaryColor={form.secondaryColor}
+                description="Used in website header, footer, and brand preview."
               />
 
               <UploadBox
@@ -622,7 +652,24 @@ export default function SettingsPage() {
                 accept=".png,.jpg,.jpeg,.svg,.ico,image/*"
                 onChange={onFaviconChange}
                 secondaryColor={form.secondaryColor}
+                description="Used in browser tab. ICO, PNG, SVG, JPG supported."
               />
+
+              <UploadBox
+                title="PWA App Logo"
+                preview={pwaLogoPreview}
+                fileName={form.pwaLogo?.name || ""}
+                accept=".png,.jpg,.jpeg,.webp,image/*"
+                onChange={onPwaLogoChange}
+                secondaryColor={form.secondaryColor}
+                description="Used when KidGage is installed on mobile home screen."
+              />
+            </div>
+
+            <div className="rounded-[22px] border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">
+              Recommended PWA logo size: <strong>512 × 512 PNG</strong>. After
+              updating the PWA logo, users may need to refresh or reinstall the
+              app shortcut to see the new icon.
             </div>
 
             <div className="grid gap-5 md:grid-cols-2">
@@ -1032,29 +1079,60 @@ export default function SettingsPage() {
               )}
             </div>
 
-            <div
-              className="rounded-2xl p-4"
-              style={{ backgroundColor: rgba(form.primaryColor, 0.08) }}
-            >
-              <div className="text-sm font-semibold text-slate-500">
-                Contact
-              </div>
-
-              <div className="mt-2 space-y-1 text-sm text-slate-800">
-                <div className="flex items-center gap-2">
-                  <Mail
-                    className="h-4 w-4"
-                    style={{ color: form.primaryColor }}
-                  />
-                  {form.contactEmail || "info@example.com"}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div
+                className="rounded-2xl p-4"
+                style={{ backgroundColor: rgba(form.primaryColor, 0.08) }}
+              >
+                <div className="text-sm font-semibold text-slate-500">
+                  Contact
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <Phone
-                    className="h-4 w-4"
-                    style={{ color: form.primaryColor }}
-                  />
-                  {form.contactPhone || "+974 0000 0000"}
+                <div className="mt-2 space-y-1 text-sm text-slate-800">
+                  <div className="flex items-center gap-2">
+                    <Mail
+                      className="h-4 w-4"
+                      style={{ color: form.primaryColor }}
+                    />
+                    {form.contactEmail || "info@example.com"}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Phone
+                      className="h-4 w-4"
+                      style={{ color: form.primaryColor }}
+                    />
+                    {form.contactPhone || "+974 0000 0000"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-sm font-semibold text-slate-500">
+                  PWA App Icon
+                </div>
+
+                <div className="mt-3 flex items-center gap-3">
+                  <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+                    {pwaLogoPreview ? (
+                      <img
+                        src={pwaLogoPreview}
+                        alt="PWA logo preview"
+                        className="h-full w-full object-contain"
+                      />
+                    ) : (
+                      <ImageIcon className="h-6 w-6 text-slate-300" />
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-sm font-bold text-slate-900">
+                      Installed App Logo
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      Recommended 512 × 512 PNG
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

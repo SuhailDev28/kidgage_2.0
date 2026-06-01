@@ -136,8 +136,16 @@ const settingsStorage = multer.diskStorage({
   },
   filename(_req, file, cb) {
     const ext = path.extname(file.originalname || "").toLowerCase() || ".png";
-    const prefix =
-      file.fieldname === "favicon" ? "settings-favicon" : "settings-logo";
+
+    let prefix = "settings-logo";
+
+    if (file.fieldname === "favicon") {
+      prefix = "settings-favicon";
+    }
+
+    if (file.fieldname === "pwaLogo") {
+      prefix = "settings-pwa-logo";
+    }
 
     cb(
       null,
@@ -1751,6 +1759,7 @@ router.put(
   settingsUpload.fields([
     { name: "logo", maxCount: 1 },
     { name: "favicon", maxCount: 1 },
+    { name: "pwaLogo", maxCount: 1 },
   ]),
   async (req, res, next) => {
     try {
@@ -1758,6 +1767,7 @@ router.put(
 
       const logoFile = req.files?.logo?.[0] || null;
       const faviconFile = req.files?.favicon?.[0] || null;
+      const pwaLogoFile = req.files?.pwaLogo?.[0] || null;
 
       const update = {
         siteName: String(
@@ -1861,12 +1871,25 @@ router.put(
 
       if (faviconFile) {
         update.favicon = buildSettingsImagePath(faviconFile.filename);
+        update.faviconUpdatedAt = new Date();
 
         if (
           settings.favicon &&
           String(settings.favicon).startsWith("/uploads/settings/")
         ) {
           cleanupUploadedFile(settingsUploadsDir, settings.favicon);
+        }
+      }
+
+      if (pwaLogoFile) {
+        update.pwaLogo = buildSettingsImagePath(pwaLogoFile.filename);
+        update.pwaLogoUpdatedAt = new Date();
+
+        if (
+          settings.pwaLogo &&
+          String(settings.pwaLogo).startsWith("/uploads/settings/")
+        ) {
+          cleanupUploadedFile(settingsUploadsDir, settings.pwaLogo);
         }
       }
 

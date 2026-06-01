@@ -155,7 +155,10 @@ function buildDefaultSettings() {
     tagline: "Discover the best kids activities in Qatar",
     logo: "",
     favicon: "",
+    pwaLogo: "",
     logoUpdatedAt: null,
+    faviconUpdatedAt: null,
+    pwaLogoUpdatedAt: null,
     primaryColor: "#2563eb",
     secondaryColor: "#6d28d9",
     contactEmail: "",
@@ -200,7 +203,10 @@ function normalizePublicSettings(settings) {
     tagline: settings.tagline || defaults.tagline,
     logo: settings.logo || "",
     favicon: settings.favicon || "",
+    pwaLogo: settings.pwaLogo || "",
     logoUpdatedAt: settings.logoUpdatedAt || settings.updatedAt || null,
+    faviconUpdatedAt: settings.faviconUpdatedAt || settings.updatedAt || null,
+    pwaLogoUpdatedAt: settings.pwaLogoUpdatedAt || settings.updatedAt || null,
 
     primaryColor: settings.primaryColor || defaults.primaryColor,
     secondaryColor: settings.secondaryColor || defaults.secondaryColor,
@@ -586,6 +592,58 @@ router.get("/settings", async (_req, res, next) => {
 
     return res.json({
       settings: normalizePublicSettings(settings),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/manifest.webmanifest", async (_req, res, next) => {
+  try {
+    const settings = await getPublicSettings();
+    const normalized = normalizePublicSettings(settings);
+
+    const siteName = normalized.siteName || "KidGage";
+    const tagline = normalized.tagline || "Kids activity booking platform.";
+
+    const pwaLogo = normalized.pwaLogo || normalized.logo || "/pwa-512x512.png";
+    const themeColor = normalized.primaryColor || "#ff7a3d";
+
+    res.setHeader("Content-Type", "application/manifest+json");
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+
+    return res.json({
+      id: "/",
+      name: siteName,
+      short_name: siteName,
+      description: tagline,
+      theme_color: themeColor,
+      background_color: "#ffffff",
+      display: "standalone",
+      orientation: "portrait",
+      scope: "/",
+      start_url: "/",
+      lang: "en",
+      icons: [
+        {
+          src: pwaLogo,
+          sizes: "192x192",
+          type: "image/png",
+          purpose: "any",
+        },
+        {
+          src: pwaLogo,
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "any",
+        },
+        {
+          src: pwaLogo,
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "maskable",
+        },
+      ],
     });
   } catch (error) {
     next(error);

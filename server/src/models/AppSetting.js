@@ -34,7 +34,23 @@ const appSettingSchema = new mongoose.Schema(
       trim: true,
     },
 
+    pwaLogo: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     logoUpdatedAt: {
+      type: Date,
+      default: null,
+    },
+
+    faviconUpdatedAt: {
+      type: Date,
+      default: null,
+    },
+
+    pwaLogoUpdatedAt: {
       type: Date,
       default: null,
     },

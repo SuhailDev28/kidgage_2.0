@@ -5,6 +5,7 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig({
   plugins: [
     react(),
+
     VitePWA({
       strategies: "generateSW",
       registerType: "autoUpdate",
@@ -30,6 +31,7 @@ export default defineConfig({
         scope: "/",
         start_url: "/",
         lang: "en",
+
         icons: [
           {
             src: "/pwa-192x192.png",
@@ -58,6 +60,32 @@ export default defineConfig({
         skipWaiting: true,
         navigateFallback: "/index.html",
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}"],
+
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith("/uploads/settings/"),
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "kidgage-settings-images",
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+            },
+          },
+          {
+            urlPattern: ({ url }) => url.pathname.includes("/public/settings"),
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "kidgage-public-settings",
+              expiration: {
+                maxEntries: 5,
+                maxAgeSeconds: 60 * 60,
+              },
+            },
+          },
+        ],
       },
 
       devOptions: {
