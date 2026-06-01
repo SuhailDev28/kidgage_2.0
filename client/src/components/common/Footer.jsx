@@ -122,24 +122,30 @@ function BrandMark({
     setImageFailed(false);
   }, [logo, version]);
 
+  if (logoSrc && !imageFailed) {
+    return (
+      <div className="flex items-center justify-center lg:justify-start">
+        <img
+          src={logoSrc}
+          alt={siteName}
+          className="h-11 w-auto max-w-[190px] object-contain sm:h-12 sm:max-w-[220px] md:h-14 md:max-w-[250px]"
+          onError={() => setImageFailed(true)}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="flex items-center gap-3">
-      <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,23,42,0.08)] ring-1 ring-[rgba(15,23,42,0.06)]">
-        {logoSrc && !imageFailed ? (
-          <img
-            src={logoSrc}
-            alt={siteName}
-            className="h-full w-full object-contain"
-            onError={() => setImageFailed(true)}
-          />
-        ) : (
-          <div
-            className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-black text-white"
-            style={{ backgroundColor: primaryColor }}
-          >
-            {String(siteName || "K").charAt(0).toUpperCase()}
-          </div>
-        )}
+    <div className="flex items-center justify-center gap-3 lg:justify-start">
+      <div
+        className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-[16px] shadow-[0_10px_24px_rgba(15,23,42,0.08)] ring-1 ring-[rgba(15,23,42,0.06)]"
+        style={{
+          backgroundColor: primaryColor,
+        }}
+      >
+        <span className="text-sm font-black tracking-tight text-white">
+          {String(siteName || "K").slice(0, 2).toUpperCase()}
+        </span>
       </div>
 
       <div className="text-[28px] font-black tracking-tight text-[#0f172a]">
