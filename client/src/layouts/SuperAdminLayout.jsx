@@ -385,15 +385,12 @@ function usePlatformSettings() {
 
 function BrandSkeleton({ collapsed = false }) {
   return (
-    <div className="flex items-center gap-3 overflow-hidden">
-      <div className="h-12 w-12 shrink-0 animate-pulse rounded-[18px] bg-slate-100" />
-
-      {!collapsed ? (
-        <div className="min-w-0">
-          <div className="h-6 w-32 animate-pulse rounded bg-slate-100" />
-          <div className="mt-2 h-3 w-24 animate-pulse rounded bg-slate-100" />
-        </div>
-      ) : null}
+    <div className="flex items-center overflow-hidden">
+      <div
+        className={`animate-pulse rounded-xl bg-slate-100 ${
+          collapsed ? "h-11 w-11" : "h-12 w-40"
+        }`}
+      />
     </div>
   );
 }
@@ -414,24 +411,30 @@ function BrandMark({ collapsed = false, settings, settingsLoading }) {
     return <BrandSkeleton collapsed={collapsed} />;
   }
 
+  if (logoUrl && !logoFailed) {
+    return (
+      <div className="flex min-w-0 items-center overflow-hidden">
+        <img
+          src={logoUrl}
+          alt={siteName}
+          className={
+            collapsed
+              ? "h-10 w-10 rounded-xl object-contain"
+              : "h-12 w-auto max-w-[190px] object-contain"
+          }
+          onError={() => setLogoFailed(true)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-3 overflow-hidden">
-      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[18px] bg-white text-slate-700 ring-1 ring-slate-200">
-        {logoUrl && !logoFailed ? (
-          <img
-            src={logoUrl}
-            alt={siteName}
-            className="h-full w-full object-contain"
-            onError={() => setLogoFailed(true)}
-          />
-        ) : (
-          <div
-            className="flex h-full w-full items-center justify-center text-sm font-black text-white"
-            style={{ backgroundColor: primary }}
-          >
-            {getInitials(siteName)}
-          </div>
-        )}
+      <div
+        className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[18px] text-sm font-black text-white"
+        style={{ backgroundColor: primary }}
+      >
+        {getInitials(siteName)}
       </div>
 
       {!collapsed ? (
@@ -1057,7 +1060,7 @@ function Topbar({ setMobileOpen, settings, settingsLoading }) {
                 </>
               ) : (
                 <>
-                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-white text-sm font-black text-slate-700 ring-1 ring-slate-200 sm:h-11 sm:w-11">
+                  <div className="flex h-10 w-20 items-center justify-center overflow-hidden rounded-xl bg-white px-2 ring-1 ring-slate-200 sm:h-11 sm:w-24">
                     {logoUrl && !logoFailed ? (
                       <img
                         src={logoUrl}
@@ -1067,7 +1070,7 @@ function Topbar({ setMobileOpen, settings, settingsLoading }) {
                       />
                     ) : (
                       <div
-                        className="flex h-full w-full items-center justify-center text-xs font-black text-white"
+                        className="flex h-9 w-9 items-center justify-center rounded-xl text-xs font-black text-white"
                         style={{ backgroundColor: primary }}
                       >
                         {getInitials(siteName)}
