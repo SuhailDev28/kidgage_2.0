@@ -119,6 +119,8 @@ function PublicHeadManager() {
 
     const title = String(settings.metaTitle || siteName || "KidGage").trim();
 
+    const manifestUrl = `${getApiOrigin()}/api/public/manifest.webmanifest`;
+
     document.title = title;
 
     upsertMetaByName("description", description);
@@ -136,8 +138,8 @@ function PublicHeadManager() {
     upsertLink("icon", faviconUrl);
     upsertLink("apple-touch-icon", pwaLogoUrl);
 
-    upsertLink("manifest", "/api/public/manifest.webmanifest", {
-      crossorigin: "use-credentials",
+    upsertLink("manifest", manifestUrl, {
+      crossorigin: "anonymous",
     });
   }, [settings]);
 
