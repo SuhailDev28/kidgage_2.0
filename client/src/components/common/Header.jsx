@@ -85,27 +85,30 @@ function BrandMark({ logo = "", siteName = "KidGage", version = "", theme }) {
     setImageFailed(false);
   }, [logo, version]);
 
+  if (logoSrc && !imageFailed) {
+    return (
+      <div className="flex min-w-0 items-center">
+        <img
+          src={logoSrc}
+          alt={siteName}
+          className="h-9 w-auto max-w-[150px] object-contain sm:h-11 sm:max-w-[190px] md:h-12 md:max-w-[220px] lg:max-w-[240px]"
+          onError={() => setImageFailed(true)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-w-0 items-center gap-2 sm:gap-3">
       <div
-        className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-white shadow-[0_10px_24px_rgba(15,23,42,0.08)] ring-1 ring-[rgba(15,23,42,0.06)] sm:h-12 sm:w-12 sm:rounded-[16px]"
+        className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[14px] shadow-[0_10px_24px_rgba(15,23,42,0.08)] ring-1 ring-[rgba(15,23,42,0.06)] sm:h-12 sm:w-12 sm:rounded-[16px]"
         style={{
-          backgroundColor:
-            logoSrc && !imageFailed ? "#ffffff" : theme.primaryColor,
+          backgroundColor: theme.primaryColor,
         }}
       >
-        {logoSrc && !imageFailed ? (
-          <img
-            src={logoSrc}
-            alt={siteName}
-            className="h-full w-full object-contain"
-            onError={() => setImageFailed(true)}
-          />
-        ) : (
-          <span className="text-xs font-black tracking-tight text-white sm:text-sm">
-            {getInitials(siteName)}
-          </span>
-        )}
+        <span className="text-xs font-black tracking-tight text-white sm:text-sm">
+          {getInitials(siteName)}
+        </span>
       </div>
 
       <div className="min-w-0 truncate text-[20px] font-black tracking-tight text-[#0f172a] sm:text-[28px]">
@@ -344,7 +347,7 @@ export function Header() {
 
   const theme = useMemo(() => {
     const primaryColor =
-      settings?.primaryColor || settings?.menuLinkActiveColor || "#ff7a3d";
+      settings?.primaryColor || settings?.menuLinkActiveColor || "#AEC4A0";
 
     const secondaryColor =
       settings?.secondaryColor || settings?.menuLinkHoverColor || "#facc15";
@@ -370,7 +373,7 @@ export function Header() {
       <header className="sticky top-0 z-30 w-full border-b border-white/30 bg-[#f8fbff]/90 backdrop-blur-xl">
         <div className="container-main px-3 py-3 sm:px-4 sm:py-4">
           <div className="flex min-w-0 items-center justify-between gap-2 rounded-[22px] bg-white/95 px-3 py-3 shadow-[0_10px_30px_rgba(15,23,42,0.05)] ring-1 ring-[rgba(15,23,42,0.05)] sm:gap-4 sm:rounded-[26px] sm:px-4 md:px-5">
-            <Link to="/" className="min-w-0 shrink">
+            <Link to="/" className="min-w-0 shrink-0">
               <BrandMark
                 logo={brand.logo}
                 siteName={brand.siteName}
