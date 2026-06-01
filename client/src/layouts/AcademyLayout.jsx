@@ -644,15 +644,15 @@ function BrandLogo({ logo, siteName, collapsed = false, brand }) {
 
   if (normalizedLogo && !failed) {
     return (
-      <div
-        className={`flex shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 ${
-          collapsed ? "h-12 w-12" : "h-12 w-12"
-        }`}
-      >
+      <div className="flex min-w-0 shrink-0 items-center justify-center overflow-hidden">
         <img
           src={normalizedLogo}
           alt={siteName || "KidGage"}
-          className="h-full w-full object-contain p-1.5"
+          className={
+            collapsed
+              ? "h-11 w-11 rounded-2xl object-contain"
+              : "h-12 w-auto max-w-[190px] object-contain sm:max-w-[210px]"
+          }
           onError={() => setFailed(true)}
         />
       </div>
@@ -676,8 +676,8 @@ function BrandBlock({ collapsed = false, brand }) {
 
   return (
     <div
-      className={`flex items-center ${
-        collapsed ? "justify-center" : "gap-3 px-2"
+      className={`flex min-w-0 items-center ${
+        collapsed ? "justify-center" : "px-2"
       }`}
     >
       <BrandLogo
@@ -687,8 +687,8 @@ function BrandBlock({ collapsed = false, brand }) {
         brand={brand}
       />
 
-      {!collapsed ? (
-        <div className="min-w-0">
+      {!collapsed && !brand?.logo ? (
+        <div className="ml-3 min-w-0">
           <div className="truncate text-[28px] font-black tracking-tight text-slate-900">
             {siteName}
           </div>
