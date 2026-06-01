@@ -55,7 +55,7 @@ function normalizeImage(value) {
   if (raw.startsWith("/")) return `${base}${raw}`;
   if (raw.startsWith("uploads/")) return `${base}/${raw}`;
 
-  return raw;
+  return `${base}/uploads/settings/${raw}`;
 }
 
 function normalizeSettingsPayload(data) {
@@ -142,6 +142,58 @@ const navItems = [
   { label: "Profile", to: "/parent/profile", icon: UserCircle2 },
   { label: "Settings", to: "/parent/settings", icon: Settings },
 ];
+
+
+function ParentBrandMark({
+  logo = "",
+  siteName = "KidGage",
+  tagline = "Parent Portal",
+  showLogo = false,
+  onLogoError,
+  onClick,
+  primaryColor = DEFAULT_THEME.primaryColor,
+}) {
+  if (showLogo) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex min-w-0 items-center text-left"
+      >
+        <img
+          src={logo}
+          alt={siteName}
+          className="h-11 w-auto max-w-[180px] object-contain sm:h-12 sm:max-w-[210px]"
+          onError={onLogoError}
+        />
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex min-w-0 items-center gap-3 text-left"
+    >
+      <div
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm"
+        style={{ backgroundColor: primaryColor }}
+      >
+        <Heart className="h-7 w-7" />
+      </div>
+
+      <div className="min-w-0">
+        <div className="truncate text-xl font-black tracking-tight text-slate-900">
+          {siteName}
+        </div>
+        <div className="mt-0.5 truncate text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
+          {tagline || "Parent Portal"}
+        </div>
+      </div>
+    </button>
+  );
+}
 
 function NotificationBell({ primaryColor }) {
   const navigate = useNavigate();
@@ -489,33 +541,15 @@ export default function ParentLayout() {
         }`}
       >
         <div className="flex h-[88px] items-center justify-between border-b border-slate-200 px-5">
-          <button
-            type="button"
+          <ParentBrandMark
+            logo={theme.logo}
+            siteName={theme.siteName}
+            tagline={theme.tagline}
+            showLogo={showLogo}
+            primaryColor={theme.primaryColor}
+            onLogoError={() => setLogoFailed(true)}
             onClick={() => navigate("/parent/dashboard")}
-            className="flex min-w-0 items-center gap-3 text-left"
-          >
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-orange-100 bg-orange-50 text-[#ec7a3b]">
-              {showLogo ? (
-                <img
-                  src={theme.logo}
-                  alt={theme.siteName}
-                  className="h-full w-full object-contain p-1.5"
-                  onError={() => setLogoFailed(true)}
-                />
-              ) : (
-                <Heart className="h-7 w-7" />
-              )}
-            </div>
-
-            <div className="min-w-0">
-              <div className="truncate text-xl font-black tracking-tight text-slate-900">
-                {theme.siteName}
-              </div>
-              <div className="mt-0.5 truncate text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
-                {theme.tagline || "Parent Portal"}
-              </div>
-            </div>
-          </button>
+          />
 
           <button
             type="button"
