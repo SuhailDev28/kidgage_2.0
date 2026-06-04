@@ -24,6 +24,8 @@ import {
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { logout } from "../lib/auth.js";
 import { api, publicApi } from "../lib/api.js";
+import { usePwaMode } from "../hooks/usePwaMode.js";
+import MobileBottomNav from "../components/mobile/MobileBottomNav.jsx";
 
 const SIDEBAR_KEY = "kidgage_academy_sidebar_collapsed";
 const FALLBACK_API_ORIGIN = "http://localhost:5001";
@@ -899,6 +901,7 @@ function SidebarContent({
 
 export default function AcademyLayout() {
   const brand = useSuperAdminBrand();
+  const isPwaMode = usePwaMode();
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(readInitialCollapsed);
@@ -966,7 +969,11 @@ export default function AcademyLayout() {
           />
         </aside>
 
-        <main className="relative z-10 min-w-0">
+        <main
+          className={`relative z-10 min-w-0 ${
+            isPwaMode ? "pb-28 xl:pb-0" : "pb-0"
+          }`}
+        >
           <AcademyTopbar
             brand={brand}
             onOpenMobile={() => setMobileOpen(true)}
@@ -975,6 +982,10 @@ export default function AcademyLayout() {
           <Outlet />
         </main>
       </div>
+
+      {isPwaMode ? (
+        <MobileBottomNav role="academy" primaryColor={brand.primaryColor} />
+      ) : null}
     </div>
   );
 }

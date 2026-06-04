@@ -38,6 +38,8 @@ import {
   X,
 } from "lucide-react";
 import { api } from "../lib/api.js";
+import { usePwaMode } from "../hooks/usePwaMode.js";
+import MobileBottomNav from "../components/mobile/MobileBottomNav.jsx";
 
 const SUPER_ADMIN_SIDEBAR_KEY = "kidgage_super_admin_sidebar_collapsed";
 
@@ -1112,6 +1114,7 @@ function Topbar({ setMobileOpen, settings, settingsLoading }) {
 export default function SuperAdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(readInitialCollapsed);
+  const isPwaMode = usePwaMode();
 
   const { settings, settingsLoading } = usePlatformSettings();
 
@@ -1137,10 +1140,21 @@ export default function SuperAdminLayout() {
           settingsLoading={settingsLoading}
         />
 
-        <main className="min-w-0 px-3 py-4 sm:px-4 sm:py-5 md:px-6 lg:px-8 lg:py-6">
+        <main
+          className={`min-w-0 px-3 py-4 sm:px-4 sm:py-5 md:px-6 lg:px-8 lg:py-6 ${
+            isPwaMode ? "pb-28 lg:pb-6" : ""
+          }`}
+        >
           <Outlet />
         </main>
       </div>
+
+      {isPwaMode ? (
+        <MobileBottomNav
+          role="superadmin"
+          primaryColor={settings.primaryColor}
+        />
+      ) : null}
     </div>
   );
 }

@@ -19,12 +19,12 @@ import {
   Clock,
   ExternalLink,
   MessageCircle,
-  Compass,
 } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { logout, getUser } from "../lib/auth.js";
 import { api, publicApi } from "../lib/api.js";
 import { usePwaMode } from "../hooks/usePwaMode.js";
+import MobileBottomNav from "../components/mobile/MobileBottomNav.jsx";
 
 const FALLBACK_API_ORIGIN = "http://localhost:5001";
 
@@ -145,14 +145,6 @@ const navItems = [
   { label: "Settings", to: "/parent/settings", icon: Settings },
 ];
 
-const bottomNavItems = [
-  { label: "Home", to: "/parent/dashboard", icon: Home },
-  { label: "Explore", to: "/", icon: Compass },
-  { label: "Bookings", to: "/parent/bookings", icon: CalendarDays },
-  { label: "Payments", to: "/parent/payments", icon: CreditCard },
-  { label: "Profile", to: "/parent/profile", icon: UserCircle2 },
-];
-
 function ParentBrandMark({
   logo = "",
   siteName = "KidGage",
@@ -201,57 +193,6 @@ function ParentBrandMark({
         </div>
       </div>
     </button>
-  );
-}
-
-function MobileBottomNav({ primaryColor = DEFAULT_THEME.primaryColor }) {
-  const location = useLocation();
-
-  return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200/80 bg-white/95 px-2 pb-[calc(env(safe-area-inset-bottom)+8px)] pt-2 shadow-[0_-18px_45px_rgba(15,23,42,0.12)] backdrop-blur-2xl lg:hidden">
-      <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
-        {bottomNavItems.map((item) => {
-          const Icon = item.icon;
-
-          const isActive =
-            item.to === "/"
-              ? location.pathname === "/"
-              : location.pathname === item.to ||
-                location.pathname.startsWith(`${item.to}/`);
-
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className="group flex min-w-0 flex-col items-center justify-center rounded-2xl px-1 py-2.5 text-[10.5px] font-black transition active:scale-95"
-              style={{
-                color: isActive ? primaryColor : "#64748b",
-                backgroundColor: isActive ? `${primaryColor}14` : "transparent",
-              }}
-            >
-              <span
-                className="mb-1 flex h-7 w-7 items-center justify-center rounded-xl transition"
-                style={{
-                  backgroundColor: isActive
-                    ? `${primaryColor}1f`
-                    : "transparent",
-                }}
-              >
-                <Icon
-                  className={`h-5 w-5 transition ${
-                    isActive
-                      ? "stroke-[2.8]"
-                      : "stroke-[2] group-hover:text-slate-900"
-                  }`}
-                />
-              </span>
-
-              <span className="max-w-full truncate">{item.label}</span>
-            </NavLink>
-          );
-        })}
-      </div>
-    </nav>
   );
 }
 
@@ -793,7 +734,9 @@ export default function ParentLayout() {
         </main>
       </div>
 
-      {isPwaMode ? <MobileBottomNav primaryColor={theme.primaryColor} /> : null}
+      {isPwaMode ? (
+        <MobileBottomNav role="parent" primaryColor={theme.primaryColor} />
+      ) : null}
     </div>
   );
 }
