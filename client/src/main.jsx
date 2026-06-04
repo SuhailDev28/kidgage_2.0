@@ -12,7 +12,7 @@ import {
 import { AppRouter } from "./app/router.jsx";
 import PwaUpdatePrompt from "./components/PwaUpdatePrompt.jsx";
 import PwaInstallButton from "./components/PwaInstallButton.jsx";
-import KidGageSplashScreen from "./components/pwa/KidGageSplashScreen.jsx";
+import KidGageSplashScreen from "./components/mobile/KidGageSplashScreen.jsx";
 import { usePwaMode } from "./hooks/usePwaMode.js";
 import "./index.css";
 
