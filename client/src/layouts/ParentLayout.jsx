@@ -19,10 +19,12 @@ import {
   Clock,
   ExternalLink,
   MessageCircle,
+  Compass,
 } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { logout, getUser } from "../lib/auth.js";
 import { api, publicApi } from "../lib/api.js";
+import { usePwaMode } from "../hooks/usePwaMode.js";
 
 const FALLBACK_API_ORIGIN = "http://localhost:5001";
 
@@ -143,6 +145,13 @@ const navItems = [
   { label: "Settings", to: "/parent/settings", icon: Settings },
 ];
 
+const bottomNavItems = [
+  { label: "Home", to: "/parent/dashboard", icon: Home },
+  { label: "Explore", to: "/", icon: Compass },
+  { label: "Bookings", to: "/parent/bookings", icon: CalendarDays },
+  { label: "Payments", to: "/parent/payments", icon: CreditCard },
+  { label: "Profile", to: "/parent/profile", icon: UserCircle2 },
+];
 
 function ParentBrandMark({
   logo = "",
@@ -192,6 +201,57 @@ function ParentBrandMark({
         </div>
       </div>
     </button>
+  );
+}
+
+function MobileBottomNav({ primaryColor = DEFAULT_THEME.primaryColor }) {
+  const location = useLocation();
+
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200/80 bg-white/95 px-2 pb-[calc(env(safe-area-inset-bottom)+8px)] pt-2 shadow-[0_-18px_45px_rgba(15,23,42,0.12)] backdrop-blur-2xl lg:hidden">
+      <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
+        {bottomNavItems.map((item) => {
+          const Icon = item.icon;
+
+          const isActive =
+            item.to === "/"
+              ? location.pathname === "/"
+              : location.pathname === item.to ||
+                location.pathname.startsWith(`${item.to}/`);
+
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className="group flex min-w-0 flex-col items-center justify-center rounded-2xl px-1 py-2.5 text-[10.5px] font-black transition active:scale-95"
+              style={{
+                color: isActive ? primaryColor : "#64748b",
+                backgroundColor: isActive ? `${primaryColor}14` : "transparent",
+              }}
+            >
+              <span
+                className="mb-1 flex h-7 w-7 items-center justify-center rounded-xl transition"
+                style={{
+                  backgroundColor: isActive
+                    ? `${primaryColor}1f`
+                    : "transparent",
+                }}
+              >
+                <Icon
+                  className={`h-5 w-5 transition ${
+                    isActive
+                      ? "stroke-[2.8]"
+                      : "stroke-[2] group-hover:text-slate-900"
+                  }`}
+                />
+              </span>
+
+              <span className="max-w-full truncate">{item.label}</span>
+            </NavLink>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
 
@@ -299,7 +359,7 @@ function NotificationBell({ primaryColor }) {
     <div className="relative">
       <button
         type="button"
-        className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 transition hover:bg-slate-200"
+        className="relative inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 transition hover:bg-slate-200 active:scale-95"
         aria-label="Notifications"
         onClick={() => {
           setOpen((prev) => !prev);
@@ -332,7 +392,7 @@ function NotificationBell({ primaryColor }) {
             aria-label="Close notifications"
           />
 
-          <div className="absolute right-0 z-50 mt-3 w-[340px] overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.18)] sm:w-[390px]">
+          <div className="absolute right-0 z-50 mt-3 w-[calc(100vw-32px)] overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.18)] sm:w-[390px]">
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
               <div>
                 <div className="text-base font-black text-slate-950">
@@ -417,7 +477,10 @@ function NotificationBell({ primaryColor }) {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center px-6 py-10 text-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-[#ec7a3b]">
+                  <div
+                    className="flex h-14 w-14 items-center justify-center rounded-2xl text-white"
+                    style={{ backgroundColor: primaryColor }}
+                  >
                     <MessageCircle className="h-6 w-6" />
                   </div>
 
@@ -440,7 +503,7 @@ function NotificationBell({ primaryColor }) {
                   setOpen(false);
                   navigate("/parent/notifications");
                 }}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-white transition hover:opacity-95"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black text-white transition hover:opacity-95 active:scale-[0.98]"
                 style={{ backgroundColor: primaryColor }}
               >
                 View all notifications
@@ -457,6 +520,7 @@ function NotificationBell({ primaryColor }) {
 export default function ParentLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const isPwaMode = usePwaMode();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState(DEFAULT_THEME);
@@ -564,7 +628,10 @@ export default function ParentLayout() {
         <div className="flex-1 overflow-y-auto px-4 py-5">
           <div className="mb-5 rounded-[24px] bg-gradient-to-br from-orange-50 to-amber-50 p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-sm font-black text-[#ec7a3b] shadow-sm">
+              <div
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-sm font-black shadow-sm"
+                style={{ color: theme.primaryColor }}
+              >
                 {getInitials(parentName)}
               </div>
 
@@ -595,10 +662,13 @@ export default function ParentLayout() {
                   className={({ isActive }) =>
                     `group flex items-center justify-between gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition ${
                       isActive
-                        ? "bg-[#ec7a3b] text-white shadow-[0_14px_30px_rgba(236,122,59,0.22)]"
+                        ? "text-white shadow-[0_14px_30px_rgba(236,122,59,0.22)]"
                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     }`
                   }
+                  style={({ isActive }) => ({
+                    backgroundColor: isActive ? theme.primaryColor : undefined,
+                  })}
                 >
                   {({ isActive }) => (
                     <>
@@ -632,7 +702,7 @@ export default function ParentLayout() {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-red-50 hover:text-red-700"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-red-50 hover:text-red-700 active:scale-[0.98]"
           >
             <LogOut className="h-4 w-4" />
             Logout
@@ -642,19 +712,19 @@ export default function ParentLayout() {
 
       <div className="lg:pl-[290px]">
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
-          <div className="flex min-h-[88px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <div className="flex min-h-[78px] items-center justify-between gap-4 px-4 sm:min-h-[88px] sm:px-6 lg:px-8">
             <div className="flex min-w-0 items-center gap-3">
               <button
                 type="button"
                 onClick={() => setSidebarOpen(true)}
-                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 transition hover:bg-slate-200 lg:hidden"
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 transition hover:bg-slate-200 active:scale-95 lg:hidden"
                 aria-label="Open sidebar"
               >
                 <Menu className="h-5 w-5" />
               </button>
 
               <div className="min-w-0">
-                <h1 className="truncate text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
+                <h1 className="truncate text-lg font-black tracking-tight text-slate-900 sm:text-2xl">
                   {activePage}
                 </h1>
                 <p className="mt-0.5 hidden text-sm font-medium text-slate-500 sm:block">
@@ -669,7 +739,16 @@ export default function ParentLayout() {
                 <input
                   type="text"
                   placeholder="Search bookings, academies, activities..."
-                  className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-[#ec7a3b] focus:bg-white"
+                  className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:bg-white"
+                  style={{
+                    "--tw-ring-color": theme.primaryColor,
+                  }}
+                  onFocus={(event) => {
+                    event.currentTarget.style.borderColor = theme.primaryColor;
+                  }}
+                  onBlur={(event) => {
+                    event.currentTarget.style.borderColor = "";
+                  }}
                 />
               </div>
             </div>
@@ -680,9 +759,15 @@ export default function ParentLayout() {
               <button
                 type="button"
                 onClick={() => navigate("/parent/profile")}
-                className="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm transition hover:bg-slate-50 sm:flex"
+                className="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] sm:flex"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-sm font-black text-[#ec7a3b]">
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black"
+                  style={{
+                    color: theme.primaryColor,
+                    backgroundColor: `${theme.primaryColor}14`,
+                  }}
+                >
                   {getInitials(parentName)}
                 </div>
 
@@ -699,10 +784,16 @@ export default function ParentLayout() {
           </div>
         </header>
 
-        <main className="min-h-[calc(100vh-88px)]">
+        <main
+          className={`min-h-[calc(100vh-78px)] sm:min-h-[calc(100vh-88px)] ${
+            isPwaMode ? "pb-28 lg:pb-0" : "pb-0"
+          }`}
+        >
           <Outlet />
         </main>
       </div>
+
+      {isPwaMode ? <MobileBottomNav primaryColor={theme.primaryColor} /> : null}
     </div>
   );
 }

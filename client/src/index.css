@@ -28,6 +28,10 @@
   --kg-primary-ring: color-mix(in srgb, var(--kg-primary) 18%, white);
   --kg-secondary-ring: color-mix(in srgb, var(--kg-secondary) 18%, white);
 
+  --kg-safe-top: env(safe-area-inset-top);
+  --kg-safe-bottom: env(safe-area-inset-bottom);
+  --kg-mobile-bottom-nav-height: 86px;
+
   color: var(--kg-text);
   background: var(--kg-bg);
   font-synthesis: none;
@@ -42,10 +46,21 @@ body,
   min-height: 100%;
 }
 
+html {
+  background: var(--kg-bg);
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   background: var(--kg-bg);
   color: var(--kg-text);
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  isolation: isolate;
 }
 
 a {
@@ -60,6 +75,46 @@ textarea {
   font: inherit;
 }
 
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+textarea,
+select {
+  color: var(--kg-text);
+}
+
+input,
+textarea,
+select,
+button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+textarea {
+  resize: vertical;
+}
+
 @layer base {
   * {
     @apply box-border;
@@ -67,6 +122,11 @@ textarea {
 
   ::selection {
     background: color-mix(in srgb, var(--kg-primary) 18%, white);
+  }
+
+  *:focus-visible {
+    outline: 3px solid var(--kg-primary-ring);
+    outline-offset: 2px;
   }
 }
 
@@ -112,23 +172,23 @@ textarea {
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-[18px] px-5 py-3 font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70;
+    @apply inline-flex items-center justify-center rounded-[18px] px-5 py-3 font-semibold text-white transition hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70;
     background: var(--kg-primary);
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-[18px] border bg-white px-5 py-3 font-semibold transition hover:bg-slate-50;
+    @apply inline-flex items-center justify-center rounded-[18px] border bg-white px-5 py-3 font-semibold transition hover:bg-slate-50 active:scale-[0.98];
     border-color: var(--kg-border);
     color: var(--kg-text);
   }
 
   .btn-sage {
-    @apply inline-flex items-center justify-center rounded-[18px] px-5 py-3 font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70;
+    @apply inline-flex items-center justify-center rounded-[18px] px-5 py-3 font-semibold text-white transition hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70;
     background: var(--kg-sage);
   }
 
   .btn-gradient-brand {
-    @apply inline-flex items-center justify-center rounded-[18px] px-5 py-3 font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70;
+    @apply inline-flex items-center justify-center rounded-[18px] px-5 py-3 font-semibold text-white transition hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70;
     background: linear-gradient(
       90deg,
       var(--kg-primary) 0%,
@@ -158,6 +218,54 @@ textarea {
     @apply rounded-full px-3 py-1 text-xs font-semibold;
     background: color-mix(in srgb, var(--kg-primary) 14%, white);
     color: var(--kg-primary);
+  }
+
+  .app-shell {
+    @apply min-h-screen;
+    background: var(--kg-bg);
+    color: var(--kg-text);
+  }
+
+  .app-page {
+    @apply min-h-screen;
+    padding-bottom: calc(var(--kg-mobile-bottom-nav-height) + var(--kg-safe-bottom));
+  }
+
+  .app-header {
+    @apply sticky top-0 z-30 border-b bg-white/90 backdrop-blur-xl;
+    border-color: var(--kg-border);
+  }
+
+  .app-bottom-nav {
+    @apply fixed inset-x-0 bottom-0 z-50 border-t bg-white/95 px-2 pt-2 backdrop-blur-2xl;
+    border-color: color-mix(in srgb, var(--kg-border) 90%, transparent);
+    padding-bottom: calc(var(--kg-safe-bottom) + 8px);
+    box-shadow: 0 -18px 45px rgba(15, 23, 42, 0.12);
+  }
+
+  .app-bottom-nav-inner {
+    @apply mx-auto grid max-w-md grid-cols-5 gap-1;
+  }
+
+  .app-bottom-nav-item {
+    @apply flex min-w-0 flex-col items-center justify-center rounded-2xl px-1 py-2.5 text-[10.5px] font-black transition active:scale-95;
+  }
+
+  .app-bottom-nav-icon {
+    @apply mb-1 flex h-7 w-7 items-center justify-center rounded-xl transition;
+  }
+
+  .safe-bottom {
+    padding-bottom: calc(var(--kg-safe-bottom) + 1rem);
+  }
+
+  .safe-top {
+    padding-top: calc(var(--kg-safe-top) + 1rem);
+  }
+
+  .safe-x {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
   }
 }
 
@@ -228,5 +336,74 @@ textarea {
       color-mix(in srgb, var(--kg-primary) 6%, white) 0%,
       color-mix(in srgb, var(--kg-secondary) 8%, #f3f1eb) 100%
     );
+  }
+
+  .pb-app-nav {
+    padding-bottom: calc(var(--kg-mobile-bottom-nav-height) + var(--kg-safe-bottom));
+  }
+
+  .pt-safe {
+    padding-top: var(--kg-safe-top);
+  }
+
+  .pb-safe {
+    padding-bottom: var(--kg-safe-bottom);
+  }
+
+  .h-screen-app {
+    min-height: 100dvh;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tap-highlight-none {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Installed PWA app mode */
+@media (display-mode: standalone) {
+  body {
+    user-select: none;
+    background: var(--kg-bg);
+  }
+
+  input,
+  textarea,
+  select,
+  [contenteditable="true"] {
+    user-select: text;
+  }
+
+  .app-header {
+    padding-top: var(--kg-safe-top);
+  }
+}
+
+/* iOS Safari standalone fallback */
+@supports (-webkit-touch-callout: none) {
+  body {
+    min-height: -webkit-fill-available;
+  }
+
+  .h-screen-app {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* Desktop: remove mobile bottom spacing */
+@media (min-width: 1024px) {
+  .app-page {
+    padding-bottom: 0;
+  }
+
+  .pb-app-nav {
+    padding-bottom: 0;
   }
 }

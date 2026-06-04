@@ -1,4 +1,5 @@
 // client/src/pages/public/HomePage.jsx
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Presentation, MonitorPlay, BarChart3, Smartphone } from "lucide-react";
@@ -134,7 +135,7 @@ function ArrowButton({ direction = "left", onClick, disabled = false }) {
       onClick={onClick}
       disabled={disabled}
       aria-label={direction === "left" ? "Previous" : "Next"}
-      className="flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(15,23,42,0.08)] bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+      className="flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(15,23,42,0.08)] bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
     >
       {direction === "left" ? (
         <svg
@@ -185,7 +186,7 @@ function SliderDots({
           type="button"
           onClick={() => onSelect(index)}
           aria-label={`Go to slide ${index + 1}`}
-          className={`h-2.5 rounded-full transition ${
+          className={`h-2.5 rounded-full transition active:scale-95 ${
             activeIndex === index
               ? `w-8 ${activeClass}`
               : "w-2.5 bg-slate-300 hover:bg-slate-400"
@@ -215,7 +216,7 @@ function SkeletonBlock({ className = "" }) {
 
 function HomeSkeleton() {
   return (
-    <div className="container-main mt-8 space-y-10">
+    <div className="container-main mt-8 space-y-10 pb-app-nav lg:pb-0">
       <SkeletonBlock className="h-[520px]" />
       <SkeletonBlock className="h-[480px]" />
       <SkeletonBlock className="h-[480px]" />
@@ -261,14 +262,14 @@ function HeroSection({ items = [] }) {
 
   return (
     <section className="container-main mt-8">
-      <div className="relative overflow-hidden rounded-[38px] bg-[#fff7e8] px-6 py-10 shadow-sm md:px-10 md:py-14">
+      <div className="relative overflow-hidden rounded-[32px] bg-[#fff7e8] px-5 py-8 shadow-sm sm:rounded-[38px] sm:px-6 sm:py-10 md:px-10 md:py-14">
         <div className="absolute -left-10 top-12 h-28 w-28 rounded-[32px] bg-[#ffd44d]" />
         <div className="absolute left-[40%] top-0 h-40 w-40 rounded-[40px] bg-[#c8ef4b]" />
         <div className="absolute right-[-14px] top-[-10px] h-36 w-36 rounded-[40px] bg-[#6b5cff]" />
         <div className="absolute bottom-[-12px] right-[20%] h-24 w-24 rounded-full bg-[#ff8a4d]" />
         <div className="absolute bottom-16 right-10 h-12 w-12 rounded-full border-4 border-[#ffd44d]" />
 
-        <div className="relative grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="relative grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
           <div className="max-w-[620px]">
             <div className="inline-flex rounded-full bg-[#6b5cff] px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white">
               KidGage for Families
@@ -287,7 +288,7 @@ function HeroSection({ items = [] }) {
               <button
                 type="button"
                 onClick={handlePrimary}
-                className="rounded-full bg-[#ec7a3b] px-6 py-4 text-base font-bold text-white shadow-[0_14px_28px_rgba(236,122,59,0.28)] transition hover:bg-[#d9682f]"
+                className="rounded-full bg-[#ec7a3b] px-6 py-4 text-base font-bold text-white shadow-[0_14px_28px_rgba(236,122,59,0.28)] transition hover:bg-[#d9682f] active:scale-[0.98]"
               >
                 Explore Programs
               </button>
@@ -297,7 +298,7 @@ function HeroSection({ items = [] }) {
                 onClick={() => {
                   window.location.href = "/events";
                 }}
-                className="inline-flex items-center gap-3 rounded-full bg-white px-6 py-4 text-base font-semibold text-[#0f172a] shadow-sm transition hover:bg-slate-50"
+                className="inline-flex items-center gap-3 rounded-full bg-white px-6 py-4 text-base font-semibold text-[#0f172a] shadow-sm transition hover:bg-slate-50 active:scale-[0.98]"
               >
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#6b5cff] text-white">
                   ▶
@@ -318,21 +319,21 @@ function HeroSection({ items = [] }) {
             <div className="absolute -left-6 top-8 h-44 w-44 rounded-[40px] bg-[#c8ef4b]" />
             <div className="absolute -right-6 bottom-4 h-40 w-40 rounded-[40px] bg-[#c8ef4b]" />
 
-            <div className="relative overflow-hidden rounded-[34px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
+            <div className="relative overflow-hidden rounded-[30px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.18)] sm:rounded-[34px]">
               {current?.image ? (
                 <img
                   src={current.image}
                   alt={current.title}
-                  className="h-[360px] w-full object-cover md:h-[460px]"
+                  className="h-[320px] w-full object-cover sm:h-[360px] md:h-[460px]"
                 />
               ) : (
-                <div className="flex h-[360px] items-center justify-center bg-slate-100 text-slate-400 md:h-[460px]">
+                <div className="flex h-[320px] items-center justify-center bg-slate-100 text-slate-400 sm:h-[360px] md:h-[460px]">
                   {current?.title || "Banner"}
                 </div>
               )}
             </div>
 
-            <div className="absolute bottom-8 left-[-8px] rounded-[18px] bg-white px-5 py-3 shadow-xl">
+            <div className="absolute bottom-6 left-[-2px] rounded-[18px] bg-white px-5 py-3 shadow-xl sm:bottom-8 sm:left-[-8px]">
               <div className="text-xs font-bold uppercase tracking-wide text-[#ec7a3b]">
                 Featured
               </div>
@@ -429,7 +430,7 @@ function PlayfulSection({
   return (
     <section className="container-main mt-10">
       <div
-        className="relative overflow-hidden rounded-[36px] bg-[#6557f5] px-6 py-8 text-white shadow-sm md:px-8 md:py-10"
+        className="relative overflow-hidden rounded-[32px] bg-[#6557f5] px-5 py-7 text-white shadow-sm sm:rounded-[36px] sm:px-6 sm:py-8 md:px-8 md:py-10"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
@@ -448,7 +449,7 @@ function PlayfulSection({
         </div>
 
         <div className="relative z-10">
-          <div className="mb-6 flex items-start justify-between gap-4">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="max-w-[720px]">
               <div className="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-white">
                 KidGage
@@ -469,7 +470,7 @@ function PlayfulSection({
               <button
                 type="button"
                 onClick={onAction}
-                className="shrink-0 rounded-full bg-white px-5 py-3 text-sm font-bold text-[#6557f5] shadow-sm transition hover:bg-white/90"
+                className="w-fit shrink-0 rounded-full bg-white px-5 py-3 text-sm font-bold text-[#6557f5] shadow-sm transition hover:bg-white/90 active:scale-[0.98]"
               >
                 {actionLabel}
               </button>
@@ -498,7 +499,7 @@ function PlayfulSection({
 
               <div
                 ref={trackRef}
-                className="flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="no-scrollbar flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-2"
               >
                 {safeItems.map((item, index) => {
                   const isMiddleCard = index === middleHighlightIndex;
@@ -542,7 +543,7 @@ function ActivityShowcaseCard({ item, highlight = false }) {
     <Link
       to={href}
       style={highlight ? { backgroundColor: BRAND_PRIMARY } : undefined}
-      className={`group block overflow-hidden rounded-[28px] border border-[rgba(15,23,42,0.08)] p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl ${
+      className={`group block overflow-hidden rounded-[28px] border border-[rgba(15,23,42,0.08)] p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl active:scale-[0.99] ${
         highlight ? "text-white" : "bg-white"
       }`}
     >
@@ -551,10 +552,10 @@ function ActivityShowcaseCard({ item, highlight = false }) {
           <img
             src={image}
             alt={title}
-            className="h-[240px] w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+            className="h-[220px] w-full object-cover transition duration-500 group-hover:scale-[1.04] sm:h-[240px]"
           />
         ) : (
-          <div className="flex h-[240px] items-center justify-center text-7xl">
+          <div className="flex h-[220px] items-center justify-center text-7xl sm:h-[240px]">
             {emoji}
           </div>
         )}
@@ -570,7 +571,7 @@ function ActivityShowcaseCard({ item, highlight = false }) {
       </div>
 
       <h3
-        className={`mt-4 text-[26px] font-black leading-tight ${
+        className={`mt-4 text-[24px] font-black leading-tight sm:text-[26px] ${
           highlight ? "text-white" : "text-[#0f172a]"
         }`}
       >
@@ -585,7 +586,7 @@ function ActivityShowcaseCard({ item, highlight = false }) {
 
       <div className="mt-6 flex items-center justify-between gap-4">
         <span
-          className={`inline-flex items-center justify-center rounded-full border-2 px-6 py-3 text-lg font-bold transition ${
+          className={`inline-flex items-center justify-center rounded-full border-2 px-5 py-3 text-base font-bold transition sm:px-6 sm:text-lg ${
             highlight
               ? "border-white text-white group-hover:bg-white group-hover:text-[#ec7a3b]"
               : "border-[#ec7a3b] text-[#ec7a3b] group-hover:bg-[#ec7a3b] group-hover:text-white"
@@ -624,7 +625,7 @@ function BrandShowcaseCard({ item, highlight = false }) {
     <Link
       to={href}
       style={highlight ? { backgroundColor: BRAND_PRIMARY } : undefined}
-      className={`group block overflow-hidden rounded-[28px] border border-[rgba(15,23,42,0.08)] p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl ${
+      className={`group block overflow-hidden rounded-[28px] border border-[rgba(15,23,42,0.08)] p-5 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl active:scale-[0.99] ${
         highlight ? "text-white" : "bg-white"
       }`}
     >
@@ -633,10 +634,10 @@ function BrandShowcaseCard({ item, highlight = false }) {
           <img
             src={image}
             alt={title}
-            className="h-[240px] w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+            className="h-[220px] w-full object-cover transition duration-500 group-hover:scale-[1.04] sm:h-[240px]"
           />
         ) : (
-          <div className="flex h-[240px] items-center justify-center bg-[#eef5ff] text-6xl font-black text-[#1877f2]">
+          <div className="flex h-[220px] items-center justify-center bg-[#eef5ff] text-6xl font-black text-[#1877f2] sm:h-[240px]">
             {title.charAt(0)}
           </div>
         )}
@@ -652,7 +653,7 @@ function BrandShowcaseCard({ item, highlight = false }) {
       </div>
 
       <h3
-        className={`mt-4 text-[26px] font-black leading-tight ${
+        className={`mt-4 text-[24px] font-black leading-tight sm:text-[26px] ${
           highlight ? "text-white" : "text-[#0f172a]"
         }`}
       >
@@ -667,7 +668,7 @@ function BrandShowcaseCard({ item, highlight = false }) {
 
       <div className="mt-6 flex items-center justify-between gap-4">
         <span
-          className={`inline-flex items-center justify-center rounded-full border-2 px-6 py-3 text-lg font-bold transition ${
+          className={`inline-flex items-center justify-center rounded-full border-2 px-5 py-3 text-base font-bold transition sm:px-6 sm:text-lg ${
             highlight
               ? "border-white text-white group-hover:bg-white group-hover:text-[#ec7a3b]"
               : "border-[#ec7a3b] text-[#ec7a3b] group-hover:bg-[#ec7a3b] group-hover:text-white"
@@ -744,7 +745,7 @@ function CardsSlider({
   return (
     <section className="container-main mt-10">
       <div className={cardShellClass}>
-        <div className="mb-7 flex items-start justify-between gap-4">
+        <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-[760px]">
             {eyebrow ? (
               <div className="inline-flex rounded-full bg-[#eef5ff] px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#1877f2]">
@@ -767,7 +768,7 @@ function CardsSlider({
             <button
               type="button"
               onClick={onAction}
-              className="shrink-0 rounded-full bg-[#1877f2] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#0f67d6]"
+              className="w-fit shrink-0 rounded-full bg-[#1877f2] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#0f67d6] active:scale-[0.98]"
             >
               {actionLabel}
             </button>
@@ -792,7 +793,7 @@ function CardsSlider({
 
             <div
               ref={trackRef}
-              className="flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="no-scrollbar flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-2"
             >
               {safeItems.map((item, index) => (
                 <div
@@ -848,7 +849,7 @@ function SectionStatCard({ item, showDivider = false }) {
 
 function SessionRow({ title, time }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-full bg-white px-6 py-5 text-[#111827] shadow-sm">
+    <div className="flex flex-col gap-1 rounded-[24px] bg-white px-5 py-5 text-[#111827] shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:rounded-full sm:px-6">
       <div className="text-lg font-bold md:text-xl">{title}</div>
       <div className="text-base font-black md:text-xl">{time}</div>
     </div>
@@ -936,7 +937,7 @@ function StatsSessionSection({ data }) {
           ))}
         </div>
 
-        <div className="relative translate-y-16 rounded-[36px] bg-[#ec7a3b] px-6 py-8 text-white shadow-[0_30px_60px_rgba(17,24,39,0.16)] md:px-10 md:py-12">
+        <div className="relative translate-y-16 rounded-[32px] bg-[#ec7a3b] px-5 py-8 text-white shadow-[0_30px_60px_rgba(17,24,39,0.16)] sm:rounded-[36px] sm:px-6 md:px-10 md:py-12">
           <div className="grid items-center gap-10 xl:grid-cols-[1fr_1.15fr]">
             <div className="xl:pr-10">
               <div className="inline-flex rounded-full bg-white px-5 py-2 text-sm font-bold text-[#ec7a3b] shadow-sm">
@@ -947,9 +948,9 @@ function StatsSessionSection({ data }) {
                 Our Session Times
               </h2>
 
-              <div className="mt-3 h-3 w-64 rounded-full bg-white/80" />
+              <div className="mt-3 h-3 w-48 rounded-full bg-white/80 sm:w-64" />
 
-              <p className="mt-8 max-w-xl text-xl leading-9 text-white/90 md:text-2xl md:leading-10">
+              <p className="mt-8 max-w-xl text-lg leading-8 text-white/90 md:text-2xl md:leading-10">
                 Choose the most convenient timing for children to learn, play,
                 and grow through structured daily activities.
               </p>
@@ -980,7 +981,7 @@ function EditorialBlogSection({ blogs = [] }) {
 
   return (
     <section className="container-main mt-10">
-      <div className="rounded-[34px] bg-white px-6 py-8 shadow-sm md:px-8 md:py-10">
+      <div className="rounded-[32px] bg-white px-5 py-8 shadow-sm sm:rounded-[34px] sm:px-6 md:px-8 md:py-10">
         <div className="mx-auto max-w-[760px] text-center">
           <div className="inline-flex rounded-full bg-[#eef5ff] px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#6b5cff]">
             Our News
@@ -995,7 +996,7 @@ function EditorialBlogSection({ blogs = [] }) {
             onClick={() => {
               window.location.href = "/blogs";
             }}
-            className="mx-auto mt-7 inline-flex items-center gap-3 rounded-full bg-[#ec7a3b] px-5 py-3 text-sm font-bold text-white shadow-[0_12px_26px_rgba(236,122,59,0.24)] transition hover:bg-[#d9682f]"
+            className="mx-auto mt-7 inline-flex items-center gap-3 rounded-full bg-[#ec7a3b] px-5 py-3 text-sm font-bold text-white shadow-[0_12px_26px_rgba(236,122,59,0.24)] transition hover:bg-[#d9682f] active:scale-[0.98]"
           >
             View All Blogs
           </button>
@@ -1125,7 +1126,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="pb-16">
+    <div className="bg-[#f8f8f8] pb-app-nav lg:pb-16">
       <SearchHero />
 
       {loading ? (
