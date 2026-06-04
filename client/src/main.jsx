@@ -102,7 +102,6 @@ function getSettingsFromContext(contextValue) {
 
 function PublicHeadManager() {
   const contextValue = usePublicSettings();
-
   const settings = getSettingsFromContext(contextValue);
 
   useEffect(() => {
@@ -149,7 +148,17 @@ function PublicHeadManager() {
     upsertLink("manifest", manifestUrl, {
       crossorigin: "anonymous",
     });
-  }, [settings]);
+  }, [
+    settings.siteName,
+    settings.metaDescription,
+    settings.tagline,
+    settings.primaryColor,
+    settings.themeColor,
+    settings.favicon,
+    settings.pwaLogo,
+    settings.logo,
+    settings.metaTitle,
+  ]);
 
   return null;
 }
@@ -204,7 +213,7 @@ function PwaSplashManager() {
       show={showSplash}
       logo={splashLogo}
       siteName={siteName}
-      duration={1900}
+      duration={2300}
       onFinish={() => setShowSplash(false)}
     />
   );

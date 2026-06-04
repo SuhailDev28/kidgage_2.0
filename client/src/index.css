@@ -228,7 +228,9 @@ textarea {
 
   .app-page {
     @apply min-h-screen;
-    padding-bottom: calc(var(--kg-mobile-bottom-nav-height) + var(--kg-safe-bottom));
+    padding-bottom: calc(
+      var(--kg-mobile-bottom-nav-height) + var(--kg-safe-bottom)
+    );
   }
 
   .app-header {
@@ -339,7 +341,9 @@ textarea {
   }
 
   .pb-app-nav {
-    padding-bottom: calc(var(--kg-mobile-bottom-nav-height) + var(--kg-safe-bottom));
+    padding-bottom: calc(
+      var(--kg-mobile-bottom-nav-height) + var(--kg-safe-bottom)
+    );
   }
 
   .pt-safe {
@@ -408,8 +412,8 @@ textarea {
   }
 }
 
-/* KidGage animated PWA splash screen */
-.kg-splash-screen {
+/* KidGage Netflix-style PWA splash screen */
+.kg-netflix-splash {
   position: fixed;
   inset: 0;
   z-index: 9999;
@@ -420,290 +424,203 @@ textarea {
   justify-content: center;
   background:
     radial-gradient(
-      circle at 20% 10%,
-      rgba(255, 255, 255, 0.22),
-      transparent 28%
+      circle at 50% 45%,
+      rgba(236, 122, 59, 0.3),
+      transparent 26%
     ),
     radial-gradient(
-      circle at 88% 82%,
-      rgba(255, 255, 255, 0.18),
-      transparent 30%
+      circle at 50% 50%,
+      rgba(255, 216, 77, 0.12),
+      transparent 34%
     ),
-    linear-gradient(145deg, #f9a08d 0%, #ff816d 48%, #f46f5e 100%);
+    linear-gradient(145deg, #100f14 0%, #17131a 44%, #07070b 100%);
   color: #ffffff;
-  animation: kgSplashEnter 420ms ease-out both;
+  animation: kgNetflixSplashEnter 380ms ease-out both;
 }
 
-.kg-splash-screen--leaving {
-  pointer-events: none;
-  animation: kgSplashExit 380ms ease-in forwards;
-}
-
-.kg-splash-bg {
+.kg-netflix-splash::before {
+  content: "";
   position: absolute;
+  inset: -22%;
+  background:
+    linear-gradient(
+      115deg,
+      transparent 0%,
+      transparent 38%,
+      rgba(236, 122, 59, 0.13) 48%,
+      rgba(255, 216, 77, 0.09) 52%,
+      transparent 62%,
+      transparent 100%
+    );
+  transform: translateX(-38%) rotate(4deg);
+  animation: kgNetflixLightSweep 1700ms ease-in-out 420ms both;
+}
+
+.kg-netflix-splash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      transparent 0%,
+      transparent 42%,
+      rgba(0, 0, 0, 0.48) 100%
+    );
+  pointer-events: none;
+}
+
+.kg-netflix-splash--leaving {
+  pointer-events: none;
+  animation: kgNetflixSplashExit 460ms ease-in forwards;
+}
+
+.kg-netflix-splash-glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  filter: blur(1px);
-  animation: kgSplashFloat 5s ease-in-out infinite;
+  filter: blur(42px);
+  opacity: 0.55;
+  transform: translate(-50%, -50%);
+  will-change: transform, opacity;
 }
 
-.kg-splash-bg-one {
-  width: 360px;
-  height: 360px;
-  left: -160px;
-  top: -120px;
-}
-
-.kg-splash-bg-two {
+.kg-netflix-splash-glow-one {
   width: 300px;
   height: 300px;
-  right: -140px;
-  bottom: 80px;
-  animation-delay: 0.8s;
+  background: rgba(236, 122, 59, 0.42);
+  animation: kgNetflixGlowPulse 1800ms ease-in-out infinite;
 }
 
-.kg-splash-bg-three {
-  width: 520px;
-  height: 220px;
-  left: -120px;
-  bottom: -90px;
-  transform: rotate(14deg);
-  animation-delay: 1.2s;
+.kg-netflix-splash-glow-two {
+  width: 190px;
+  height: 190px;
+  background: rgba(255, 216, 77, 0.24);
+  animation: kgNetflixGlowPulse 1800ms ease-in-out 260ms infinite;
 }
 
-.kg-splash-shape {
-  position: absolute;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 28px;
-  line-height: 1;
-  animation: kgSplashTwinkle 1.8s ease-in-out infinite;
-}
-
-.kg-splash-star-one {
-  left: 18%;
-  top: 22%;
-}
-
-.kg-splash-star-two {
-  right: 18%;
-  top: 28%;
-  animation-delay: 0.45s;
-}
-
-.kg-splash-star-three {
-  right: 22%;
-  bottom: 24%;
-  animation-delay: 0.9s;
-}
-
-.kg-splash-doodle {
-  position: absolute;
-  width: 140px;
-  height: 90px;
-  border: 3px dashed rgba(255, 255, 255, 0.28);
-  border-left-color: transparent;
-  border-bottom-color: transparent;
-  border-radius: 50%;
-  animation: kgSplashDoodle 4.6s ease-in-out infinite;
-}
-
-.kg-splash-doodle-one {
-  left: -18px;
-  top: 36%;
-  transform: rotate(14deg);
-}
-
-.kg-splash-doodle-two {
-  right: -22px;
-  top: 14%;
-  transform: rotate(-22deg);
-  animation-delay: 1s;
-}
-
-.kg-splash-floating-icon {
-  position: absolute;
-  z-index: 1;
-  color: rgba(255, 255, 255, 0.28);
-  font-size: 32px;
-  line-height: 1;
-  animation: kgSplashFloatIcon 4.4s ease-in-out infinite;
-}
-
-.kg-splash-floating-icon-one {
-  left: 12%;
-  bottom: 27%;
-}
-
-.kg-splash-floating-icon-two {
-  right: 13%;
-  bottom: 31%;
-  animation-delay: 0.7s;
-}
-
-.kg-splash-floating-icon-three {
-  left: 28%;
-  top: 18%;
-  animation-delay: 1.1s;
-}
-
-.kg-splash-content {
+.kg-netflix-splash-logo-stage {
   position: relative;
   z-index: 2;
-  width: min(82vw, 520px);
+  width: min(74vw, 430px);
+  min-height: 190px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  transform: translateY(-8px);
-}
-
-.kg-splash-logo-wrap {
-  width: 100%;
-  display: flex;
   justify-content: center;
-  animation: kgSplashLogoPop 760ms cubic-bezier(0.2, 0.9, 0.24, 1.2) both;
+  animation: kgNetflixLogoReveal 1550ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.kg-splash-logo-img {
-  width: min(74vw, 480px);
+.kg-netflix-splash-logo-pulse {
+  position: absolute;
+  width: 76%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: rgba(236, 122, 59, 0.2);
+  filter: blur(24px);
+  animation: kgNetflixLogoHalo 1650ms ease-out both;
+}
+
+.kg-netflix-splash-logo-img {
+  position: relative;
+  z-index: 2;
+  width: min(72vw, 400px);
   max-height: 220px;
   object-fit: contain;
-  filter: drop-shadow(0 22px 34px rgba(144, 52, 35, 0.22));
+  filter:
+    drop-shadow(0 0 18px rgba(255, 255, 255, 0.18))
+    drop-shadow(0 20px 42px rgba(0, 0, 0, 0.45));
 }
 
-.kg-splash-logo-fallback {
-  display: grid;
-  grid-template-columns: auto auto auto;
+.kg-netflix-splash-fallback {
+  position: relative;
+  z-index: 2;
+  display: flex;
   align-items: center;
-  gap: 18px;
-  filter: drop-shadow(0 22px 34px rgba(144, 52, 35, 0.22));
+  gap: 16px;
+  color: #ffffff;
+  filter:
+    drop-shadow(0 0 18px rgba(255, 255, 255, 0.18))
+    drop-shadow(0 20px 42px rgba(0, 0, 0, 0.45));
 }
 
-.kg-splash-mark {
-  width: 106px;
-  height: 126px;
-  border: 13px solid #ffffff;
-  border-radius: 22px;
-  transform: perspective(280px) rotateY(-10deg);
+.kg-netflix-splash-mark {
+  width: 86px;
+  height: 104px;
+  border: 10px solid currentColor;
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
+  gap: 7px;
+  transform: perspective(240px) rotateY(-9deg);
 }
 
-.kg-splash-mark span {
-  position: relative;
-  width: 14px;
-  height: 72px;
+.kg-netflix-splash-mark span {
+  width: 10px;
+  height: 58px;
   border-radius: 999px;
-  background: #ffffff;
+  background: currentColor;
 }
 
-.kg-splash-mark span:nth-child(2) {
-  height: 92px;
+.kg-netflix-splash-mark span:nth-child(2) {
+  height: 76px;
 }
 
-.kg-splash-mark span:nth-child(3) {
-  height: 108px;
+.kg-netflix-splash-mark span:nth-child(3) {
+  height: 88px;
 }
 
-.kg-splash-mark span:nth-child(4) {
-  height: 86px;
+.kg-netflix-splash-mark span:nth-child(4) {
+  height: 66px;
 }
 
-.kg-splash-wordmark {
+.kg-netflix-splash-wordmark {
   font-weight: 950;
   letter-spacing: -0.07em;
   line-height: 0.72;
-  font-size: clamp(76px, 17vw, 132px);
+  font-size: clamp(72px, 16vw, 124px);
 }
 
-.kg-splash-wordmark-top {
-  position: relative;
-}
-
-.kg-splash-wordmark-bottom {
+.kg-netflix-splash-word-bottom {
   margin-top: 8px;
 }
 
-.kg-splash-wordmark-star {
+.kg-netflix-splash-loader {
   position: absolute;
-  right: -6px;
-  top: -28px;
-  font-size: 34px;
-  letter-spacing: 0;
-  animation: kgSplashTwinkle 1.6s ease-in-out infinite;
-}
-
-.kg-splash-tagline {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-self: start;
-  margin-top: -20px;
-  font-size: clamp(24px, 5vw, 38px);
-  font-weight: 300;
-  line-height: 1.04;
-  letter-spacing: -0.04em;
-}
-
-.kg-splash-subtitle {
-  margin-top: 28px;
-  padding: 9px 16px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  backdrop-filter: blur(16px);
-  animation: kgSplashFadeUp 760ms ease-out 260ms both;
-}
-
-.kg-splash-loader {
-  position: absolute;
-  left: 50%;
-  bottom: calc(env(safe-area-inset-bottom) + 72px);
   z-index: 3;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 76px);
+  width: min(150px, 38vw);
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
   transform: translateX(-50%);
 }
 
-.kg-splash-loader span {
-  width: 14px;
-  height: 14px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.45);
-  animation: kgSplashDot 1.1s ease-in-out infinite;
+.kg-netflix-splash-loader span {
+  display: block;
+  height: 100%;
+  width: 44%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ec7a3b, #ffd84d);
+  box-shadow: 0 0 18px rgba(236, 122, 59, 0.45);
+  animation: kgNetflixLoader 1250ms ease-in-out infinite;
 }
 
-.kg-splash-loader span:nth-child(2) {
-  width: 22px;
-  height: 22px;
-  background: #ffffff;
-  animation-delay: 0.15s;
-  box-shadow: 0 14px 35px rgba(255, 255, 255, 0.32);
-}
-
-.kg-splash-loader span:nth-child(3) {
-  animation-delay: 0.3s;
-}
-
-@keyframes kgSplashEnter {
+@keyframes kgNetflixSplashEnter {
   from {
     opacity: 0;
-    transform: scale(1.015);
+    background-color: #000000;
   }
 
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
-@keyframes kgSplashExit {
+@keyframes kgNetflixSplashExit {
   from {
     opacity: 1;
     transform: scale(1);
@@ -711,161 +628,140 @@ textarea {
 
   to {
     opacity: 0;
-    transform: scale(1.035);
+    transform: scale(1.025);
   }
 }
 
-@keyframes kgSplashLogoPop {
+@keyframes kgNetflixLogoReveal {
   0% {
     opacity: 0;
-    transform: translateY(18px) scale(0.92);
+    transform: scale(0.72);
+    filter: blur(10px);
   }
 
-  65% {
+  18% {
     opacity: 1;
-    transform: translateY(-4px) scale(1.03);
+    filter: blur(0);
+  }
+
+  58% {
+    opacity: 1;
+    transform: scale(1.08);
   }
 
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: scale(1);
   }
 }
 
-@keyframes kgSplashFadeUp {
-  from {
+@keyframes kgNetflixLogoHalo {
+  0% {
     opacity: 0;
-    transform: translateY(12px);
+    transform: scale(0.45);
   }
 
-  to {
+  45% {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0.35;
+    transform: scale(1.18);
   }
 }
 
-@keyframes kgSplashFloat {
+@keyframes kgNetflixGlowPulse {
   0%,
   100% {
-    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.34;
+    transform: translate(-50%, -50%) scale(0.92);
   }
 
   50% {
-    transform: translate3d(14px, -18px, 0) scale(1.04);
+    opacity: 0.68;
+    transform: translate(-50%, -50%) scale(1.08);
   }
 }
 
-@keyframes kgSplashTwinkle {
-  0%,
-  100% {
-    opacity: 0.45;
-    transform: scale(0.85) rotate(0deg);
+@keyframes kgNetflixLightSweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-40%) rotate(4deg);
   }
 
-  50% {
+  30% {
     opacity: 1;
-    transform: scale(1.18) rotate(8deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(42%) rotate(4deg);
   }
 }
 
-@keyframes kgSplashDoodle {
-  0%,
+@keyframes kgNetflixLoader {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  55% {
+    transform: translateX(60%);
+  }
+
   100% {
-    opacity: 0.22;
-    transform: translateX(0) rotate(14deg);
-  }
-
-  50% {
-    opacity: 0.5;
-    transform: translateX(12px) rotate(18deg);
-  }
-}
-
-@keyframes kgSplashFloatIcon {
-  0%,
-  100% {
-    opacity: 0.22;
-    transform: translate3d(0, 0, 0) rotate(-4deg);
-  }
-
-  50% {
-    opacity: 0.42;
-    transform: translate3d(8px, -14px, 0) rotate(8deg);
-  }
-}
-
-@keyframes kgSplashDot {
-  0%,
-  100% {
-    opacity: 0.45;
-    transform: translateY(0) scale(0.9);
-  }
-
-  50% {
-    opacity: 1;
-    transform: translateY(-5px) scale(1);
+    transform: translateX(260%);
   }
 }
 
 @media (max-width: 480px) {
-  .kg-splash-content {
-    width: min(88vw, 390px);
+  .kg-netflix-splash-logo-stage {
+    width: min(84vw, 360px);
   }
 
-  .kg-splash-logo-img {
-    width: min(82vw, 370px);
+  .kg-netflix-splash-logo-img {
+    width: min(80vw, 330px);
+    max-height: 180px;
   }
 
-  .kg-splash-logo-fallback {
-    grid-template-columns: auto auto;
-    gap: 14px;
+  .kg-netflix-splash-mark {
+    width: 72px;
+    height: 88px;
+    border-width: 8px;
+    border-radius: 17px;
   }
 
-  .kg-splash-mark {
-    width: 82px;
-    height: 98px;
-    border-width: 10px;
-    border-radius: 18px;
+  .kg-netflix-splash-mark span {
+    width: 8px;
+    height: 48px;
   }
 
-  .kg-splash-mark span {
-    width: 11px;
-    height: 56px;
+  .kg-netflix-splash-mark span:nth-child(2) {
+    height: 60px;
   }
 
-  .kg-splash-mark span:nth-child(2) {
-    height: 68px;
+  .kg-netflix-splash-mark span:nth-child(3) {
+    height: 70px;
   }
 
-  .kg-splash-mark span:nth-child(3) {
-    height: 78px;
+  .kg-netflix-splash-mark span:nth-child(4) {
+    height: 54px;
   }
 
-  .kg-splash-mark span:nth-child(4) {
-    height: 64px;
-  }
-
-  .kg-splash-tagline {
-    grid-column: 2;
-    font-size: 22px;
-    margin-top: -8px;
-  }
-
-  .kg-splash-subtitle {
-    font-size: 11px;
+  .kg-netflix-splash-fallback {
+    gap: 12px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .kg-splash-screen,
-  .kg-splash-screen--leaving,
-  .kg-splash-bg,
-  .kg-splash-shape,
-  .kg-splash-doodle,
-  .kg-splash-floating-icon,
-  .kg-splash-logo-wrap,
-  .kg-splash-subtitle,
-  .kg-splash-loader span {
+  .kg-netflix-splash,
+  .kg-netflix-splash::before,
+  .kg-netflix-splash--leaving,
+  .kg-netflix-splash-glow,
+  .kg-netflix-splash-logo-stage,
+  .kg-netflix-splash-logo-pulse,
+  .kg-netflix-splash-loader span {
     animation: none !important;
   }
 }
