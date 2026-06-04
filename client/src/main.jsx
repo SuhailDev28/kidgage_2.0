@@ -1,5 +1,6 @@
 // client/src/main.jsx
-import React, { useEffect } from "react";
+
+import React, { useEffect, useMemo, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { GoogleOAuthProvider } from "@react-oauth/google";
@@ -11,6 +12,8 @@ import {
 import { AppRouter } from "./app/router.jsx";
 import PwaUpdatePrompt from "./components/PwaUpdatePrompt.jsx";
 import PwaInstallButton from "./components/PwaInstallButton.jsx";
+import KidGageSplashScreen from "./components/pwa/KidGageSplashScreen.jsx";
+import { usePwaMode } from "./hooks/usePwaMode.js";
 import "./index.css";
 
 const FALLBACK_API_ORIGIN = "http://localhost:5001";
@@ -87,15 +90,20 @@ function upsertLink(rel, href, extraAttrs = {}) {
   });
 }
 
-function PublicHeadManager() {
-  const contextValue = usePublicSettings();
-
-  const settings =
+function getSettingsFromContext(contextValue) {
+  return (
     contextValue?.settings ||
     contextValue?.publicSettings ||
     contextValue?.data ||
     contextValue ||
-    {};
+    {}
+  );
+}
+
+function PublicHeadManager() {
+  const contextValue = usePublicSettings();
+
+  const settings = getSettingsFromContext(contextValue);
 
   useEffect(() => {
     const siteName = String(settings.siteName || "KidGage").trim();
@@ -146,6 +154,62 @@ function PublicHeadManager() {
   return null;
 }
 
+function PwaSplashManager() {
+  const isPwaMode = usePwaMode();
+  const contextValue = usePublicSettings();
+
+  const [showSplash, setShowSplash] = useState(false);
+
+  const settings = getSettingsFromContext(contextValue);
+
+  const siteName = String(settings.siteName || "KidGage").trim();
+
+  const splashLogo = useMemo(() => {
+    return (
+      normalizeAssetUrl(settings.splashLogo) ||
+      normalizeAssetUrl(settings.pwaLogo) ||
+      normalizeAssetUrl(settings.logo) ||
+      ""
+    );
+  }, [settings.splashLogo, settings.pwaLogo, settings.logo]);
+
+  useEffect(() => {
+    if (!isPwaMode) {
+      setShowSplash(false);
+      return;
+    }
+
+    try {
+      const alreadyShown = sessionStorage.getItem(
+        "kidgage_pwa_splash_shown",
+      );
+
+      if (alreadyShown) {
+        setShowSplash(false);
+        return;
+      }
+
+      sessionStorage.setItem("kidgage_pwa_splash_shown", "true");
+    } catch {
+      // If sessionStorage is blocked, still show splash.
+    }
+
+    setShowSplash(true);
+  }, [isPwaMode, splashLogo]);
+
+  if (!isPwaMode) return null;
+
+  return (
+    <KidGageSplashScreen
+      show={showSplash}
+      logo={splashLogo}
+      siteName={siteName}
+      duration={1900}
+      onFinish={() => setShowSplash(false)}
+    />
+  );
+}
+
 function RootApp() {
   return (
     <PublicSettingsProvider>
@@ -153,6 +217,7 @@ function RootApp() {
       <AppRouter />
       <PwaUpdatePrompt />
       <PwaInstallButton />
+      <PwaSplashManager />
     </PublicSettingsProvider>
   );
 }
